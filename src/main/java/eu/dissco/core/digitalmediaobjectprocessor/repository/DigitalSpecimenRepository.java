@@ -19,8 +19,10 @@ public class DigitalSpecimenRepository {
   public Optional<DigitalSpecimenInformation> getSpecimenIdBasedOnDWCAId(String dwcaId) {
     return context.select(NEW_DIGITAL_SPECIMEN.ID,
             NEW_DIGITAL_SPECIMEN.ORGANIZATION_ID)
+        .distinctOn(NEW_DIGITAL_SPECIMEN.ID)
         .from(NEW_DIGITAL_SPECIMEN)
         .where(NEW_DIGITAL_SPECIMEN.DWCA_ID.eq(dwcaId))
+        .orderBy(NEW_DIGITAL_SPECIMEN.ID, NEW_DIGITAL_SPECIMEN.VERSION.desc())
         .fetchOptional(this::mapToDigitalSpecimenInformation);
   }
 
@@ -33,8 +35,10 @@ public class DigitalSpecimenRepository {
 
   public Optional<DigitalSpecimenInformation> getSpecimenId(String physicalSpecimenId) {
     return context.select(NEW_DIGITAL_SPECIMEN.ID, NEW_DIGITAL_SPECIMEN.ORGANIZATION_ID)
+        .distinctOn(NEW_DIGITAL_SPECIMEN.ID)
         .from(NEW_DIGITAL_SPECIMEN)
         .where(NEW_DIGITAL_SPECIMEN.PHYSICAL_SPECIMEN_ID.eq(physicalSpecimenId))
+        .orderBy(NEW_DIGITAL_SPECIMEN.ID, NEW_DIGITAL_SPECIMEN.VERSION.desc())
         .fetchOptional(this::mapToDigitalSpecimenInformation);
   }
 }
