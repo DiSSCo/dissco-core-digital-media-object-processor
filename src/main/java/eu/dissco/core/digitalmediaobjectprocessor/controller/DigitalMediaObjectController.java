@@ -10,9 +10,11 @@ import javax.xml.transform.TransformerException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,8 +34,13 @@ public class DigitalMediaObjectController {
   public ResponseEntity<DigitalMediaObjectRecord> createDigitalMediaObject(@RequestBody
   DigitalMediaObjectEvent event)
       throws JsonProcessingException, TransformerException, DigitalSpecimenNotFoundException {
-    log.info("Received digitalMediaObject create");
+    log.info("Received digitalMediaObject upsert: {}", event);
     var result = processingService.handleMessage(event, true);
     return ResponseEntity.ok(result);
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<String> handleException(DigitalSpecimenNotFoundException e) {
+    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
   }
 }
