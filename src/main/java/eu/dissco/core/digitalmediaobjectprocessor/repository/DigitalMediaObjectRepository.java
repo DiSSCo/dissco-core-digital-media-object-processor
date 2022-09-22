@@ -47,8 +47,10 @@ public class DigitalMediaObjectRepository {
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
-    return new DigitalMediaObjectRecord(dbRecord.get(NEW_DIGITAL_MEDIA_OBJECT.ID),
+    return new DigitalMediaObjectRecord(
+        dbRecord.get(NEW_DIGITAL_MEDIA_OBJECT.ID),
         dbRecord.get(NEW_DIGITAL_MEDIA_OBJECT.VERSION),
+        dbRecord.get(NEW_DIGITAL_MEDIA_OBJECT.CREATED),
         digitalMediaObject);
   }
 
@@ -65,7 +67,7 @@ public class DigitalMediaObjectRepository {
             digitalMediaObjectRecord.digitalMediaObject().format())
         .set(NEW_DIGITAL_MEDIA_OBJECT.SOURCE_SYSTEM_ID,
             digitalMediaObjectRecord.digitalMediaObject().sourceSystemId())
-        .set(NEW_DIGITAL_MEDIA_OBJECT.CREATED, Instant.now())
+        .set(NEW_DIGITAL_MEDIA_OBJECT.CREATED, digitalMediaObjectRecord.created())
         .set(NEW_DIGITAL_MEDIA_OBJECT.LAST_CHECKED, Instant.now())
         .set(NEW_DIGITAL_MEDIA_OBJECT.DATA,
             JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().data().toString()))

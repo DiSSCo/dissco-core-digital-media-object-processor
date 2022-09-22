@@ -10,6 +10,7 @@ import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotF
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalMediaObjectRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalSpecimenRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.ElasticSearchRepository;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import javax.xml.transform.TransformerException;
@@ -82,7 +83,8 @@ public class ProcessingService {
         digitalMediaObjectTransfer.sourceSystemId());
     if (webProfile) {
       throw new DigitalSpecimenNotFoundException(
-          "Digital Specimen with id: " + digitalMediaObjectTransfer.physicalSpecimenId() + " was not found");
+          "Digital Specimen with id: " + digitalMediaObjectTransfer.physicalSpecimenId()
+              + " was not found");
     } else {
       kafkaService.republishDigitalMediaObject(event);
     }
@@ -96,7 +98,8 @@ public class ProcessingService {
     }
     var id = currentDigitalMediaObject.id();
     var version = currentDigitalMediaObject.version() + 1;
-    var digitalMediaObjectRecord = new DigitalMediaObjectRecord(id, version, digitalMediaObject);
+    var digitalMediaObjectRecord = new DigitalMediaObjectRecord(id, version, Instant.now(),
+        digitalMediaObject);
     var result = repository.createDigitalMediaObjectRecord(digitalMediaObjectRecord);
     if (result == SUCCESS) {
       log.info("DigitalMediaObject: {} has been successfully committed to database", id);
@@ -127,7 +130,8 @@ public class ProcessingService {
       throws TransformerException {
     var id = handleService.createNewHandle(digitalMediaObject);
     log.info("New id has been generated for MultiMediaObject: {}", id);
-    var digitalMediaObjectRecord = new DigitalMediaObjectRecord(id, 1, digitalMediaObject);
+    var digitalMediaObjectRecord = new DigitalMediaObjectRecord(id, 1, Instant.now(),
+        digitalMediaObject);
     var result = repository.createDigitalMediaObjectRecord(digitalMediaObjectRecord);
     if (result == SUCCESS) {
       log.info("DigitalMediaObject: {} has been successfully committed to database", id);
