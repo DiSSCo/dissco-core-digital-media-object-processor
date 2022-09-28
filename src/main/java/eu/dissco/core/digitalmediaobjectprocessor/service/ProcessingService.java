@@ -7,6 +7,7 @@ import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecor
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransfer;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalSpecimenInformation;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
+import eu.dissco.core.digitalmediaobjectprocessor.exceptions.NoChangesFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalMediaObjectRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalSpecimenRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.ElasticSearchRepository;
@@ -44,7 +45,7 @@ public class ProcessingService {
   }
 
   public DigitalMediaObjectRecord handleMessage(DigitalMediaObjectEvent event, boolean webProfile)
-      throws JsonProcessingException, TransformerException, DigitalSpecimenNotFoundException {
+      throws JsonProcessingException, TransformerException, DigitalSpecimenNotFoundException, NoChangesFoundException {
     var digitalMediaObjectTransfer = event.digitalMediaObject();
     var digitalSpecimenInformationOptional = retrieveDigitalSpecimenId(digitalMediaObjectTransfer);
     if (digitalSpecimenInformationOptional.isEmpty()) {
@@ -65,7 +66,8 @@ public class ProcessingService {
           log.info("Received digitalMediaObject is equal to digitalMediaObject: {}",
               currentDigitalMediaObject.id());
           processEqualDigitalSpecimen(currentDigitalMediaObject);
-          return null;
+          throw new NoChangesFoundException("No changes were necessary to mediaObject with id: "
+              + currentDigitalMediaObject.id());
         } else {
           log.info("DigitalMediaObject with id: {} has received an update",
               currentDigitalMediaObject.id());
