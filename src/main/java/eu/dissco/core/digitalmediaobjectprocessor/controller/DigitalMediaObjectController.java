@@ -5,6 +5,7 @@ import eu.dissco.core.digitalmediaobjectprocessor.Profiles;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
+import eu.dissco.core.digitalmediaobjectprocessor.exceptions.NoChangesFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.service.ProcessingService;
 import javax.xml.transform.TransformerException;
 import lombok.RequiredArgsConstructor;
@@ -33,14 +34,19 @@ public class DigitalMediaObjectController {
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<DigitalMediaObjectRecord> createDigitalMediaObject(@RequestBody
   DigitalMediaObjectEvent event)
-      throws JsonProcessingException, TransformerException, DigitalSpecimenNotFoundException {
+      throws JsonProcessingException, TransformerException, DigitalSpecimenNotFoundException, NoChangesFoundException {
     log.info("Received digitalMediaObject upsert: {}", event);
     var result = processingService.handleMessage(event, true);
-    return ResponseEntity.ok(result);
+    return ResponseEntity.status(HttpStatus.CREATED).body(result);
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<String> handleException(DigitalSpecimenNotFoundException e) {
     return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
+  }
+
+  @ExceptionHandler(NoChangesFoundException.class)
+  public ResponseEntity<String> handleException(NoChangesFoundException e) {
+    return ResponseEntity.status(HttpStatus.OK).body(e.getMessage());
   }
 }
