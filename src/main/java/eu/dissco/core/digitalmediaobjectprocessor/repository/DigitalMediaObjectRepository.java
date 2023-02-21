@@ -24,11 +24,9 @@ public class DigitalMediaObjectRepository {
   public Optional<DigitalMediaObjectRecord> getDigitalMediaObject(String digitalSpecimenId,
       String mediaUrl) {
     return context.select(NEW_DIGITAL_MEDIA_OBJECT.asterisk())
-        .distinctOn(NEW_DIGITAL_MEDIA_OBJECT.ID)
         .from(NEW_DIGITAL_MEDIA_OBJECT)
         .where(NEW_DIGITAL_MEDIA_OBJECT.DIGITAL_SPECIMEN_ID.eq(digitalSpecimenId))
         .and(NEW_DIGITAL_MEDIA_OBJECT.MEDIA_URL.eq(mediaUrl))
-        .orderBy(NEW_DIGITAL_MEDIA_OBJECT.ID, NEW_DIGITAL_MEDIA_OBJECT.VERSION.desc())
         .fetchOptional(this::mapDigitalMediaObject);
   }
 
@@ -57,6 +55,23 @@ public class DigitalMediaObjectRepository {
   public int createDigitalMediaObjectRecord(DigitalMediaObjectRecord digitalMediaObjectRecord) {
     return context.insertInto(NEW_DIGITAL_MEDIA_OBJECT)
         .set(NEW_DIGITAL_MEDIA_OBJECT.ID, digitalMediaObjectRecord.id())
+        .set(NEW_DIGITAL_MEDIA_OBJECT.TYPE, digitalMediaObjectRecord.digitalMediaObject().type())
+        .set(NEW_DIGITAL_MEDIA_OBJECT.VERSION, digitalMediaObjectRecord.version())
+        .set(NEW_DIGITAL_MEDIA_OBJECT.DIGITAL_SPECIMEN_ID,
+            digitalMediaObjectRecord.digitalMediaObject().digitalSpecimenId())
+        .set(NEW_DIGITAL_MEDIA_OBJECT.MEDIA_URL,
+            digitalMediaObjectRecord.digitalMediaObject().mediaUrl())
+        .set(NEW_DIGITAL_MEDIA_OBJECT.FORMAT,
+            digitalMediaObjectRecord.digitalMediaObject().format())
+        .set(NEW_DIGITAL_MEDIA_OBJECT.SOURCE_SYSTEM_ID,
+            digitalMediaObjectRecord.digitalMediaObject().sourceSystemId())
+        .set(NEW_DIGITAL_MEDIA_OBJECT.CREATED, digitalMediaObjectRecord.created())
+        .set(NEW_DIGITAL_MEDIA_OBJECT.LAST_CHECKED, Instant.now())
+        .set(NEW_DIGITAL_MEDIA_OBJECT.DATA,
+            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().data().toString()))
+        .set(NEW_DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA,
+            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().originalData().toString()))
+        .onConflict(NEW_DIGITAL_MEDIA_OBJECT.ID).doUpdate()
         .set(NEW_DIGITAL_MEDIA_OBJECT.TYPE, digitalMediaObjectRecord.digitalMediaObject().type())
         .set(NEW_DIGITAL_MEDIA_OBJECT.VERSION, digitalMediaObjectRecord.version())
         .set(NEW_DIGITAL_MEDIA_OBJECT.DIGITAL_SPECIMEN_ID,

@@ -4,6 +4,7 @@
 package eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables;
 
 
+import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Indexes;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Keys;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Public;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.records.NewDigitalSpecimenRecord;
@@ -14,6 +15,7 @@ import java.util.List;
 
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Index;
 import org.jooq.JSONB;
 import org.jooq.Name;
 import org.jooq.Record;
@@ -55,14 +57,14 @@ public class NewDigitalSpecimen extends TableImpl<NewDigitalSpecimenRecord> {
     public final TableField<NewDigitalSpecimenRecord, String> ID = createField(DSL.name("id"), SQLDataType.CLOB.nullable(false), this, "");
 
     /**
+     * The column <code>public.new_digital_specimen.version</code>.
+     */
+    public final TableField<NewDigitalSpecimenRecord, Integer> VERSION = createField(DSL.name("version"), SQLDataType.INTEGER.nullable(false), this, "");
+
+    /**
      * The column <code>public.new_digital_specimen.type</code>.
      */
     public final TableField<NewDigitalSpecimenRecord, String> TYPE = createField(DSL.name("type"), SQLDataType.CLOB.nullable(false), this, "");
-
-    /**
-     * The column <code>public.new_digital_specimen.version</code>.
-     */
-    public final TableField<NewDigitalSpecimenRecord, Short> VERSION = createField(DSL.name("version"), SQLDataType.SMALLINT.nullable(false), this, "");
 
     /**
      * The column <code>public.new_digital_specimen.midslevel</code>.
@@ -173,13 +175,18 @@ public class NewDigitalSpecimen extends TableImpl<NewDigitalSpecimenRecord> {
     }
 
     @Override
+    public List<Index> getIndexes() {
+        return Arrays.<Index>asList(Indexes.NEW_DIGITAL_SPECIMEN_CREATED_IDX, Indexes.NEW_DIGITAL_SPECIMEN_ID_IDX, Indexes.NEW_DIGITAL_SPECIMEN_PHYSICAL_SPECIMEN_ID_IDX);
+    }
+
+    @Override
     public UniqueKey<NewDigitalSpecimenRecord> getPrimaryKey() {
         return Keys.NEW_DIGITAL_SPECIMEN_PKEY;
     }
 
     @Override
     public List<UniqueKey<NewDigitalSpecimenRecord>> getKeys() {
-        return Arrays.<UniqueKey<NewDigitalSpecimenRecord>>asList(Keys.NEW_DIGITAL_SPECIMEN_PKEY, Keys.NEW_DIGITAL_SPECIMEN_PHYSICAL_SPECIMEN_ID_KEY);
+        return Arrays.<UniqueKey<NewDigitalSpecimenRecord>>asList(Keys.NEW_DIGITAL_SPECIMEN_PKEY);
     }
 
     @Override
@@ -213,7 +220,7 @@ public class NewDigitalSpecimen extends TableImpl<NewDigitalSpecimenRecord> {
     // -------------------------------------------------------------------------
 
     @Override
-    public Row17<String, String, Short, Short, String, String, String, String, String, String, String, Instant, Instant, Instant, JSONB, JSONB, String> fieldsRow() {
+    public Row17<String, Integer, String, Short, String, String, String, String, String, String, String, Instant, Instant, Instant, JSONB, JSONB, String> fieldsRow() {
         return (Row17) super.fieldsRow();
     }
 }
