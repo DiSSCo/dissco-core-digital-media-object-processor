@@ -4,6 +4,7 @@
 package eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables;
 
 
+import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Indexes;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Keys;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Public;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.records.NewDigitalMediaObjectRecord;
@@ -14,6 +15,7 @@ import java.util.List;
 
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Index;
 import org.jooq.JSONB;
 import org.jooq.Name;
 import org.jooq.Record;
@@ -62,7 +64,7 @@ public class NewDigitalMediaObject extends TableImpl<NewDigitalMediaObjectRecord
     /**
      * The column <code>public.new_digital_media_object.type</code>.
      */
-    public final TableField<NewDigitalMediaObjectRecord, String> TYPE = createField(DSL.name("type"), SQLDataType.CLOB.nullable(false), this, "");
+    public final TableField<NewDigitalMediaObjectRecord, String> TYPE = createField(DSL.name("type"), SQLDataType.CLOB, this, "");
 
     /**
      * The column <code>public.new_digital_media_object.digital_specimen_id</code>.
@@ -148,13 +150,18 @@ public class NewDigitalMediaObject extends TableImpl<NewDigitalMediaObjectRecord
     }
 
     @Override
+    public List<Index> getIndexes() {
+        return Arrays.<Index>asList(Indexes.NEW_DIGITAL_MEDIA_OBJECT_ID_IDX, Indexes.NEW_DIGITAL_MEDIA_OBJECT_ID_VERSION_URL);
+    }
+
+    @Override
     public UniqueKey<NewDigitalMediaObjectRecord> getPrimaryKey() {
-        return Keys.NEW_DIGITAL_MEDIA_OBJECT_PKEY;
+        return Keys.NEW_DIGITAL_MEDIA_OBJECT_PK;
     }
 
     @Override
     public List<UniqueKey<NewDigitalMediaObjectRecord>> getKeys() {
-        return Arrays.<UniqueKey<NewDigitalMediaObjectRecord>>asList(Keys.NEW_DIGITAL_MEDIA_OBJECT_PKEY);
+        return Arrays.<UniqueKey<NewDigitalMediaObjectRecord>>asList(Keys.NEW_DIGITAL_MEDIA_OBJECT_PK);
     }
 
     @Override
