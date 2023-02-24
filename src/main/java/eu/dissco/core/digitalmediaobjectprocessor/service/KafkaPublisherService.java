@@ -17,13 +17,20 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class KafkaPublisherService {
 
+  private static final String SUBJECT_TYPE = "DigitalMediaObject";
+
   private final ObjectMapper mapper;
   private final KafkaTemplate<String, String> kafkaTemplate;
 
   public void publishCreateEvent(DigitalMediaObjectRecord digitalMediaObjectRecord) {
     var event = new CreateUpdateDeleteEvent(UUID.randomUUID(), "create",
-        "digital-media-object-processing-service", digitalMediaObjectRecord.id(), Instant.now(),
-        mapper.valueToTree(digitalMediaObjectRecord), "Digital Media Object newly created");
+        "digital-media-object-processing-service",
+        digitalMediaObjectRecord.id(),
+        SUBJECT_TYPE,
+        Instant.now(),
+        mapper.valueToTree(digitalMediaObjectRecord),
+        null,
+        "Digital Media Object newly created");
     try {
       kafkaTemplate.send("createUpdateDeleteTopic", mapper.writeValueAsString(event));
     } catch (JsonProcessingException e) {
@@ -43,8 +50,14 @@ public class KafkaPublisherService {
   public void publishUpdateEvent(DigitalMediaObjectRecord currentDigitalMediaRecord,
       DigitalMediaObjectRecord digitalMediaObjectRecord) {
     var jsonPatch = createJsonPatch(currentDigitalMediaRecord, digitalMediaObjectRecord);
-    var event = new CreateUpdateDeleteEvent(UUID.randomUUID(), "update", "digital-media-object-processing-service",
-        digitalMediaObjectRecord.id(), Instant.now(), jsonPatch,
+    var event = new CreateUpdateDeleteEvent(UUID.randomUUID(),
+        "update",
+        "digital-media-object-processing-service",
+        digitalMediaObjectRecord.id(),
+        SUBJECT_TYPE,
+        Instant.now(),
+        mapper.valueToTree(digitalMediaObjectRecord),
+        jsonPatch,
         "Digital Media Object has been updated");
     try {
       kafkaTemplate.send("createUpdateDeleteTopic", mapper.writeValueAsString(event));
