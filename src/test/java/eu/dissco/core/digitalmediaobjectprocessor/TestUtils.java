@@ -21,9 +21,8 @@ public class TestUtils {
   public static final String AAS = "OCR";
   public static final String PHYSICAL_SPECIMEN_ID = "045db6cb-5f06-4c19-b0f6-9620bdff3ae4:040ck2b86";
   public static final String DIGITAL_SPECIMEN_ID = "20.5000.1025/460-A7R-QMJ";
-  public static final String MEDIA_URL = "http://repo.rbge.org.uk/image_server.php?kind=1500&path_base64=L2l0ZW1faW1hZ2VzL2FjY2Vzc2lvbnMvMTkvOTQvMjIvNzIvUGhvdG9fNTFjMWNlNzM5ZDE2Zi5qcGc=";
+  public static final String MEDIA_URL = "http://data.rbge.org.uk/living/19942272";
   public static final String FORMAT = "image/jpeg";
-  public static final String SOURCE_SYSTEM_ID = "20.5000.1025/GW0-TYL-YRU";
 
   public static DigitalMediaObjectEvent givenMediaEvent() throws JsonProcessingException {
     return new DigitalMediaObjectEvent(
@@ -65,9 +64,6 @@ public class TestUtils {
     return new DigitalMediaObject(
         TYPE,
         DIGITAL_SPECIMEN_ID,
-        MEDIA_URL,
-        format,
-        SOURCE_SYSTEM_ID,
         generateAttributes(),
         generateOriginalAttributes()
     );

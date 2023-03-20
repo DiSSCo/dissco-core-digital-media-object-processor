@@ -38,9 +38,6 @@ public class ProcessingService {
     var attributes = digitalMediaObjectTransfer.attributes();
     return new DigitalMediaObject(digitalMediaObjectTransfer.type(),
         digitalSpecimenInformation.id(),
-        attributes.get("ac:accessURI").asText(),
-        attributes.get("dcterms:format").asText(),
-        attributes.get("ods:sourceSystemId").asText(),
         attributes,
         digitalMediaObjectTransfer.originalAttributes());
   }
@@ -58,7 +55,7 @@ public class ProcessingService {
           digitalSpecimenInformation);
       var currentDigitalMediaObjectOptional = repository.getDigitalMediaObject(
           digitalSpecimenInformation.id(),
-          digitalMediaObject.mediaUrl());
+          digitalMediaObject.attributes().get("ac:accessURI").asText());
       if (currentDigitalMediaObjectOptional.isEmpty()) {
         return persistNewDigitalMediaObject(digitalMediaObject, event.enrichmentList());
       } else {
