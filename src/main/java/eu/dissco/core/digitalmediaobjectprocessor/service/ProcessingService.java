@@ -35,13 +35,14 @@ public class ProcessingService {
   private static DigitalMediaObject convertToDigitalMediaObject(
       DigitalMediaObjectTransfer digitalMediaObjectTransfer,
       DigitalSpecimenInformation digitalSpecimenInformation) {
+    var attributes = digitalMediaObjectTransfer.attributes();
     return new DigitalMediaObject(digitalMediaObjectTransfer.type(),
         digitalSpecimenInformation.id(),
-        digitalMediaObjectTransfer.mediaUrl(),
-        digitalMediaObjectTransfer.format(),
-        digitalMediaObjectTransfer.sourceSystemId(),
-        digitalMediaObjectTransfer.data(),
-        digitalMediaObjectTransfer.originalData());
+        attributes.get("ac:accessURI").asText(),
+        attributes.get("dcterms:format").asText(),
+        attributes.get("ods:sourceSystemId").asText(),
+        attributes,
+        digitalMediaObjectTransfer.originalAttributes());
   }
 
   public DigitalMediaObjectRecord handleMessage(DigitalMediaObjectEvent event, boolean webProfile)
@@ -82,7 +83,7 @@ public class ProcessingService {
       throws DigitalSpecimenNotFoundException, JsonProcessingException {
     log.error("Digital specimen for dwca_id: {} and sourceSystem: {} is not available",
         digitalMediaObjectTransfer.physicalSpecimenId(),
-        digitalMediaObjectTransfer.sourceSystemId());
+        digitalMediaObjectTransfer.attributes().get("ods:sourceSystemId").asText());
     if (webProfile) {
       throw new DigitalSpecimenNotFoundException(
           "Digital Specimen with id: " + digitalMediaObjectTransfer.physicalSpecimenId()
@@ -151,11 +152,6 @@ public class ProcessingService {
 
   private Optional<DigitalSpecimenInformation> retrieveDigitalSpecimenId(
       DigitalMediaObjectTransfer digitalMediaObject) {
-    if (digitalMediaObject.idType().equals("DWCA")) {
-      return digitalSpecimenRepository.getSpecimenIdBasedOnDWCAId(
-          digitalMediaObject.physicalSpecimenId());
-    } else {
       return digitalSpecimenRepository.getSpecimenId(digitalMediaObject.physicalSpecimenId());
-    }
   }
 }

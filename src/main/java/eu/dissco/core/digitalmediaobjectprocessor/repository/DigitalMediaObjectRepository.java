@@ -68,9 +68,9 @@ public class DigitalMediaObjectRepository {
         .set(NEW_DIGITAL_MEDIA_OBJECT.CREATED, digitalMediaObjectRecord.created())
         .set(NEW_DIGITAL_MEDIA_OBJECT.LAST_CHECKED, Instant.now())
         .set(NEW_DIGITAL_MEDIA_OBJECT.DATA,
-            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().data().toString()))
+            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().attributes().toString()))
         .set(NEW_DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA,
-            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().originalData().toString()))
+            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().originalAttributes().toString()))
         .onConflict(NEW_DIGITAL_MEDIA_OBJECT.ID).doUpdate()
         .set(NEW_DIGITAL_MEDIA_OBJECT.TYPE, digitalMediaObjectRecord.digitalMediaObject().type())
         .set(NEW_DIGITAL_MEDIA_OBJECT.VERSION, digitalMediaObjectRecord.version())
@@ -85,9 +85,9 @@ public class DigitalMediaObjectRepository {
         .set(NEW_DIGITAL_MEDIA_OBJECT.CREATED, digitalMediaObjectRecord.created())
         .set(NEW_DIGITAL_MEDIA_OBJECT.LAST_CHECKED, Instant.now())
         .set(NEW_DIGITAL_MEDIA_OBJECT.DATA,
-            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().data().toString()))
+            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().attributes().toString()))
         .set(NEW_DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA,
-            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().originalData().toString()))
+            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().originalAttributes().toString()))
         .execute();
   }
 
