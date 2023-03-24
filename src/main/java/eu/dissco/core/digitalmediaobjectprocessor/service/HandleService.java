@@ -2,7 +2,9 @@ package eu.dissco.core.digitalmediaobjectprocessor.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.HandleAttribute;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaTuple;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.HandleRepository;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -47,7 +49,8 @@ public class HandleService {
     return handle;
   }
 
-  private List<HandleAttribute> fillPidRecord(DigitalMediaObject digitalMediaObject, String handle, Instant recordTimestamp)
+  private List<HandleAttribute> fillPidRecord(DigitalMediaObject digitalMediaObject, String handle,
+      Instant recordTimestamp)
       throws TransformerException {
     var handleAttributes = new ArrayList<HandleAttribute>();
     handleAttributes.add(new HandleAttribute(1, "pid",
@@ -72,12 +75,25 @@ public class HandleService {
     return handleAttributes;
   }
 
-  public void updateHandle(String id, DigitalMediaObject digitalMediaObject) {
-    var handleAttributes = new ArrayList<HandleAttribute>();
+  public void updateHandles(List<UpdatedDigitalMediaTuple> handleUpdates) {
+    for (var handleUpdate : handleUpdates) {
+      updateHandle(handleUpdate.currentDigitalMediaRecord().id(),
+          handleUpdate.digitalMediaObjectEvent().digitalMediaObject());
+    }
+  }
+
+  private void updateHandle(String id, DigitalMediaObject digitalMediaObject){
+    var handleAttributes = updatedHandles(digitalMediaObject);
     var recordTimeStamp = Instant.now();
+    repository.updateHandleAttributes(id, recordTimeStamp, handleAttributes, true);
+  }
+
+  private ArrayList<HandleAttribute> updatedHandles(DigitalMediaObject digitalMediaObject) {
+    var handleAttributes = new ArrayList<HandleAttribute>();
     handleAttributes.add(new HandleAttribute(4, "digitalObjectSubtype",
         createPidReference("https://hdl.handle.net/21...", "Handle", digitalMediaObject.type())));
-    repository.updateHandleAttributes(id, recordTimeStamp, handleAttributes);
+    return handleAttributes;
+
   }
 
   private byte[] createIssueDate(Instant recordTimestamp) {
@@ -148,5 +164,13 @@ public class HandleService {
     return Character.digit(hexChar, 16);
   }
 
+  public void rollbackHandleCreation(DigitalMediaObjectRecord digitalMediaObjectRecord) {
+    repository.rollbackHandleCreation(digitalMediaObjectRecord.id());
+  }
 
+  public void deleteVersion(DigitalMediaObjectRecord currentDigitalMediaRecord) {
+    var handleAttributes = updatedHandles(currentDigitalMediaRecord.digitalMediaObject());
+    repository.updateHandleAttributes(currentDigitalMediaRecord.id(), Instant.now(), handleAttributes,
+        false);
+  }
 }

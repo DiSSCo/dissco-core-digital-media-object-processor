@@ -8,18 +8,16 @@ import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Indexes;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Keys;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Public;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.records.NewDigitalMediaObjectRecord;
-
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-
 import org.jooq.Field;
 import org.jooq.ForeignKey;
 import org.jooq.Index;
 import org.jooq.JSONB;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row12;
+import org.jooq.Row13;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -111,6 +109,11 @@ public class NewDigitalMediaObject extends TableImpl<NewDigitalMediaObjectRecord
      */
     public final TableField<NewDigitalMediaObjectRecord, JSONB> ORIGINAL_DATA = createField(DSL.name("original_data"), SQLDataType.JSONB, this, "");
 
+    /**
+     * The column <code>public.new_digital_media_object.physical_specimen_id</code>.
+     */
+    public final TableField<NewDigitalMediaObjectRecord, String> PHYSICAL_SPECIMEN_ID = createField(DSL.name("physical_specimen_id"), SQLDataType.VARCHAR.nullable(false).defaultValue(DSL.field("'unknown'::character varying", SQLDataType.VARCHAR)), this, "");
+
     private NewDigitalMediaObject(Name alias, Table<NewDigitalMediaObjectRecord> aliased) {
         this(alias, aliased, null);
     }
@@ -191,11 +194,11 @@ public class NewDigitalMediaObject extends TableImpl<NewDigitalMediaObjectRecord
     }
 
     // -------------------------------------------------------------------------
-    // Row12 type methods
+    // Row13 type methods
     // -------------------------------------------------------------------------
 
     @Override
-    public Row12<String, Integer, String, String, String, String, String, Instant, Instant, Instant, JSONB, JSONB> fieldsRow() {
-        return (Row12) super.fieldsRow();
+    public Row13<String, Integer, String, String, String, String, String, Instant, Instant, Instant, JSONB, JSONB, String> fieldsRow() {
+        return (Row13) super.fieldsRow();
     }
 }

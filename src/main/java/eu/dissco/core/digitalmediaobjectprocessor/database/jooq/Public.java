@@ -7,10 +7,8 @@ package eu.dissco.core.digitalmediaobjectprocessor.database.jooq;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.Handles;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.NewDigitalMediaObject;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.NewDigitalSpecimen;
-
 import java.util.Arrays;
 import java.util.List;
-
 import org.jooq.Catalog;
 import org.jooq.Table;
 import org.jooq.impl.SchemaImpl;

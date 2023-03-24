@@ -8,8 +8,6 @@ public record DigitalMediaObjectTransfer(
     String type,
     @JsonProperty("ods:physicalSpecimenId")
     String physicalSpecimenId,
-    @JsonProperty("ods:mediaIdType")
-    String idType,
     @JsonProperty("ods:attributes")
     JsonNode attributes,
     @JsonProperty("ods:originalAttributes")

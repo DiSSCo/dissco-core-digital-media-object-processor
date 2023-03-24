@@ -7,7 +7,6 @@ package eu.dissco.core.digitalmediaobjectprocessor.database.jooq;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.Handles;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.NewDigitalMediaObject;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.NewDigitalSpecimen;
-
 import org.jooq.Index;
 import org.jooq.OrderField;
 import org.jooq.impl.DSL;

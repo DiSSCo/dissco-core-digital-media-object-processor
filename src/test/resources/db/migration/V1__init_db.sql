@@ -11,9 +11,10 @@ CREATE TABLE public.new_digital_media_object (
 	deleted timestamptz NULL,
 	"data" jsonb NULL,
 	original_data jsonb NULL,
-	CONSTRAINT new_digital_media_object_pkey PRIMARY KEY (id)
+	physical_specimen_id varchar NOT NULL DEFAULT 'unknown'::character varying,
+	CONSTRAINT new_digital_media_object_pk PRIMARY KEY (id)
 );
-CREATE INDEX new_digital_media_object_id_idx ON public.new_digital_media_object USING btree (id, version);
+CREATE INDEX new_digital_media_object_id_idx ON public.new_digital_media_object USING btree (id, media_url);
 CREATE UNIQUE INDEX new_digital_media_object_id_version_url ON public.new_digital_media_object USING btree (id, version, media_url);
 
 CREATE TABLE public.handles (

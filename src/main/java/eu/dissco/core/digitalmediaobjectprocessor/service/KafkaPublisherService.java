@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.diff.JsonDiff;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.CreateUpdateDeleteEvent;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransferEvent;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,8 @@ public class KafkaPublisherService {
   private final ObjectMapper mapper;
   private final KafkaTemplate<String, String> kafkaTemplate;
 
-  public void publishCreateEvent(DigitalMediaObjectRecord digitalMediaObjectRecord) {
+  public void publishCreateEvent(DigitalMediaObjectRecord digitalMediaObjectRecord)
+      throws JsonProcessingException {
     var event = new CreateUpdateDeleteEvent(UUID.randomUUID(), "create",
         "digital-media-object-processing-service",
         digitalMediaObjectRecord.id(),
@@ -31,24 +32,16 @@ public class KafkaPublisherService {
         mapper.valueToTree(digitalMediaObjectRecord),
         null,
         "Digital Media Object newly created");
-    try {
-      kafkaTemplate.send("createUpdateDeleteTopic", mapper.writeValueAsString(event));
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
+    kafkaTemplate.send("createUpdateDeleteTopic", mapper.writeValueAsString(event));
   }
 
   public void publishAnnotationRequestEvent(String enrichment,
-      DigitalMediaObjectRecord digitalMediaObjectRecord) {
-    try {
-      kafkaTemplate.send(enrichment, mapper.writeValueAsString(digitalMediaObjectRecord));
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
+      DigitalMediaObjectRecord digitalMediaObjectRecord) throws JsonProcessingException {
+    kafkaTemplate.send(enrichment, mapper.writeValueAsString(digitalMediaObjectRecord));
   }
 
-  public void publishUpdateEvent(DigitalMediaObjectRecord currentDigitalMediaRecord,
-      DigitalMediaObjectRecord digitalMediaObjectRecord) {
+  public void publishUpdateEvent(DigitalMediaObjectRecord digitalMediaObjectRecord,
+      DigitalMediaObjectRecord currentDigitalMediaRecord) throws JsonProcessingException {
     var jsonPatch = createJsonPatch(currentDigitalMediaRecord, digitalMediaObjectRecord);
     var event = new CreateUpdateDeleteEvent(UUID.randomUUID(),
         "update",
@@ -59,11 +52,7 @@ public class KafkaPublisherService {
         mapper.valueToTree(digitalMediaObjectRecord),
         jsonPatch,
         "Digital Media Object has been updated");
-    try {
-      kafkaTemplate.send("createUpdateDeleteTopic", mapper.writeValueAsString(event));
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
+    kafkaTemplate.send("createUpdateDeleteTopic", mapper.writeValueAsString(event));
   }
 
   private JsonNode createJsonPatch(DigitalMediaObjectRecord currentDigitalMediaRecord,
@@ -72,7 +61,17 @@ public class KafkaPublisherService {
         mapper.valueToTree(digitalMediaObjectRecord.digitalMediaObject()));
   }
 
-  public void republishDigitalMediaObject(DigitalMediaObjectEvent event) throws JsonProcessingException {
+  public void republishDigitalMediaObject(DigitalMediaObjectTransferEvent event)
+      throws JsonProcessingException {
     kafkaTemplate.send("digital-media-object", mapper.writeValueAsString(event));
+  }
+
+  public void deadLetterRaw(String message) {
+    kafkaTemplate.send("digital-media-object-dlq", message);
+  }
+
+  public void deadLetterEvent(DigitalMediaObjectTransferEvent event)
+      throws JsonProcessingException {
+    kafkaTemplate.send("digital-media-object-dlq", mapper.writeValueAsString(event));
   }
 }

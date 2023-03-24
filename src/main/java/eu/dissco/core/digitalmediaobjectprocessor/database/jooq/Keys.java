@@ -10,7 +10,6 @@ import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.NewDigita
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.records.HandlesRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.records.NewDigitalMediaObjectRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.records.NewDigitalSpecimenRecord;
-
 import org.jooq.TableField;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;

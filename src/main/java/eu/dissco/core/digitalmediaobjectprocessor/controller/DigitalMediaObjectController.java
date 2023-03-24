@@ -1,13 +1,12 @@
 package eu.dissco.core.digitalmediaobjectprocessor.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.dissco.core.digitalmediaobjectprocessor.Profiles;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransferEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.NoChangesFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.service.ProcessingService;
-import javax.xml.transform.TransformerException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
@@ -33,11 +32,14 @@ public class DigitalMediaObjectController {
   @PreAuthorize("isAuthenticated()")
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<DigitalMediaObjectRecord> createDigitalMediaObject(@RequestBody
-  DigitalMediaObjectEvent event)
-      throws JsonProcessingException, TransformerException, DigitalSpecimenNotFoundException, NoChangesFoundException {
+  DigitalMediaObjectTransferEvent event)
+      throws DigitalSpecimenNotFoundException, NoChangesFoundException {
     log.info("Received digitalMediaObject upsert: {}", event);
-    var result = processingService.handleMessage(event, true);
-    return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    var result = processingService.handleMessage(List.of(event), true);
+    if (result.isEmpty()){
+      throw new NoChangesFoundException("No changes found for specimen");
+    }
+    return ResponseEntity.status(HttpStatus.CREATED).body(result.get(0));
   }
 
   @ExceptionHandler(DigitalSpecimenNotFoundException.class)
