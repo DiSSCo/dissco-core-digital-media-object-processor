@@ -26,17 +26,17 @@ public class TestUtils {
 
   public static DigitalMediaObjectEvent givenMediaEvent() throws JsonProcessingException {
     return new DigitalMediaObjectEvent(
-        List.of("OCR"), givenDigitelMediaTransfer()
+        List.of("OCR"), givenDigitalMediaTransfer()
     );
   }
 
-  private static DigitalMediaObjectTransfer givenDigitelMediaTransfer()
+  private static DigitalMediaObjectTransfer givenDigitalMediaTransfer()
       throws JsonProcessingException {
     return new DigitalMediaObjectTransfer(
         TYPE,
         PHYSICAL_SPECIMEN_ID,
         "combined",
-        generateAttributes(),
+        generateAttributes(FORMAT),
         generateOriginalAttributes()
     );
   }
@@ -64,22 +64,18 @@ public class TestUtils {
     return new DigitalMediaObject(
         TYPE,
         DIGITAL_SPECIMEN_ID,
-        generateAttributes(),
+        generateAttributes(format),
         generateOriginalAttributes()
     );
   }
 
-  private static JsonNode generateAttributes() throws JsonProcessingException {
-    return MAPPER.readValue(
-        """
-            {
-              "ac:accessURI": "http://data.rbge.org.uk/living/19942272",
-              "ods:sourceSystemId": "20.5000.1025/WDP-JYE-73C",
-              "dcterms:format": "image/jpeg",
-              "dcterms:license": "http://creativecommons.org/licenses/by-nc/3.0/"
-              }
-            """, JsonNode.class
-    );
+  private static JsonNode generateAttributes(String format) throws JsonProcessingException {
+    var json = MAPPER.createObjectNode();
+    json.put("ac:accessURI", "http://data.rbge.org.uk/living/19942272");
+    json.put("ods:sourceSystemId", "20.5000.1025/WDP-JYE-73C");
+    json.put("dcterms:format", format);
+    json.put("dcterms:license", "http://creativecommons.org/licenses/by-nc/3.0/");
+    return json;
   }
 
   private static JsonNode generateOriginalAttributes() throws JsonProcessingException {
