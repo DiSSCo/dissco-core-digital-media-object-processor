@@ -40,7 +40,7 @@ public class DigitalMediaObjectController {
     return ResponseEntity.status(HttpStatus.CREATED).body(result);
   }
 
-  @ExceptionHandler(Exception.class)
+  @ExceptionHandler(DigitalSpecimenNotFoundException.class)
   public ResponseEntity<String> handleException(DigitalSpecimenNotFoundException e) {
     return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
   }

@@ -1,23 +1,22 @@
 package eu.dissco.core.digitalmediaobjectprocessor.repository;
 
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.DIGITAL_SPECIMEN_ID;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecord;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class DigitalMediaObjectRepositoryIT extends BaseRepositoryIT {
 
-  private final ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
   private DigitalMediaObjectRepository repository;
 
   @BeforeEach
   void setup() {
-    repository = new DigitalMediaObjectRepository(context, mapper);
+    repository = new DigitalMediaObjectRepository(context, MAPPER);
   }
 
 

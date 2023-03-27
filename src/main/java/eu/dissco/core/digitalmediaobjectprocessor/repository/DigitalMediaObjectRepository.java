@@ -36,9 +36,6 @@ public class DigitalMediaObjectRepository {
       digitalMediaObject = new DigitalMediaObject(
           dbRecord.get(NEW_DIGITAL_MEDIA_OBJECT.TYPE),
           dbRecord.get(NEW_DIGITAL_MEDIA_OBJECT.DIGITAL_SPECIMEN_ID),
-          dbRecord.get(NEW_DIGITAL_MEDIA_OBJECT.MEDIA_URL),
-          dbRecord.get(NEW_DIGITAL_MEDIA_OBJECT.FORMAT),
-          dbRecord.get(NEW_DIGITAL_MEDIA_OBJECT.SOURCE_SYSTEM_ID),
           mapper.readTree(dbRecord.get(NEW_DIGITAL_MEDIA_OBJECT.DATA).data()),
           mapper.readTree(dbRecord.get(NEW_DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA).data())
       );
@@ -60,34 +57,34 @@ public class DigitalMediaObjectRepository {
         .set(NEW_DIGITAL_MEDIA_OBJECT.DIGITAL_SPECIMEN_ID,
             digitalMediaObjectRecord.digitalMediaObject().digitalSpecimenId())
         .set(NEW_DIGITAL_MEDIA_OBJECT.MEDIA_URL,
-            digitalMediaObjectRecord.digitalMediaObject().mediaUrl())
+            digitalMediaObjectRecord.digitalMediaObject().attributes().get("ac:accessURI").asText())
         .set(NEW_DIGITAL_MEDIA_OBJECT.FORMAT,
-            digitalMediaObjectRecord.digitalMediaObject().format())
+            digitalMediaObjectRecord.digitalMediaObject().attributes().get("dcterms:format").asText())
         .set(NEW_DIGITAL_MEDIA_OBJECT.SOURCE_SYSTEM_ID,
-            digitalMediaObjectRecord.digitalMediaObject().sourceSystemId())
+            digitalMediaObjectRecord.digitalMediaObject().attributes().get("ods:sourceSystemId").asText())
         .set(NEW_DIGITAL_MEDIA_OBJECT.CREATED, digitalMediaObjectRecord.created())
         .set(NEW_DIGITAL_MEDIA_OBJECT.LAST_CHECKED, Instant.now())
         .set(NEW_DIGITAL_MEDIA_OBJECT.DATA,
-            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().data().toString()))
+            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().attributes().toString()))
         .set(NEW_DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA,
-            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().originalData().toString()))
+            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().originalAttributes().toString()))
         .onConflict(NEW_DIGITAL_MEDIA_OBJECT.ID).doUpdate()
         .set(NEW_DIGITAL_MEDIA_OBJECT.TYPE, digitalMediaObjectRecord.digitalMediaObject().type())
         .set(NEW_DIGITAL_MEDIA_OBJECT.VERSION, digitalMediaObjectRecord.version())
         .set(NEW_DIGITAL_MEDIA_OBJECT.DIGITAL_SPECIMEN_ID,
             digitalMediaObjectRecord.digitalMediaObject().digitalSpecimenId())
         .set(NEW_DIGITAL_MEDIA_OBJECT.MEDIA_URL,
-            digitalMediaObjectRecord.digitalMediaObject().mediaUrl())
+            digitalMediaObjectRecord.digitalMediaObject().attributes().get("ac:accessURI").asText())
         .set(NEW_DIGITAL_MEDIA_OBJECT.FORMAT,
-            digitalMediaObjectRecord.digitalMediaObject().format())
+            digitalMediaObjectRecord.digitalMediaObject().attributes().get("dcterms:format").asText())
         .set(NEW_DIGITAL_MEDIA_OBJECT.SOURCE_SYSTEM_ID,
-            digitalMediaObjectRecord.digitalMediaObject().sourceSystemId())
+            digitalMediaObjectRecord.digitalMediaObject().attributes().get("ods:sourceSystemId").asText())
         .set(NEW_DIGITAL_MEDIA_OBJECT.CREATED, digitalMediaObjectRecord.created())
         .set(NEW_DIGITAL_MEDIA_OBJECT.LAST_CHECKED, Instant.now())
         .set(NEW_DIGITAL_MEDIA_OBJECT.DATA,
-            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().data().toString()))
+            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().attributes().toString()))
         .set(NEW_DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA,
-            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().originalData().toString()))
+            JSONB.jsonb(digitalMediaObjectRecord.digitalMediaObject().originalAttributes().toString()))
         .execute();
   }
 

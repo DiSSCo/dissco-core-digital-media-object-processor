@@ -30,11 +30,12 @@ public class HandleService {
 
   private static final String PREFIX = "20.5000.1025/";
   private final Random random;
-  private final char[] symbols = "ABCDEFGHJKLMNPQRSTUVWXYZ1234567890".toCharArray();
+  private final char[] symbols = "ABCDEFGHJKLMNPQRSTVWXYZ1234567890".toCharArray();
   private final char[] buffer = new char[11];
   private final ObjectMapper mapper;
   private final DocumentBuilder documentBuilder;
   private final HandleRepository repository;
+  private final TransformerFactory transformerFactory;
 
   public String createNewHandle(DigitalMediaObject digitalMediaObject)
       throws TransformerException {
@@ -97,8 +98,7 @@ public class HandleService {
   }
 
   private String documentToString(Document document) throws TransformerException {
-    var tf = TransformerFactory.newInstance();
-    var transformer = tf.newTransformer();
+    var transformer = transformerFactory.newTransformer();
     transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
     StringWriter writer = new StringWriter();
     transformer.transform(new DOMSource(document), new StreamResult(writer));
