@@ -5,7 +5,6 @@ import static eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Tables.NE
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectKey;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
 import java.time.Instant;
 import java.util.Collection;
@@ -27,13 +26,11 @@ public class DigitalMediaObjectRepository {
   private final ObjectMapper mapper;
 
   public List<DigitalMediaObjectRecord> getDigitalMediaObject(
-      List<DigitalMediaObjectKey> digitalMediaKeys) {
+      List<String> digitalSpecimenIds, List<String> mediaUrls) {
     return context.select(NEW_DIGITAL_MEDIA_OBJECT.asterisk())
         .from(NEW_DIGITAL_MEDIA_OBJECT)
-        .where(NEW_DIGITAL_MEDIA_OBJECT.DIGITAL_SPECIMEN_ID.in(
-            digitalMediaKeys.stream().map(DigitalMediaObjectKey::digitalSpecimenId).toList()))
-        .and(NEW_DIGITAL_MEDIA_OBJECT.MEDIA_URL.in(
-            digitalMediaKeys.stream().map(DigitalMediaObjectKey::mediaUrl).toList()))
+        .where(NEW_DIGITAL_MEDIA_OBJECT.DIGITAL_SPECIMEN_ID.in(digitalSpecimenIds))
+        .and(NEW_DIGITAL_MEDIA_OBJECT.MEDIA_URL.in(mediaUrls))
         .fetch(this::mapDigitalMediaObject);
   }
 

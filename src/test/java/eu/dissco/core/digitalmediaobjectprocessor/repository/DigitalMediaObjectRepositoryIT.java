@@ -18,7 +18,6 @@ import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.dissco.core.digitalmediaobjectprocessor.TestUtils;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectKey;
 import java.time.Instant;
 import java.util.List;
 import org.jooq.Record1;
@@ -45,8 +44,7 @@ class DigitalMediaObjectRepositoryIT extends BaseRepositoryIT {
     var result = repository.createDigitalMediaRecord(List.of(digitalMedia));
 
     // Then
-    var actual = repository.getDigitalMediaObject(
-        List.of(new DigitalMediaObjectKey(DIGITAL_SPECIMEN_ID, MEDIA_URL)));
+    var actual = repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID), List.of(MEDIA_URL));
     assertThat(result).hasSize(1);
     assertThat(actual).contains(digitalMedia);
   }
@@ -63,8 +61,7 @@ class DigitalMediaObjectRepositoryIT extends BaseRepositoryIT {
     repository.createDigitalMediaRecord(List.of(updatedMedia));
 
     // Then
-    var actual = repository.getDigitalMediaObject(
-        List.of(new DigitalMediaObjectKey(DIGITAL_SPECIMEN_ID, MEDIA_URL)));
+    var actual = repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID), List.of(MEDIA_URL));
     assertThat(actual).contains(updatedMedia);
   }
 
@@ -102,8 +99,8 @@ class DigitalMediaObjectRepositoryIT extends BaseRepositoryIT {
     repository.rollBackDigitalMedia(HANDLE_2);
 
     // Then
-    var result = repository.getDigitalMediaObject(
-        List.of(new DigitalMediaObjectKey(DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2)));
+    var result = repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID_2),
+        List.of(MEDIA_URL_2));
     assertThat(result).isEmpty();
   }
 

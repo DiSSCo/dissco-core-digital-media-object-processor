@@ -45,6 +45,10 @@ public class ProcessingService {
   private final ElasticSearchRepository elasticRepository;
   private final KafkaPublisherService kafkaService;
 
+  private static String getMediaUrl(JsonNode attributes) {
+    return attributes.get("ac:accessURI").asText();
+  }
+
   public List<DigitalMediaObjectRecord> handleMessage(List<DigitalMediaObjectTransferEvent> events,
       boolean webProfile) throws DigitalSpecimenNotFoundException {
     log.info("Processing {} digital specimen", events.size());
@@ -67,7 +71,8 @@ public class ProcessingService {
       List<DigitalMediaObjectTransferEvent> events) {
     var uniqueSet = new HashSet<DigitalMediaObjectTransferEvent>();
     var map = events.stream()
-        .collect(Collectors.groupingBy(event -> getMediaUrl(event.digitalMediaObject().attributes())));
+        .collect(
+            Collectors.groupingBy(event -> getMediaUrl(event.digitalMediaObject().attributes())));
     for (Entry<String, List<DigitalMediaObjectTransferEvent>> entry : map.entrySet()) {
       if (entry.getValue().size() > 1) {
         log.warn("Found {} duplicates in batch for id {}", entry.getValue().size(), entry.getKey());
@@ -85,10 +90,6 @@ public class ProcessingService {
     return uniqueSet;
   }
 
-  private static String getMediaUrl(JsonNode attributes) {
-    return attributes.get("ac:accessURI").asText();
-  }
-
   private void republishEvent(DigitalMediaObjectTransferEvent event) {
     try {
       kafkaService.republishDigitalMediaObject(event);
@@ -97,7 +98,8 @@ public class ProcessingService {
     }
   }
 
-  private ProcessResult processDigitalMedia(Set<DigitalMediaObjectTransferEvent> events, boolean webProfile)
+  private ProcessResult processDigitalMedia(Set<DigitalMediaObjectTransferEvent> events,
+      boolean webProfile)
       throws DigitalSpecimenNotFoundException {
     var convertedMediaObjects = getDigitalSpecimenId(events, webProfile);
     var currentMediaObjects = getCurrentDigitalMedia(
@@ -131,7 +133,8 @@ public class ProcessingService {
   }
 
   private List<DigitalMediaObjectEvent> getDigitalSpecimenId(
-      Set<DigitalMediaObjectTransferEvent> events, boolean webProfile) throws DigitalSpecimenNotFoundException {
+      Set<DigitalMediaObjectTransferEvent> events, boolean webProfile)
+      throws DigitalSpecimenNotFoundException {
     var physicalSpecimenIds = events.stream()
         .map(event -> event.digitalMediaObject().physicalSpecimenId()).toList();
     var digitalSpecimenInformation = retrieveDigitalSpecimenId(physicalSpecimenIds);
@@ -140,7 +143,8 @@ public class ProcessingService {
 
   private List<DigitalMediaObjectEvent> convertToDigitalMediaObject(
       Set<DigitalMediaObjectTransferEvent> digitalMediaObjectEvents,
-      Map<String, String> digitalSpecimenInformation, boolean webProfile) throws DigitalSpecimenNotFoundException {
+      Map<String, String> digitalSpecimenInformation, boolean webProfile)
+      throws DigitalSpecimenNotFoundException {
     var convertedRecords = new ArrayList<DigitalMediaObjectEvent>();
     for (var mediaObjectEvent : digitalMediaObjectEvents) {
       if (digitalSpecimenInformation.containsKey(
@@ -165,10 +169,9 @@ public class ProcessingService {
   private Map<DigitalMediaObjectKey, DigitalMediaObjectRecord> getCurrentDigitalMedia(
       List<DigitalMediaObject> digitalMediaObjects) {
     return repository.getDigitalMediaObject(
-            digitalMediaObjects.stream().map(digitalMedia -> new DigitalMediaObjectKey(
-                digitalMedia.digitalSpecimenId(),
-                getMediaUrl(digitalMedia.attributes())
-            )).toList())
+            digitalMediaObjects.stream().map(DigitalMediaObject::digitalSpecimenId).toList(),
+            digitalMediaObjects.stream().map(digitalMedia -> getMediaUrl(digitalMedia.attributes()))
+                .toList())
         .stream().collect(
             toMap(digitalMediaRecord ->
                     new DigitalMediaObjectKey(

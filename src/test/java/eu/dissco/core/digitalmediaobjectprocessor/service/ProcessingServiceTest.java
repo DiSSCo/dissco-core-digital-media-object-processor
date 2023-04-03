@@ -16,7 +16,6 @@ import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.PHYSICAL_SPEC
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.PHYSICAL_SPECIMEN_ID_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.PHYSICAL_SPECIMEN_ID_3;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.TYPE;
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaKey;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObject;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecord;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecordPhysical;
@@ -100,7 +99,8 @@ class ProcessingServiceTest {
     // Given
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
-    given(repository.getDigitalMediaObject(List.of(givenDigitalMediaKey()))).willReturn(
+    given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL))).willReturn(
         List.of(givenDigitalMediaObjectRecord()));
 
     // When
@@ -117,7 +117,8 @@ class ProcessingServiceTest {
     var expected = List.of(givenDigitalMediaObjectRecordWithVersion(2));
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
-    given(repository.getDigitalMediaObject(List.of(givenDigitalMediaKey()))).willReturn(
+    given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL))).willReturn(
         List.of(givenDigitalMediaObjectRecord(FORMAT_2)));
     given(bulkResponse.errors()).willReturn(false);
     given(elasticRepository.indexDigitalMediaObject(expected)).willReturn(bulkResponse);
@@ -141,7 +142,8 @@ class ProcessingServiceTest {
     var expected = List.of(givenDigitalMediaObjectRecord());
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
-    given(repository.getDigitalMediaObject(List.of(givenDigitalMediaKey()))).willReturn(List.of());
+    given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL))).willReturn(List.of());
     given(handleService.createNewHandle(givenDigitalMediaObject())).willReturn(HANDLE);
     given(bulkResponse.errors()).willReturn(false);
     given(elasticRepository.indexDigitalMediaObject(
@@ -164,7 +166,8 @@ class ProcessingServiceTest {
     var expected = List.of(givenDigitalMediaObjectRecord());
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
-    given(repository.getDigitalMediaObject(List.of(givenDigitalMediaKey()))).willReturn(List.of());
+    given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL))).willReturn(List.of());
     given(handleService.createNewHandle(givenDigitalMediaObject())).willReturn(HANDLE);
     given(bulkResponse.errors()).willReturn(false);
     given(elasticRepository.indexDigitalMediaObject(
@@ -190,7 +193,8 @@ class ProcessingServiceTest {
     // Given
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
-    given(repository.getDigitalMediaObject(List.of(givenDigitalMediaKey()))).willReturn(List.of());
+    given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL))).willReturn(List.of());
     given(handleService.createNewHandle(givenDigitalMediaObject())).willReturn(HANDLE);
     given(elasticRepository.indexDigitalMediaObject(
         Set.of(givenDigitalMediaObjectRecord()))).willThrow(IOException.class);
@@ -219,7 +223,7 @@ class ProcessingServiceTest {
             PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID,
             PHYSICAL_SPECIMEN_ID_2, DIGITAL_SPECIMEN_ID_2)
     );
-    given(repository.getDigitalMediaObject(anyList())).willReturn(List.of());
+    given(repository.getDigitalMediaObject(anyList(), anyList())).willReturn(List.of());
     given(handleService.createNewHandle(any(DigitalMediaObject.class))).willReturn(HANDLE_3)
         .willReturn(HANDLE).willReturn(HANDLE_2);
     givenBulkResponse();
@@ -250,7 +254,8 @@ class ProcessingServiceTest {
     var expected = List.of(givenDigitalMediaObjectRecord());
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
-    given(repository.getDigitalMediaObject(List.of(givenDigitalMediaKey()))).willReturn(List.of());
+    given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL))).willReturn(List.of());
     given(handleService.createNewHandle(givenDigitalMediaObject())).willReturn(HANDLE);
     given(bulkResponse.errors()).willReturn(false);
     given(elasticRepository.indexDigitalMediaObject(
@@ -283,7 +288,7 @@ class ProcessingServiceTest {
             PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID,
             PHYSICAL_SPECIMEN_ID_2, DIGITAL_SPECIMEN_ID_2)
     );
-    given(repository.getDigitalMediaObject(anyList())).willReturn(List.of(
+    given(repository.getDigitalMediaObject(anyList(), anyList())).willReturn(List.of(
         givenDigitalMediaObjectRecordPhysical(HANDLE, PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID,
             MEDIA_URL, "Another Type"),
         givenDigitalMediaObjectRecordPhysical(HANDLE_2, PHYSICAL_SPECIMEN_ID_2,
@@ -314,7 +319,8 @@ class ProcessingServiceTest {
     var expected = List.of(givenDigitalMediaObjectRecordWithVersion(2));
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
-    given(repository.getDigitalMediaObject(List.of(givenDigitalMediaKey()))).willReturn(
+    given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL))).willReturn(
         List.of(givenDigitalMediaObjectRecord(FORMAT_2)));
     given(bulkResponse.errors()).willReturn(false);
     given(elasticRepository.indexDigitalMediaObject(expected)).willReturn(bulkResponse);
@@ -339,7 +345,8 @@ class ProcessingServiceTest {
     var expected = List.of(givenDigitalMediaObjectRecordWithVersion(2));
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
-    given(repository.getDigitalMediaObject(List.of(givenDigitalMediaKey()))).willReturn(
+    given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL))).willReturn(
         List.of(givenDigitalMediaObjectRecord(FORMAT_2)));
     given(elasticRepository.indexDigitalMediaObject(expected)).willThrow(IOException.class);
 
@@ -359,7 +366,8 @@ class ProcessingServiceTest {
     // Given
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
-    given(repository.getDigitalMediaObject(List.of(givenDigitalMediaKey()))).willReturn(List.of());
+    given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL))).willReturn(List.of());
     given(handleService.createNewHandle(givenDigitalMediaObject())).willThrow(
         TransformerException.class);
 
