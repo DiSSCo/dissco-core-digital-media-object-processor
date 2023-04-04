@@ -70,14 +70,10 @@ public class DigitalMediaObjectRepository {
             digitalMediaObjectRecord.digitalMediaObject().digitalSpecimenId())
         .set(NEW_DIGITAL_MEDIA_OBJECT.PHYSICAL_SPECIMEN_ID,
             digitalMediaObjectRecord.digitalMediaObject().physicalSpecimenId())
-        .set(NEW_DIGITAL_MEDIA_OBJECT.MEDIA_URL,
-            digitalMediaObjectRecord.digitalMediaObject().attributes().get("ac:accessURI").asText())
-        .set(NEW_DIGITAL_MEDIA_OBJECT.FORMAT,
-            digitalMediaObjectRecord.digitalMediaObject().attributes().get("dcterms:format")
-                .asText())
+        .set(NEW_DIGITAL_MEDIA_OBJECT.MEDIA_URL, getText(digitalMediaObjectRecord, "ac:accessURI"))
+        .set(NEW_DIGITAL_MEDIA_OBJECT.FORMAT, getText(digitalMediaObjectRecord, "dcterms:format"))
         .set(NEW_DIGITAL_MEDIA_OBJECT.SOURCE_SYSTEM_ID,
-            digitalMediaObjectRecord.digitalMediaObject().attributes().get("ods:sourceSystemId")
-                .asText())
+            getText(digitalMediaObjectRecord, "ods:sourceSystemId"))
         .set(NEW_DIGITAL_MEDIA_OBJECT.CREATED, digitalMediaObjectRecord.created())
         .set(NEW_DIGITAL_MEDIA_OBJECT.LAST_CHECKED, Instant.now())
         .set(NEW_DIGITAL_MEDIA_OBJECT.DATA,
@@ -92,14 +88,10 @@ public class DigitalMediaObjectRepository {
             digitalMediaObjectRecord.digitalMediaObject().digitalSpecimenId())
         .set(NEW_DIGITAL_MEDIA_OBJECT.PHYSICAL_SPECIMEN_ID,
             digitalMediaObjectRecord.digitalMediaObject().physicalSpecimenId())
-        .set(NEW_DIGITAL_MEDIA_OBJECT.MEDIA_URL,
-            digitalMediaObjectRecord.digitalMediaObject().attributes().get("ac:accessURI").asText())
-        .set(NEW_DIGITAL_MEDIA_OBJECT.FORMAT,
-            digitalMediaObjectRecord.digitalMediaObject().attributes().get("dcterms:format")
-                .asText())
+        .set(NEW_DIGITAL_MEDIA_OBJECT.MEDIA_URL, getText(digitalMediaObjectRecord, "ac:accessURI"))
+        .set(NEW_DIGITAL_MEDIA_OBJECT.FORMAT, getText(digitalMediaObjectRecord, "dcterms:format"))
         .set(NEW_DIGITAL_MEDIA_OBJECT.SOURCE_SYSTEM_ID,
-            digitalMediaObjectRecord.digitalMediaObject().attributes().get("ods:sourceSystemId")
-                .asText())
+            getText(digitalMediaObjectRecord, "ods:sourceSystemId"))
         .set(NEW_DIGITAL_MEDIA_OBJECT.CREATED, digitalMediaObjectRecord.created())
         .set(NEW_DIGITAL_MEDIA_OBJECT.LAST_CHECKED, Instant.now())
         .set(NEW_DIGITAL_MEDIA_OBJECT.DATA,
@@ -107,6 +99,14 @@ public class DigitalMediaObjectRepository {
         .set(NEW_DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA,
             JSONB.jsonb(
                 digitalMediaObjectRecord.digitalMediaObject().originalAttributes().toString()));
+  }
+
+  private String getText(DigitalMediaObjectRecord digitalMediaObjectRecord, String value) {
+    var node = digitalMediaObjectRecord.digitalMediaObject().attributes().get(value);
+    if (node != null) {
+      return node.asText();
+    }
+    return null;
   }
 
   public void updateLastChecked(List<String> currentDigitalMediaObject) {
