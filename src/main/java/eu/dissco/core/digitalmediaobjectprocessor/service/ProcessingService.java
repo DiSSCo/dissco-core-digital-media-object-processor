@@ -46,7 +46,10 @@ public class ProcessingService {
   private final KafkaPublisherService kafkaService;
 
   private static String getMediaUrl(JsonNode attributes) {
-    return attributes.get("ac:accessURI").asText();
+    if (attributes.get("ac:accessURI") != null){
+      return attributes.get("ac:accessURI").asText();
+    }
+    return null;
   }
 
   public List<DigitalMediaObjectRecord> handleMessage(List<DigitalMediaObjectTransferEvent> events,
