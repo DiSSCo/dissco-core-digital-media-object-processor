@@ -1,8 +1,10 @@
 package eu.dissco.core.digitalmediaobjectprocessor.service;
 
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.AAS;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecord;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectTransferEvent;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenMediaEvent;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -56,7 +58,8 @@ class KafkaPublisherServiceTest {
     // Given
 
     // When
-    service.publishUpdateEvent(givenDigitalMediaObjectRecord(), givenDigitalMediaObjectRecord("image/tiff"));
+    service.publishUpdateEvent(givenDigitalMediaObjectRecord(),
+        givenDigitalMediaObjectRecord(HANDLE, "image/tiff"));
 
     // Then
     then(kafkaTemplate).should().send(eq("createUpdateDeleteTopic"), anyString());
@@ -72,6 +75,32 @@ class KafkaPublisherServiceTest {
     // Then
     then(kafkaTemplate).should()
         .send("digital-media-object", MAPPER.writeValueAsString(givenMediaEvent()));
+  }
+
+  @Test
+  void testDeadLetterRaw() {
+    // Given
+    var messageString = "Given String Event";
+
+    // When
+    service.deadLetterRaw(messageString);
+
+    // Then
+    then(kafkaTemplate).should()
+        .send("digital-media-object-dlq", messageString);
+  }
+
+  @Test
+  void testDeadLetterEvent() throws JsonProcessingException {
+    // Given
+    var event = givenDigitalMediaObjectTransferEvent();
+
+    // When
+    service.deadLetterEvent(event);
+
+    // Then
+    then(kafkaTemplate).should()
+        .send("digital-media-object-dlq", MAPPER.writeValueAsString(event));
   }
 
 }

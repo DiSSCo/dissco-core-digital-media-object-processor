@@ -2,14 +2,12 @@ package eu.dissco.core.digitalmediaobjectprocessor.service;
 
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenMediaEvent;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
-import eu.dissco.core.digitalmediaobjectprocessor.exceptions.NoChangesFoundException;
-import javax.xml.transform.TransformerException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,25 +20,28 @@ class KafkaConsumerServiceTest {
 
   @Mock
   private ProcessingService processingService;
+  @Mock
+  private KafkaPublisherService publisherService;
 
   private KafkaConsumerService service;
 
   @BeforeEach
   void setup() {
-    service = new KafkaConsumerService(MAPPER, processingService);
+    service = new KafkaConsumerService(MAPPER, processingService, publisherService);
   }
 
   @Test
   void testGetMessages()
-      throws DigitalSpecimenNotFoundException, JsonProcessingException, TransformerException, NoChangesFoundException {
+      throws DigitalSpecimenNotFoundException, JsonProcessingException {
     // Given
     var message = givenMessage();
 
     // When
-    service.getMessages(message);
+    service.getMessages(List.of(message));
 
     // Then
-    then(processingService).should().handleMessage(givenMediaEvent(), false);
+    then(processingService).should().handleMessage(List.of(givenMediaEvent()), false);
+    then(publisherService).shouldHaveNoInteractions();
   }
 
   @Test
@@ -49,11 +50,27 @@ class KafkaConsumerServiceTest {
     var message = givenInvalidMessage();
 
     // When
-    assertThatThrownBy(() -> service.getMessages(message)).isInstanceOf(
-        UnrecognizedPropertyException.class);
+    service.getMessages(List.of(message));
 
     // Then
     then(processingService).shouldHaveNoInteractions();
+    then(publisherService).should().deadLetterRaw(message);
+  }
+
+  @Test
+  void testProcessingThrowsException()
+      throws JsonProcessingException, DigitalSpecimenNotFoundException {
+    // Given
+    var message = givenMessage();
+    given(processingService.handleMessage(List.of(givenMediaEvent()), false)).willThrow(
+        new DigitalSpecimenNotFoundException("Not found"));
+
+    // When
+    service.getMessages(List.of(message));
+
+    // Then
+    then(publisherService).shouldHaveNoInteractions();
+    then(processingService).shouldHaveNoMoreInteractions();
   }
 
   private String givenInvalidMessage() {
@@ -63,7 +80,6 @@ class KafkaConsumerServiceTest {
           "digitalMediaasdbject": {
             "dcterms:type": "2DImageObject",
             "ods:physicalSpecimenId": "045db6cb-5f06-4c19-b0f6-9620bdff3ae4:040ck2b86",
-            "ods:mediaIdType": "combined",
             "ods:attributes": {
               "ac:accessURI": "http://data.rbge.org.uk/living/19942272",
               "ods:sourceSystemId": "20.5000.1025/WDP-JYE-73C",
@@ -94,7 +110,6 @@ class KafkaConsumerServiceTest {
           "digitalMediaObject": {
             "dcterms:type": "2DImageObject",
             "ods:physicalSpecimenId": "045db6cb-5f06-4c19-b0f6-9620bdff3ae4:040ck2b86",
-            "ods:mediaIdType": "combined",
             "ods:attributes": {
               "ac:accessURI": "http://data.rbge.org.uk/living/19942272",
               "ods:sourceSystemId": "20.5000.1025/WDP-JYE-73C",

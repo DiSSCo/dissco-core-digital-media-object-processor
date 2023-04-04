@@ -8,6 +8,8 @@ public record DigitalMediaObject(
     String type,
     @JsonProperty("ods:digitalSpecimenId")
     String digitalSpecimenId,
+    @JsonProperty("ods:physicalSpecimenId")
+    String physicalSpecimenId,
     @JsonProperty("ods:attributes")
     JsonNode attributes,
     @JsonProperty("ods:originalAttributes")

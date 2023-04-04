@@ -1,7 +1,7 @@
 package eu.dissco.core.digitalmediaobjectprocessor.repository;
 
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.CREATED;
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.ID;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Tables.HANDLES;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -33,42 +33,77 @@ class HandleRepositoryIT extends BaseRepositoryIT {
     var handleAttributes = givenHandleAttributes();
 
     // When
-    repository.createHandle(ID, CREATED, handleAttributes);
+    repository.createHandle(HANDLE, CREATED, handleAttributes);
 
     // Then
     var handles = context.selectFrom(HANDLES).fetch();
     assertThat(handles).hasSize(handleAttributes.size());
   }
 
-    @Test
+  @Test
   void testUpdateHandleAttributes() {
     // Given
     var handleAttributes = givenHandleAttributes();
-    repository.createHandle(ID, CREATED, handleAttributes);
+    repository.createHandle(HANDLE, CREATED, handleAttributes);
     var updatedHandle = new HandleAttribute(11, "pidKernelMetadataLicense",
         "anotherLicenseType".getBytes(StandardCharsets.UTF_8));
 
     // When
-    repository.updateHandleAttributes(ID, CREATED, List.of(updatedHandle));
+    repository.updateHandleAttributes(HANDLE, CREATED, List.of(updatedHandle), true);
 
     // Then
     var result = context.select(HANDLES.DATA)
         .from(HANDLES)
-        .where(HANDLES.HANDLE.eq(ID.getBytes(StandardCharsets.UTF_8)))
+        .where(HANDLES.HANDLE.eq(HANDLE.getBytes(StandardCharsets.UTF_8)))
         .and(HANDLES.TYPE.eq("issueNumber".getBytes(StandardCharsets.UTF_8)))
         .fetchOne(Record1::value1);
     assertThat(result).isEqualTo("2".getBytes(StandardCharsets.UTF_8));
   }
 
+  @Test
+  void testRollbackVersion() {
+    // Given
+    var handleAttributes = givenHandleAttributes();
+    repository.createHandle(HANDLE, CREATED, handleAttributes);
+    var updatedHandle = new HandleAttribute(11, "pidKernelMetadataLicense",
+        "anotherLicenseType".getBytes(StandardCharsets.UTF_8));
+    repository.updateHandleAttributes(HANDLE, CREATED, List.of(updatedHandle), true);
+
+    // When
+    repository.updateHandleAttributes(HANDLE, CREATED, handleAttributes, false);
+
+    // Then
+    var result = context.select(HANDLES.DATA)
+        .from(HANDLES)
+        .where(HANDLES.HANDLE.eq(HANDLE.getBytes(StandardCharsets.UTF_8)))
+        .and(HANDLES.TYPE.eq("issueNumber".getBytes(StandardCharsets.UTF_8)))
+        .fetchOne(Record1::value1);
+    assertThat(result).isEqualTo("1".getBytes(StandardCharsets.UTF_8));
+  }
+
   private List<HandleAttribute> givenHandleAttributes() {
     return List.of(
         new HandleAttribute(1, "pid",
-            ("https://hdl.handle.net/" + ID).getBytes(StandardCharsets.UTF_8)),
+            ("https://hdl.handle.net/" + HANDLE).getBytes(StandardCharsets.UTF_8)),
         new HandleAttribute(11, "pidKernelMetadataLicense",
             "https://creativecommons.org/publicdomain/zero/1.0/".getBytes(StandardCharsets.UTF_8)),
         new HandleAttribute(7, "issueNumber", "1".getBytes(StandardCharsets.UTF_8)),
         new HandleAttribute(100, "HS_ADMIN", "TEST_ADMIN_STRING".getBytes(StandardCharsets.UTF_8))
     );
+  }
+
+  @Test
+  void testRollbackHandle() {
+    // Given
+    var handleAttributes = givenHandleAttributes();
+    repository.createHandle(HANDLE, CREATED, handleAttributes);
+
+    // When
+    repository.rollbackHandleCreation(HANDLE);
+
+    // Then
+    var handles = context.selectFrom(HANDLES).fetch();
+    assertThat(handles).isEmpty();
   }
 
 }

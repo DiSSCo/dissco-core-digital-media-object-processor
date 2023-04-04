@@ -1,8 +1,10 @@
 package eu.dissco.core.digitalmediaobjectprocessor.service;
 
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.CREATED;
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.ID;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObject;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecord;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenUpdatedDigitalMediaTuple;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -16,6 +18,7 @@ import eu.dissco.core.digitalmediaobjectprocessor.repository.HandleRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Random;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -77,10 +80,32 @@ class HandleServiceTest {
     // Given
 
     // When
-    service.updateHandle(ID, givenDigitalMediaObject());
+    service.updateHandles(List.of(givenUpdatedDigitalMediaTuple()));
 
     // Then
-    then(repository).should().updateHandleAttributes(eq(ID), eq(CREATED), anyList());
+    then(repository).should().updateHandleAttributes(eq(HANDLE), eq(CREATED), anyList(), eq(true));
+  }
+
+  @Test
+  void testRollbackHandleCreation() throws JsonProcessingException {
+    // Given
+
+    // When
+    service.rollbackHandleCreation(givenDigitalMediaObjectRecord());
+
+    // Then
+    then(repository).should().rollbackHandleCreation(HANDLE);
+  }
+
+  @Test
+  void testDeleteVersion() throws JsonProcessingException {
+    // Given
+
+    // When
+    service.deleteVersion(givenDigitalMediaObjectRecord());
+
+    // Then
+    then(repository).should().updateHandleAttributes(eq(HANDLE), eq(CREATED), anyList(), eq(false));
   }
 
 }

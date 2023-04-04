@@ -9,7 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.NoChangesFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.service.ProcessingService;
-import javax.xml.transform.TransformerException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,10 +31,10 @@ class DigitalMediaControllerTest {
 
   @Test
   void testCreateDigitalMediaObject()
-      throws JsonProcessingException, DigitalSpecimenNotFoundException, TransformerException, NoChangesFoundException {
+      throws JsonProcessingException, DigitalSpecimenNotFoundException, NoChangesFoundException {
     // Given
-    given(service.handleMessage(givenMediaEvent(), true)).willReturn(
-        givenDigitalMediaObjectRecord());
+    given(service.handleMessage(List.of(givenMediaEvent()), true)).willReturn(
+        List.of(givenDigitalMediaObjectRecord()));
 
     // When
     var result = controller.createDigitalMediaObject(givenMediaEvent());

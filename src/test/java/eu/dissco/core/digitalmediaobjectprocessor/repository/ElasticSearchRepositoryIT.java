@@ -1,8 +1,13 @@
 package eu.dissco.core.digitalmediaobjectprocessor.repository;
 
-
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.ID;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.DIGITAL_SPECIMEN_ID_2;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.DIGITAL_SPECIMEN_ID_3;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE_2;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE_3;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_2;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_3;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecord;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -14,6 +19,7 @@ import co.elastic.clients.transport.rest_client.RestClientTransport;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.properties.ElasticSearchProperties;
 import java.io.IOException;
+import java.util.List;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -92,14 +98,56 @@ class ElasticSearchRepositoryIT {
     esProperties.setIndexName(INDEX);
 
     // When
-    var result = repository.indexDigitalMediaObject(givenDigitalMediaObjectRecord());
+    var result = repository.indexDigitalMediaObject(List.of(
+        givenDigitalMediaObjectRecord(),
+        givenDigitalMediaObjectRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2)));
 
     // Then
 
-    var document = client.get(g -> g.index(INDEX).id(ID),
+    var document = client.get(g -> g.index(INDEX).id(HANDLE),
         DigitalMediaObjectRecord.class);
+    assertThat(result.errors()).isFalse();
     assertThat(document.source()).isEqualTo(givenDigitalMediaObjectRecord());
-    assertThat(result.result()).isEqualTo(Result.Created);
+    assertThat(result.items().get(0).result()).isEqualTo("created");
+  }
+
+  @Test
+  void testRollbackSpecimen() throws IOException {
+    // Given
+    esProperties.setIndexName(INDEX);
+    repository.indexDigitalMediaObject(List.of(
+        givenDigitalMediaObjectRecord(),
+        givenDigitalMediaObjectRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2),
+        givenDigitalMediaObjectRecord(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3)));
+
+    // When
+    var result = repository.rollbackSpecimen(givenDigitalMediaObjectRecord());
+
+    // Then
+    var document = client.get(g -> g.index(INDEX).id(HANDLE),
+        DigitalMediaObjectRecord.class);
+    assertThat(document.source()).isNull();
+    assertThat(document.found()).isFalse();
+    assertThat(result.result()).isEqualTo(Result.Deleted);
+  }
+
+  @Test
+  void testRollbackVersion() throws IOException {
+    // Given
+    esProperties.setIndexName(INDEX);
+    repository.indexDigitalMediaObject(List.of(
+        givenDigitalMediaObjectRecord(),
+        givenDigitalMediaObjectRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2),
+        givenDigitalMediaObjectRecord(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3)));
+
+    // When
+    repository.rollbackVersion(givenDigitalMediaObjectRecord("image/png"));
+
+    // Then
+    var document = client.get(g -> g.index(INDEX).id(HANDLE),
+        DigitalMediaObjectRecord.class);
+    assertThat(document.source().digitalMediaObject().attributes().get("dcterms:format")
+        .asText()).isEqualTo("image/png");
   }
 
 
