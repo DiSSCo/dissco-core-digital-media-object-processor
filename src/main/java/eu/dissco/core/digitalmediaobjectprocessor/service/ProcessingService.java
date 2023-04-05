@@ -180,8 +180,13 @@ public class ProcessingService {
                     new DigitalMediaObjectKey(
                         digitalMediaRecord.digitalMediaObject().digitalSpecimenId(),
                         getMediaUrl(digitalMediaRecord.digitalMediaObject().attributes())
+
                     ),
-                Function.identity()));
+                Function.identity(),
+                (dm1, dm2) -> {
+                  log.warn("Duplicate keys found: {} and {}", dm1, dm2);
+                  return dm1;
+                }));
   }
 
   private void digitalSpecimenMissing(DigitalMediaObjectTransferEvent event, boolean webProfile)
