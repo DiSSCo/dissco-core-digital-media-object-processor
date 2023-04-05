@@ -268,7 +268,7 @@ class ProcessingServiceTest {
 
     // Then
     then(repository).should().createDigitalMediaRecord(anySet());
-    then(elasticRepository).should().rollbackSpecimen(expected.get(0));
+    then(elasticRepository).should().rollbackDigitalMedia(expected.get(0));
     then(repository).should().rollBackDigitalMedia(HANDLE);
     then(handleService).should().rollbackHandleCreation(expected.get(0));
     then(publisherService).should().deadLetterEvent(givenDigitalMediaObjectTransferEvent());

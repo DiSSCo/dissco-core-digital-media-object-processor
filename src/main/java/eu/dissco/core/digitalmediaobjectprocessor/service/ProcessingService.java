@@ -120,15 +120,15 @@ public class ProcessingService {
         log.debug("DigitalMedia with key: {} is completely new", digitalMediaObjectKey);
         newMediaObjects.add(mediaObject);
       } else {
-        var currentDigitalSpecimen = currentMediaObjects.get(digitalMediaObjectKey);
-        if (currentDigitalSpecimen.digitalMediaObject().equals(digitalMediaObject)) {
+        var currentDigitalMediaObject = currentMediaObjects.get(digitalMediaObjectKey);
+        if (currentDigitalMediaObject.digitalMediaObject().equals(digitalMediaObject)) {
           log.debug("Received digital media is equal to digital media: {}",
-              currentDigitalSpecimen.id());
-          equalMediaObjects.add(currentDigitalSpecimen);
+              currentDigitalMediaObject.id());
+          equalMediaObjects.add(currentDigitalMediaObject);
         } else {
-          log.debug("Specimen with id: {} has received an update", currentDigitalSpecimen.id());
+          log.debug("Digital Media Object with id: {} has received an update", currentDigitalMediaObject.id());
           changedMediaObjects.add(
-              new UpdatedDigitalMediaTuple(currentDigitalSpecimen, mediaObject));
+              new UpdatedDigitalMediaTuple(currentDigitalMediaObject, mediaObject));
         }
       }
     }
@@ -229,12 +229,12 @@ public class ProcessingService {
       var successfullyProcessedRecords = digitalMediaRecords.stream()
           .map(UpdatedDigitalMediaRecord::digitalMediaObjectRecord).collect(
               Collectors.toSet());
-      log.info("Successfully updated {} digitalSpecimen", successfullyProcessedRecords.size());
+      log.info("Successfully updated {} digital media object", successfullyProcessedRecords.size());
       return successfullyProcessedRecords;
     } catch (IOException e) {
       log.error("Rolling back, failed to insert records in elastic", e);
       digitalMediaRecords.forEach(
-          updatedDigitalSpecimenRecord -> rollbackUpdatedDigitalMedia(updatedDigitalSpecimenRecord,
+          updatedDigitalMediaObjectRecord -> rollbackUpdatedDigitalMedia(updatedDigitalMediaObjectRecord,
               false));
       return Set.of();
     }
@@ -242,13 +242,13 @@ public class ProcessingService {
 
   private void handlePartiallyElasticUpdate(Set<UpdatedDigitalMediaRecord> digitalMediaRecords,
       BulkResponse bulkResponse) {
-    var digitalSpecimenMap = digitalMediaRecords.stream()
+    var digitalMediaMap = digitalMediaRecords.stream()
         .collect(Collectors.toMap(
             updatedDigitalMediaRecord -> updatedDigitalMediaRecord.digitalMediaObjectRecord()
                 .id(), Function.identity()));
     bulkResponse.items().forEach(
         item -> {
-          var digitalMediaRecord = digitalSpecimenMap.get(item.id());
+          var digitalMediaRecord = digitalMediaMap.get(item.id());
           if (item.error() != null) {
             log.error("Failed item to insert into elastic search: {} with errors {}",
                 digitalMediaRecord.digitalMediaObjectRecord().id(), item.error().reason());
@@ -327,8 +327,8 @@ public class ProcessingService {
   }
 
   private Set<UpdatedDigitalMediaRecord> getDigitalMediaRecordMap(
-      List<UpdatedDigitalMediaTuple> updatedDigitalSpecimenTuples) {
-    return updatedDigitalSpecimenTuples.stream().map(tuple -> new UpdatedDigitalMediaRecord(
+      List<UpdatedDigitalMediaTuple> updatedDigitalMediaTuples) {
+    return updatedDigitalMediaTuples.stream().map(tuple -> new UpdatedDigitalMediaRecord(
         new DigitalMediaObjectRecord(
             tuple.currentDigitalMediaRecord().id(),
             tuple.currentDigitalMediaRecord().version() + 1,
@@ -339,8 +339,8 @@ public class ProcessingService {
     )).collect(Collectors.toSet());
   }
 
-  public void updateHandles(List<UpdatedDigitalMediaTuple> updatedDigitalSpecimenTuples) {
-    var handleUpdates = updatedDigitalSpecimenTuples.stream().filter(
+  public void updateHandles(List<UpdatedDigitalMediaTuple> updatedDigitalMediaTuples) {
+    var handleUpdates = updatedDigitalMediaTuples.stream().filter(
         tuple -> handleNeedsUpdate(tuple.currentDigitalMediaRecord().digitalMediaObject(),
             tuple.digitalMediaObjectEvent().digitalMediaObject())).toList();
     if (!handleUpdates.isEmpty()) {
@@ -356,7 +356,7 @@ public class ProcessingService {
   private void processEqualDigitalMedia(List<DigitalMediaObjectRecord> currentDigitalMediaObject) {
     var currentIds = currentDigitalMediaObject.stream().map(DigitalMediaObjectRecord::id).toList();
     repository.updateLastChecked(currentIds);
-    log.info("Successfully updated lastChecked for {} existing digitalSpecimen",
+    log.info("Successfully updated lastChecked for {} existing digital media object",
         currentIds.size());
   }
 
@@ -391,22 +391,22 @@ public class ProcessingService {
 
   private void handlePartiallyFailedElasticInsert(
       Map<DigitalMediaObjectRecord, List<String>> digitalMediaRecords, BulkResponse bulkResponse) {
-    var digitalSpecimenMap = digitalMediaRecords.keySet().stream()
+    var digitalMediaMap = digitalMediaRecords.keySet().stream()
         .collect(Collectors.toMap(DigitalMediaObjectRecord::id, Function.identity()));
     bulkResponse.items().forEach(
         item -> {
-          var digitalSpecimenRecord = digitalSpecimenMap.get(item.id());
+          var digitalMediaRecord = digitalMediaMap.get(item.id());
           if (item.error() != null) {
             log.error("Failed item to insert into elastic search: {} with errors {}",
-                digitalSpecimenRecord.id(), item.error().reason());
-            rollbackNewDigitalMedia(digitalSpecimenRecord,
-                digitalMediaRecords.get(digitalSpecimenRecord));
-            digitalMediaRecords.remove(digitalSpecimenRecord);
+                digitalMediaRecord.id(), item.error().reason());
+            rollbackNewDigitalMedia(digitalMediaRecord,
+                digitalMediaRecords.get(digitalMediaRecord));
+            digitalMediaRecords.remove(digitalMediaRecord);
           } else {
-            var successfullyPublished = publishEvents(digitalSpecimenRecord,
-                digitalMediaRecords.get(digitalSpecimenRecord));
+            var successfullyPublished = publishEvents(digitalMediaRecord,
+                digitalMediaRecords.get(digitalMediaRecord));
             if (!successfullyPublished) {
-              digitalMediaRecords.remove(digitalSpecimenRecord);
+              digitalMediaRecords.remove(digitalMediaRecord);
             }
           }
         }
@@ -415,7 +415,7 @@ public class ProcessingService {
 
   private void handleSuccessfulElasticInsert(
       Map<DigitalMediaObjectRecord, List<String>> digitalMediaRecords) {
-    log.debug("Successfully indexed {} specimens", digitalMediaRecords);
+    log.debug("Successfully indexed {} digital media", digitalMediaRecords);
     for (var entry : digitalMediaRecords.entrySet()) {
       var successfullyPublished = publishEvents(entry.getKey(), entry.getValue());
       if (!successfullyPublished) {
@@ -454,7 +454,7 @@ public class ProcessingService {
 
     if (elasticRollback) {
       try {
-        elasticRepository.rollbackSpecimen(digitalMediaObjectRecord);
+        elasticRepository.rollbackDigitalMedia(digitalMediaObjectRecord);
       } catch (IOException e) {
         log.error("Fatal exception, unable to roll back: " + digitalMediaObjectRecord.id(), e);
       }
