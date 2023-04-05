@@ -32,7 +32,7 @@ public class ElasticSearchRepository {
     return client.bulk(bulkRequest.build());
   }
 
-  public DeleteResponse rollbackSpecimen(DigitalMediaObjectRecord digitalMediaRecord)
+  public DeleteResponse rollbackDigitalMedia(DigitalMediaObjectRecord digitalMediaRecord)
       throws IOException {
     return client.delete(d -> d.index(properties.getIndexName()).id(digitalMediaRecord.id()));
   }

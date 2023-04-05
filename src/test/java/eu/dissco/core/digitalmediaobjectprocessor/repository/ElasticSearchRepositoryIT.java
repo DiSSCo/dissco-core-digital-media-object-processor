@@ -121,7 +121,7 @@ class ElasticSearchRepositoryIT {
         givenDigitalMediaObjectRecord(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3)));
 
     // When
-    var result = repository.rollbackSpecimen(givenDigitalMediaObjectRecord());
+    var result = repository.rollbackDigitalMedia(givenDigitalMediaObjectRecord());
 
     // Then
     var document = client.get(g -> g.index(INDEX).id(HANDLE),
