@@ -54,7 +54,7 @@ public class ProcessingService {
 
   public List<DigitalMediaObjectRecord> handleMessage(List<DigitalMediaObjectTransferEvent> events,
       boolean webProfile) throws DigitalSpecimenNotFoundException {
-    log.info("Processing {} digital specimen", events.size());
+    log.info("Processing {} digital media objects", events.size());
     var uniqueBatch = removeDuplicatesInBatch(events);
     var processResult = processDigitalMedia(uniqueBatch, webProfile);
     var results = new ArrayList<DigitalMediaObjectRecord>();
