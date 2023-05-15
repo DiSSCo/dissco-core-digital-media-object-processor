@@ -96,7 +96,6 @@ class ElasticSearchRepositoryIT {
   void testIndexDigitalMediaObject() throws IOException {
     // Given
     esProperties.setIndexName(INDEX);
-
     // When
     var result = repository.indexDigitalMediaObject(List.of(
         givenDigitalMediaObjectRecord(),

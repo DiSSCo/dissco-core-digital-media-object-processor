@@ -29,7 +29,6 @@ public class DigitalMediaObjectController {
 
   private final ProcessingService processingService;
 
-  @PreAuthorize("isAuthenticated()")
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<DigitalMediaObjectRecord> createDigitalMediaObject(@RequestBody
   DigitalMediaObjectTransferEvent event)

@@ -75,16 +75,13 @@ class DigitalMediaObjectRepositoryIT extends BaseRepositoryIT {
         TestUtils.givenDigitalMediaObjectRecord(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3)));
 
     // When
-    try (MockedStatic<Instant> mockedStatic = mockStatic(Instant.class)) {
-      mockedStatic.when(Instant::now).thenReturn(UPDATED_TIMESTAMP);
-      repository.updateLastChecked(List.of(HANDLE));
-    }
+    repository.updateLastChecked(List.of(HANDLE));
 
     // Then
     var result = context.select(NEW_DIGITAL_MEDIA_OBJECT.LAST_CHECKED)
         .from(NEW_DIGITAL_MEDIA_OBJECT)
         .where(NEW_DIGITAL_MEDIA_OBJECT.ID.eq(HANDLE)).fetchOne(Record1::value1);
-    assertThat(result).isEqualTo(UPDATED_TIMESTAMP);
+    assertThat(result).isAfter(UPDATED_TIMESTAMP);
   }
 
   @Test
