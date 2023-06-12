@@ -1,0 +1,72 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dissco-digital-media-object-processor-kafka
+  labels:
+    app: dissco-digital-media-object-processor-kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dissco-digital-media-object-processor-kafka
+  template:
+    metadata:
+      labels:
+        app: dissco-digital-media-object-processor-kafka
+    spec:
+      containers:
+        - name: dissco-digital-media-object-processor-kafka
+          image: public.ecr.aws/dissco/dissco-core-digital-media-object-processor
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: spring.profiles.active
+              value: kafka
+            - name: spring.datasource.url
+              value: jdbc:postgresql://database-1.cbppwfnjypll.eu-west-2.rds.amazonaws.com/dissco
+            - name: spring.datasource.username
+              valueFrom:
+                secretKeyRef:
+                  name: db-user-pass
+                  key: username
+            - name: spring.datasource.password
+              valueFrom:
+                secretKeyRef:
+                  name: db-user-pass
+                  key: password
+            - name: elasticsearch.hostname
+              value: elasticsearch-master.default.svc.cluster.local
+            - name: elasticsearch.port
+              value: "9200"
+            - name: elasticsearch.index-name
+              value: digital-media-object
+            - name: kafka.publisher.host
+              value: kafka.kafka.svc.cluster.local:9092
+            - name: kafka.consumer.host
+              value: kafka.kafka.svc.cluster.local:9092
+            - name: kafka.consumer.group
+              value: group
+            - name: kafka.consumer.topic
+              value: digital-media-object
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: dissco-digital-media-object-processor-kafka-scaled-object
+spec:
+  scaleTargetRef:
+    name: dissco-digital-media-object-processor-kafka
+  minReplicaCount: 1
+  maxReplicaCount:  5
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka.kafka.svc.cluster.local:9092
+        consumerGroup: group
+        topic: digital-media-object
+        lagThreshold: '5'
