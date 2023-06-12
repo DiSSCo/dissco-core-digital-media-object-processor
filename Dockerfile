@@ -1,5 +1,4 @@
 FROM eclipse-temurin:17-alpine AS builder
-RUN apk update && apk upgrade && apk add --upgrade libcrypto3 libssl3
 WORKDIR application
 ARG JAR_FILE=target/*.jar
 COPY ${JAR_FILE} application.jar
