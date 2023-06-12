@@ -1,0 +1,4 @@
+# Date: June 12, 2023
+# Issue: vulnerability in Alpine image
+# Solution: Wait for Alpine to address this CVE
+CVE-2023-2650
