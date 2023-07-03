@@ -12,7 +12,7 @@ import reactor.netty.http.client.HttpClient;
 
 @Configuration
 @RequiredArgsConstructor
-public class WebClientConfig {
+public class WebClientConfiguration {
 
   private final WebConnectionProperties properties;
 
