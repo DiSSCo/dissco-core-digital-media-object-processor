@@ -1,8 +1,11 @@
 package eu.dissco.core.digitalmediaobjectprocessor.service;
 
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.CREATED;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.DIGITAL_SPECIMEN_ID;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_1;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.PHYSICAL_SPECIMEN_ID;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObject;
@@ -10,9 +13,10 @@ import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalM
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.DIGITAL_OBJECT_TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.FDO_PROFILE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_URL;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.SUBJECT_ID;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.MAP;
 import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,7 +24,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,7 +56,7 @@ class FdoRecordServiceTest {
     var expectedString = """
         {
           "data": {
-            "type": "doi",
+            "type": "mediaObject",
             "id":\"""" + HANDLE + "\","
         + "\"attributes\":" + givenPostAttributes().toPrettyString() + "}}";
 
@@ -104,7 +107,7 @@ class FdoRecordServiceTest {
     var result = MAPPER.createObjectNode();
     var data = MAPPER.createObjectNode();
     var attributes = givenPostAttributes();
-    data.put("type", "doi");
+    data.put("type", "mediaObject");
     data.set("attributes", attributes);
     result.set("data", data);
     return result;
@@ -115,7 +118,12 @@ class FdoRecordServiceTest {
     attributes.put(FDO_PROFILE.getAttribute(), FDO_PROFILE.getDefaultValue());
     attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
     attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
-    attributes.put(REFERENT_NAME.getAttribute(), TYPE + " for " + PHYSICAL_SPECIMEN_ID);
+    attributes.put(REFERENT_NAME.getAttribute(), TYPE + " for " + DIGITAL_SPECIMEN_ID);
+    attributes.put("mediaHash", "");
+    attributes.put("mediaHashAlgorithm", "");
+    attributes.put("subjectSpecimenHost", "");
+    attributes.put(MEDIA_URL.getAttribute(), MEDIA_URL_1);
+    attributes.put(SUBJECT_ID.getAttribute(), DIGITAL_SPECIMEN_ID);
     return attributes;
   }
 

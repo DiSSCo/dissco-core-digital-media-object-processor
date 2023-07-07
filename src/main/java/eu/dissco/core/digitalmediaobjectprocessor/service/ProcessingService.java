@@ -1,5 +1,6 @@
 package eu.dissco.core.digitalmediaobjectprocessor.service;
 
+import static eu.dissco.core.digitalmediaobjectprocessor.service.ServiceUtils.getMediaUrl;
 import static java.util.stream.Collectors.toMap;
 
 import co.elastic.clients.elasticsearch.core.BulkResponse;
@@ -47,13 +48,6 @@ public class ProcessingService {
   private final HandleComponent handleComponent;
   private final ElasticSearchRepository elasticRepository;
   private final KafkaPublisherService kafkaService;
-
-  private static String getMediaUrl(JsonNode attributes) {
-    if (attributes.get("ac:accessURI") != null) {
-      return attributes.get("ac:accessURI").asText();
-    }
-    return null;
-  }
 
   public List<DigitalMediaObjectRecord> handleMessage(List<DigitalMediaObjectTransferEvent> events,
       boolean webProfile) throws DigitalSpecimenNotFoundException {

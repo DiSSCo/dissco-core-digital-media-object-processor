@@ -7,7 +7,7 @@ import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE_3;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_1;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_3;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.UPDATED_TIMESTAMP;
@@ -18,12 +18,10 @@ import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.dissco.core.digitalmediaobjectprocessor.TestUtils;
-import java.time.Instant;
 import java.util.List;
 import org.jooq.Record1;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
 class DigitalMediaObjectRepositoryIT extends BaseRepositoryIT {
 
@@ -44,7 +42,7 @@ class DigitalMediaObjectRepositoryIT extends BaseRepositoryIT {
     var result = repository.createDigitalMediaRecord(List.of(digitalMedia));
 
     // Then
-    var actual = repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID), List.of(MEDIA_URL));
+    var actual = repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID), List.of(MEDIA_URL_1));
     assertThat(result).hasSize(1);
     assertThat(actual).contains(digitalMedia);
   }
@@ -61,7 +59,7 @@ class DigitalMediaObjectRepositoryIT extends BaseRepositoryIT {
     repository.createDigitalMediaRecord(List.of(updatedMedia));
 
     // Then
-    var actual = repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID), List.of(MEDIA_URL));
+    var actual = repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID), List.of(MEDIA_URL_1));
     assertThat(actual).contains(updatedMedia);
   }
 
@@ -88,7 +86,7 @@ class DigitalMediaObjectRepositoryIT extends BaseRepositoryIT {
   void testRollbackSpecimen() throws JsonProcessingException {
     // Given
     repository.createDigitalMediaRecord(List.of(
-        TestUtils.givenDigitalMediaObjectRecord(HANDLE, DIGITAL_SPECIMEN_ID, MEDIA_URL),
+        TestUtils.givenDigitalMediaObjectRecord(HANDLE, DIGITAL_SPECIMEN_ID, MEDIA_URL_1),
         TestUtils.givenDigitalMediaObjectRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2),
         TestUtils.givenDigitalMediaObjectRecord(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3)));
 

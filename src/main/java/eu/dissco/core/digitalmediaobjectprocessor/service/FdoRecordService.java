@@ -3,8 +3,11 @@ package eu.dissco.core.digitalmediaobjectprocessor.service;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.DIGITAL_OBJECT_TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.FDO_PROFILE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_URL;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.SUBJECT_ID;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.TYPE;
+import static eu.dissco.core.digitalmediaobjectprocessor.service.ServiceUtils.getMediaUrl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,15 +49,18 @@ public class FdoRecordService {
     attributes.put(FDO_PROFILE.getAttribute(), FDO_PROFILE.getDefaultValue());
     attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
     attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
-    attributes.put(REFERENT_NAME.getAttribute(),
-        mediaObject.type() + " for " + mediaObject.physicalSpecimenId());
+    attributes.put(REFERENT_NAME.getAttribute(),mediaObject.type() + " for " + mediaObject.digitalSpecimenId());
+    attributes.put("mediaHash", "");
+    attributes.put("mediaHashAlgorithm", "");
+    attributes.put("subjectSpecimenHost", "");
+    attributes.put(MEDIA_URL.getAttribute(), getMediaUrl(mediaObject.attributes()));
+    attributes.put(SUBJECT_ID.getAttribute(), mediaObject.digitalSpecimenId());
     return attributes;
   }
 
   public JsonNode buildRollbackCreationRequest(List<DigitalMediaObjectRecord> digitalMediaObjects) {
     var handles = digitalMediaObjects.stream().map(DigitalMediaObjectRecord::id).toList();
-    var dataNode = handles.stream()
-        .map(handle -> mapper.createObjectNode().put("id", handle))
+    var dataNode = handles.stream().map(handle -> mapper.createObjectNode().put("id", handle))
         .toList();
     ArrayNode dataArray = mapper.valueToTree(dataNode);
     return mapper.createObjectNode().set("data", dataArray);
@@ -81,15 +87,10 @@ public class FdoRecordService {
   }
 
   public boolean handleNeedsUpdate(DigitalMediaObject currentMediaObject,
-      DigitalMediaObject digitalSpecimen) {
-    return false;
-  }
-
-  private boolean isUnequal(DigitalMediaObject currentMediaObject,
-      DigitalMediaObject newMediaObject,
-      String fieldName) {
-    return !Objects.equals(currentMediaObject.attributes().findValue(fieldName).asText(),
-        newMediaObject.attributes().findValue(fieldName).asText());
+      DigitalMediaObject mediaObject) {
+    return (!currentMediaObject.digitalSpecimenId().equals(mediaObject.digitalSpecimenId())
+        || !Objects.equals(getMediaUrl(currentMediaObject.attributes()),
+        getMediaUrl(mediaObject.attributes())));
   }
 
 }
