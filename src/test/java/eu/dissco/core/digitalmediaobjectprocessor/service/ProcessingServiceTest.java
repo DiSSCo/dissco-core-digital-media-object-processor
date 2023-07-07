@@ -21,6 +21,7 @@ import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalM
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecordPhysical;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecordWithVersion;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectTransferEvent;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPidMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,13 +41,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
+import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidAuthenticationException;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalMediaObjectRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalSpecimenRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.ElasticSearchRepository;
+import eu.dissco.core.digitalmediaobjectprocessor.web.HandleComponent;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,13 +72,15 @@ class ProcessingServiceTest {
   @Mock
   private DigitalSpecimenRepository specimenRepository;
   @Mock
-  private HandleService handleService;
-  @Mock
   private ElasticSearchRepository elasticRepository;
   @Mock
   private BulkResponse bulkResponse;
   @Mock
   private KafkaPublisherService publisherService;
+  @Mock
+  private FdoRecordService fdoRecordService;
+  @Mock
+  private HandleComponent handleComponent;
 
   private MockedStatic<Instant> mockedInstant;
   private MockedStatic<Clock> mockedClock;
@@ -82,8 +89,8 @@ class ProcessingServiceTest {
 
   @BeforeEach
   void setup() {
-    service = new ProcessingService(repository, specimenRepository, handleService,
-        elasticRepository, publisherService);
+    service = new ProcessingService(repository, specimenRepository, fdoRecordService,
+        handleComponent, elasticRepository, publisherService);
     Clock clock = Clock.fixed(CREATED, ZoneOffset.UTC);
     Instant instant = Instant.now(clock);
     mockedInstant = mockStatic(Instant.class);
@@ -117,7 +124,7 @@ class ProcessingServiceTest {
   }
 
   @Test
-  void testUnequalDigitalMedia() throws IOException, DigitalSpecimenNotFoundException {
+  void testUnequalDigitalMedia() throws Exception {
     // Given
     var expected = List.of(givenDigitalMediaObjectRecordWithVersion(2));
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
@@ -127,12 +134,12 @@ class ProcessingServiceTest {
         List.of(givenDigitalMediaObjectRecord(FORMAT_2)));
     given(bulkResponse.errors()).willReturn(false);
     given(elasticRepository.indexDigitalMediaObject(expected)).willReturn(bulkResponse);
+    given(fdoRecordService.handleNeedsUpdate(any(), any())).willReturn(false);
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent()), false);
 
     // Then
-    then(handleService).shouldHaveNoInteractions();
     then(repository).should().createDigitalMediaRecord(expected);
     then(publisherService).should()
         .publishUpdateEvent(givenDigitalMediaObjectRecordWithVersion(2),
@@ -142,14 +149,14 @@ class ProcessingServiceTest {
 
   @Test
   void testNewDigitalMedia()
-      throws IOException, DigitalSpecimenNotFoundException, TransformerException {
+      throws Exception {
     // Given
     var expected = List.of(givenDigitalMediaObjectRecord());
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
     given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL))).willReturn(List.of());
-    given(handleService.createNewHandle(givenDigitalMediaObject())).willReturn(HANDLE);
+    given(handleComponent.postHandle(anyList())).willReturn(givenPidMap(1));
     given(bulkResponse.errors()).willReturn(false);
     given(elasticRepository.indexDigitalMediaObject(
         Set.of(givenDigitalMediaObjectRecord()))).willReturn(bulkResponse);
@@ -166,14 +173,14 @@ class ProcessingServiceTest {
 
   @Test
   void testDuplicateNewDigitalMedia()
-      throws IOException, TransformerException, DigitalSpecimenNotFoundException {
+      throws Exception {
     // Given
     var expected = List.of(givenDigitalMediaObjectRecord());
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
     given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL))).willReturn(List.of());
-    given(handleService.createNewHandle(givenDigitalMediaObject())).willReturn(HANDLE);
+    given(handleComponent.postHandle(anyList())).willReturn(givenPidMap(1));
     given(bulkResponse.errors()).willReturn(false);
     given(elasticRepository.indexDigitalMediaObject(
         Set.of(givenDigitalMediaObjectRecord()))).willReturn(bulkResponse);
@@ -194,13 +201,13 @@ class ProcessingServiceTest {
 
   @Test
   void testNewDigitalMediaIOException()
-      throws IOException, TransformerException, DigitalSpecimenNotFoundException {
+      throws Exception {
     // Given
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
     given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL))).willReturn(List.of());
-    given(handleService.createNewHandle(givenDigitalMediaObject())).willReturn(HANDLE);
+    given(handleComponent.postHandle(anyList())).willReturn(givenPidMap(1));
     given(elasticRepository.indexDigitalMediaObject(
         Set.of(givenDigitalMediaObjectRecord()))).willThrow(IOException.class);
 
@@ -210,14 +217,14 @@ class ProcessingServiceTest {
     // Then
     then(repository).should().createDigitalMediaRecord(Set.of(givenDigitalMediaObjectRecord()));
     then(repository).should().rollBackDigitalMedia(HANDLE);
-    then(handleService).should().rollbackHandleCreation(givenDigitalMediaObjectRecord());
+    then(handleComponent).should().rollbackHandleCreation(any());
     then(publisherService).should().deadLetterEvent(givenDigitalMediaObjectTransferEvent());
     assertThat(result).isEmpty();
   }
 
   @Test
   void testNewDigitalMediaPartialElasticFailed()
-      throws IOException, TransformerException, DigitalSpecimenNotFoundException {
+      throws Exception {
     // Given
     var secondEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_2, MEDIA_URL_2);
     var thirdEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_3, MEDIA_URL_3);
@@ -229,8 +236,7 @@ class ProcessingServiceTest {
             PHYSICAL_SPECIMEN_ID_2, DIGITAL_SPECIMEN_ID_2)
     );
     given(repository.getDigitalMediaObject(anyList(), anyList())).willReturn(List.of());
-    given(handleService.createNewHandle(any(DigitalMediaObject.class))).willReturn(HANDLE_3)
-        .willReturn(HANDLE).willReturn(HANDLE_2);
+    given(handleComponent.postHandle(anyList())).willReturn(givenPidMap(3));
     givenBulkResponse();
     given(elasticRepository.indexDigitalMediaObject(anySet())).willReturn(bulkResponse);
 
@@ -240,11 +246,9 @@ class ProcessingServiceTest {
 
     // Then
     then(repository).should().createDigitalMediaRecord(anySet());
-    then(handleService).should(times(3)).createNewHandle(any(DigitalMediaObject.class));
     then(repository).should().rollBackDigitalMedia(HANDLE_2);
-    then(handleService).should().rollbackHandleCreation(
-        givenDigitalMediaObjectRecordPhysical(HANDLE_2, PHYSICAL_SPECIMEN_ID_2,
-            DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2, TYPE));
+    then(fdoRecordService).should().buildRollbackCreationRequest(anyList()); // todo
+    then(handleComponent).should().rollbackHandleCreation(any());
     then(publisherService).should().deadLetterEvent(secondEvent);
     assertThat(result).isEqualTo(
         List.of(givenDigitalMediaObjectRecordPhysical(HANDLE_3, PHYSICAL_SPECIMEN_ID_3,
@@ -254,14 +258,14 @@ class ProcessingServiceTest {
 
   @Test
   void testNewSpecimenKafkaFailed()
-      throws IOException, TransformerException, DigitalSpecimenNotFoundException {
+      throws Exception {
     // Given
     var expected = List.of(givenDigitalMediaObjectRecord());
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
     given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL))).willReturn(List.of());
-    given(handleService.createNewHandle(givenDigitalMediaObject())).willReturn(HANDLE);
+    given(handleComponent.postHandle(anyList())).willReturn(givenPidMap(1));
     given(bulkResponse.errors()).willReturn(false);
     given(elasticRepository.indexDigitalMediaObject(
         Set.of(givenDigitalMediaObjectRecord()))).willReturn(bulkResponse);
@@ -275,7 +279,8 @@ class ProcessingServiceTest {
     then(repository).should().createDigitalMediaRecord(anySet());
     then(elasticRepository).should().rollbackDigitalMedia(expected.get(0));
     then(repository).should().rollBackDigitalMedia(HANDLE);
-    then(handleService).should().rollbackHandleCreation(expected.get(0));
+    then(fdoRecordService).should().buildRollbackCreationRequest(List.of(givenDigitalMediaObjectRecord()));
+    then(handleComponent).should().rollbackHandleCreation(any());
     then(publisherService).should().deadLetterEvent(givenDigitalMediaObjectTransferEvent());
     assertThat(result).isEmpty();
   }
@@ -309,17 +314,13 @@ class ProcessingServiceTest {
         List.of(givenDigitalMediaObjectTransferEvent(), secondEvent, thirdEvent), false);
 
     // Then
-    then(handleService).should().updateHandles(anyList());
     then(repository).should(times(2)).createDigitalMediaRecord(anyList());
-    then(handleService).should().deleteVersion(
-        givenDigitalMediaObjectRecordPhysical(HANDLE_2, PHYSICAL_SPECIMEN_ID_2,
-            DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2, "Another Type"));
     then(publisherService).should().deadLetterEvent(secondEvent);
     assertThat(result).hasSize(2);
   }
 
   @Test
-  void testUpdateDigitalMediaKafkaFailed() throws IOException, DigitalSpecimenNotFoundException {
+  void testUpdateDigitalMediaKafkaFailed() throws Exception {
     // Given
     var expected = List.of(givenDigitalMediaObjectRecordWithVersion(2));
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
@@ -332,12 +333,12 @@ class ProcessingServiceTest {
     doThrow(JsonProcessingException.class).when(publisherService)
         .publishUpdateEvent(givenDigitalMediaObjectRecordWithVersion(2),
             givenDigitalMediaObjectRecord(FORMAT_2));
+    given(fdoRecordService.handleNeedsUpdate(any(), any())).willReturn(false);
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent()), false);
 
     // Then
-    then(handleService).shouldHaveNoInteractions();
     then(repository).should(times(2)).createDigitalMediaRecord(anyList());
     then(elasticRepository).should().rollbackVersion(givenDigitalMediaObjectRecord(FORMAT_2));
     then(publisherService).should().deadLetterEvent(givenDigitalMediaObjectTransferEvent());
@@ -345,7 +346,7 @@ class ProcessingServiceTest {
   }
 
   @Test
-  void testUpdateDigitalMediaIOException() throws IOException, DigitalSpecimenNotFoundException {
+  void testUpdateDigitalMediaIOException() throws Exception {
     // Given
     var expected = List.of(givenDigitalMediaObjectRecordWithVersion(2));
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
@@ -354,12 +355,12 @@ class ProcessingServiceTest {
         List.of(MEDIA_URL))).willReturn(
         List.of(givenDigitalMediaObjectRecord(FORMAT_2)));
     given(elasticRepository.indexDigitalMediaObject(expected)).willThrow(IOException.class);
+    given(fdoRecordService.handleNeedsUpdate(any(), any())).willReturn(false);
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent()), false);
 
     // Then
-    then(handleService).shouldHaveNoInteractions();
     then(repository).should(times(2)).createDigitalMediaRecord(anyList());
     then(publisherService).should().deadLetterEvent(givenDigitalMediaObjectTransferEvent());
     assertThat(result).isEmpty();
@@ -367,14 +368,13 @@ class ProcessingServiceTest {
 
   @Test
   void testNewSpecimenError()
-      throws IOException, DigitalSpecimenNotFoundException, TransformerException {
+      throws Exception {
     // Given
     given(specimenRepository.getSpecimenId(List.of(PHYSICAL_SPECIMEN_ID))).willReturn(
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
     given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL))).willReturn(List.of());
-    given(handleService.createNewHandle(givenDigitalMediaObject())).willThrow(
-        TransformerException.class);
+    given(handleComponent.postHandle(anyList())).willThrow(PidAuthenticationException.class);
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent()), false);
@@ -382,7 +382,7 @@ class ProcessingServiceTest {
     // Then
     then(repository).shouldHaveNoMoreInteractions();
     then(elasticRepository).shouldHaveNoInteractions();
-    then(publisherService).shouldHaveNoInteractions();
+    then(publisherService).should().deadLetterEvent(any());
     assertThat(result).isEmpty();
   }
 

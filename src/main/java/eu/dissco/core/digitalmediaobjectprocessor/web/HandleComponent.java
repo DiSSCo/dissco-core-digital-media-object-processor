@@ -1,6 +1,7 @@
 package eu.dissco.core.digitalmediaobjectprocessor.web;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectKey;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidAuthenticationException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +36,7 @@ public class HandleComponent {
   private static final String UNEXPECTED_MSG = "Unexpected response from handle API";
   private static final String UNEXPECTED_LOG = "Unexpected response from Handle API. Missing id and/or primarySpecimenObjectId. Response: {}";
 
-  public Map<String, String> postHandle(List<JsonNode> request)
+  public Map<DigitalMediaObjectKey, String> postHandle(List<JsonNode> request)
       throws PidAuthenticationException, PidCreationException {
     var requestBody = BodyInserters.fromValue(request);
     var response = sendRequest(HttpMethod.POST, requestBody, "batch");
@@ -43,13 +44,23 @@ public class HandleComponent {
     return parseResponse(responseJson);
   }
 
-  public void rollbackHandleCreation(JsonNode request) throws PidCreationException, PidAuthenticationException {
+  public void rollbackHandleCreation(JsonNode request)
+      throws PidCreationException, PidAuthenticationException {
     var requestBody = BodyInserters.fromValue(request);
     var response = sendRequest(HttpMethod.DELETE, requestBody, "rollback");
     validateResponse(response);
   }
 
-  private <T> Mono<JsonNode> sendRequest(HttpMethod httpMethod, BodyInserter<T, ReactiveHttpOutputMessage> requestBody, String endpoint) throws PidAuthenticationException {
+  public void rollbackHandleUpdate(List<JsonNode> request)
+      throws PidCreationException, PidAuthenticationException {
+    var requestBody = BodyInserters.fromValue(request);
+    var response = sendRequest(HttpMethod.DELETE, requestBody, "rollback/update");
+    validateResponse(response);
+  }
+
+  private <T> Mono<JsonNode> sendRequest(HttpMethod httpMethod,
+      BodyInserter<T, ReactiveHttpOutputMessage> requestBody, String endpoint)
+      throws PidAuthenticationException {
     var token = "Bearer " + tokenAuthenticator.getToken();
     return handleClient
         .method(httpMethod)
@@ -87,10 +98,11 @@ public class HandleComponent {
     }
   }
 
-  private HashMap<String, String> parseResponse(JsonNode handleResponse) throws PidCreationException{
+  private HashMap<DigitalMediaObjectKey, String> parseResponse(JsonNode handleResponse)
+      throws PidCreationException {
     try {
       var dataNode = handleResponse.get("data");
-      HashMap<String, String> handleNames = new HashMap<>();
+      HashMap<DigitalMediaObjectKey, String> handleNames = new HashMap<>();
       if (!dataNode.isArray()) {
         log.error(UNEXPECTED_LOG, handleResponse.toPrettyString());
         throw new PidCreationException(UNEXPECTED_MSG);
@@ -98,12 +110,14 @@ public class HandleComponent {
       for (var node : dataNode) {
         var handle = node.get("id");
         var primarySpecimenObjectId = node.get("attributes")
-            .get("primarySpecimenId"); // todo verifyyy
-        if (handle == null || primarySpecimenObjectId == null) {
+            .get("primarySpecimenId").asText();
+        var mediaUrl = node.get("attributes").get("mediaUrl").asText();
+        DigitalMediaObjectKey key = new DigitalMediaObjectKey(primarySpecimenObjectId, mediaUrl);
+        if (handle == null || primarySpecimenObjectId == null || mediaUrl == null) {
           log.error(UNEXPECTED_LOG, handleResponse.toPrettyString());
           throw new PidCreationException(UNEXPECTED_MSG);
         }
-        handleNames.put(primarySpecimenObjectId.asText(), handle.asText());
+        handleNames.put(key, handle.asText());
       }
       return handleNames;
     } catch (NullPointerException e) {

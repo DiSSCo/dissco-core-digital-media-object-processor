@@ -13,6 +13,7 @@ import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -34,8 +35,8 @@ public class FdoRecordService {
     var request = mapper.createObjectNode();
     var data = mapper.createObjectNode();
     var attributes = generateAttributes(mediaObject);
-    data.set("attributes", attributes);
     data.put(TYPE.getAttribute(), TYPE.getDefaultValue());
+    data.set("attributes", attributes);
     request.set("data", data);
     return request;
   }
@@ -50,8 +51,8 @@ public class FdoRecordService {
     return attributes;
   }
 
-  public JsonNode buildRollbackCreationRequest(List<DigitalMediaObjectRecord> digitalSpecimens) {
-    var handles = digitalSpecimens.stream().map(DigitalMediaObjectRecord::id).toList();
+  public JsonNode buildRollbackCreationRequest(List<DigitalMediaObjectRecord> digitalMediaObjects) {
+    var handles = digitalMediaObjects.stream().map(DigitalMediaObjectRecord::id).toList();
     var dataNode = handles.stream()
         .map(handle -> mapper.createObjectNode().put("id", handle))
         .toList();
@@ -77,6 +78,18 @@ public class FdoRecordService {
     data.set("attributes", attributes);
     request.set("data", data);
     return request;
+  }
+
+  public boolean handleNeedsUpdate(DigitalMediaObject currentMediaObject,
+      DigitalMediaObject digitalSpecimen) {
+    return false;
+  }
+
+  private boolean isUnequal(DigitalMediaObject currentMediaObject,
+      DigitalMediaObject newMediaObject,
+      String fieldName) {
+    return !Objects.equals(currentMediaObject.attributes().findValue(fieldName).asText(),
+        newMediaObject.attributes().findValue(fieldName).asText());
   }
 
 }

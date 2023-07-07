@@ -11,6 +11,7 @@ import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTrans
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransferEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaTuple;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 
 public class TestUtils {
@@ -66,6 +67,20 @@ public class TestUtils {
         List.of(AAS),
         givenDigitalMediaTransfer(physicalSpecimenId, mediaUrl)
     );
+  }
+
+  public static HashMap<DigitalMediaObjectKey, String> givenPidMap(int size){
+    HashMap<DigitalMediaObjectKey, String> pidMap = new HashMap<>();
+    pidMap.put(givenDigitalMediaKey(), HANDLE);
+    size = size-1;
+    if (size > 0){
+      pidMap.put(new DigitalMediaObjectKey(DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2), HANDLE_2);
+    }
+    size = size-1;
+    if (size > 0){
+      pidMap.put(new DigitalMediaObjectKey(DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3), HANDLE_3);
+    }
+    return pidMap;
   }
 
   public static DigitalMediaObjectKey givenDigitalMediaKey() {
