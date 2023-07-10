@@ -5,7 +5,6 @@ import static java.util.stream.Collectors.toMap;
 
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectKey;
@@ -208,7 +207,14 @@ public class ProcessingService {
   private Set<DigitalMediaObjectRecord> updateExistingDigitalMedia(
       List<UpdatedDigitalMediaTuple> updatedDigitalSpecimenTuples) {
     var digitalMediaRecords = getDigitalMediaRecordMap(updatedDigitalSpecimenTuples);
-    filterUpdatesAndRollbackHandles(new ArrayList<>(digitalMediaRecords));
+    try {
+      updateHandles(updatedDigitalSpecimenTuples);
+    } catch (PidAuthenticationException | PidCreationException e) {
+      log.error("unable to update handle records for given request", e);
+      dlqBatchUpdate(digitalMediaRecords);
+      return Set.of();
+    }
+
     log.info("Persisting to db");
     repository.createDigitalMediaRecord(
         digitalMediaRecords.stream().map(UpdatedDigitalMediaRecord::digitalMediaObjectRecord)
@@ -239,11 +245,11 @@ public class ProcessingService {
     }
   }
 
-  private void dlqBatchUpdate(List<UpdatedDigitalMediaRecord> recordsToDlq) {
+  private void dlqBatchUpdate(Set<UpdatedDigitalMediaRecord> recordsToDlq) {
     for (var media : recordsToDlq) {
       try {
         kafkaService.deadLetterEvent(
-            new DigitalMediaObjectTransferEvent(null,
+            new DigitalMediaObjectTransferEvent(media.automatedAnnotations(),
                 new DigitalMediaObjectTransfer(
                     media.digitalMediaObjectRecord().digitalMediaObject().type(),
                     media.digitalMediaObjectRecord().digitalMediaObject().physicalSpecimenId(),
@@ -334,7 +340,6 @@ public class ProcessingService {
       log.error(
           "Unable to rollback handle updates. Handles: {}. Revert handles to the following records {}",
           handles, recordsToRollback);
-      dlqBatchUpdate(recordsToRollback);
     }
   }
 
@@ -359,8 +364,11 @@ public class ProcessingService {
 
       }
     }
-    filterUpdatesAndRollbackHandles(new ArrayList<>(failedRecords));
-    digitalMediaRecords.removeAll(failedRecords);
+    if (!failedRecords.isEmpty()) {
+      filterUpdatesAndRollbackHandles(new ArrayList<>(failedRecords));
+      digitalMediaRecords.removeAll(failedRecords);
+    }
+
   }
 
   private boolean publishUpdateEvent(UpdatedDigitalMediaRecord digitalMediaRecord) {
@@ -452,6 +460,7 @@ public class ProcessingService {
     try {
       pidMap = handleComponent.postHandle(requestBody);
     } catch (PidCreationException | PidAuthenticationException e) {
+      log.error("Unable to create pids for given request", e);
       dlqBatchCreate(newRecords);
       return Collections.emptySet();
     }
