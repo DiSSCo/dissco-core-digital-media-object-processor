@@ -2,11 +2,15 @@ package eu.dissco.core.digitalmediaobjectprocessor.service;
 
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.CREATED;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.DIGITAL_SPECIMEN_ID;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.DIGITAL_SPECIMEN_ID_2;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.FORMAT;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.FORMAT_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_1;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.PHYSICAL_SPECIMEN_ID;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.PHYSICAL_SPECIMEN_ID_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObject;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecord;
@@ -47,7 +51,7 @@ class FdoRecordServiceTest {
   }
 
   @AfterEach
-  void destroy(){
+  void destroy() {
     mockedStatic.close();
   }
 
@@ -82,18 +86,34 @@ class FdoRecordServiceTest {
   }
 
   @Test
-  void testBuildRollbackCreationRequest() throws Exception{
+  void testBuildRollbackCreationRequest() throws Exception {
     // Given
     var expected = expectedRollbackCreationRequest();
 
     // When
-    var result = fdoRecordService.buildRollbackCreationRequest(List.of(givenDigitalMediaObjectRecord()));
+    var result = fdoRecordService.buildRollbackCreationRequest(
+        List.of(givenDigitalMediaObjectRecord()));
 
     // Then
     assertThat(result).isEqualTo(expected);
   }
 
-  private static JsonNode expectedRollbackCreationRequest() throws Exception{
+  @Test
+  void testHandleDoesNotNeedUpdate() throws Exception {
+    // Then
+    assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(),
+        givenDigitalMediaObject())).isFalse();
+  }
+
+  @Test
+  void testHandleDoesNeedUpdate() throws Exception {
+    // Then
+    assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(),
+        givenDigitalMediaObject(DIGITAL_SPECIMEN_ID_2, PHYSICAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1,
+            TYPE))).isTrue();
+  }
+
+  private static JsonNode expectedRollbackCreationRequest() throws Exception {
     return MAPPER.readTree("""
         {
           "data":[

@@ -269,7 +269,7 @@ public class ProcessingService {
     for (var media : recordsToDlq) {
       try {
         kafkaService.deadLetterEvent(
-            new DigitalMediaObjectTransferEvent(null,
+            new DigitalMediaObjectTransferEvent(media.enrichmentList(),
                 new DigitalMediaObjectTransfer(
                     media.digitalMediaObject().type(),
                     media.digitalMediaObject().physicalSpecimenId(),
