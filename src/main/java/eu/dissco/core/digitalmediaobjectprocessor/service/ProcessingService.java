@@ -310,9 +310,7 @@ public class ProcessingService {
           }
         }
     );
-    if (!handlesToRollback.isEmpty()) {
-      filterUpdatesAndRollbackHandles(handlesToRollback);
-    }
+    filterUpdatesAndRollbackHandles(handlesToRollback);
   }
 
   private void filterUpdatesAndRollbackHandles(List<UpdatedDigitalMediaRecord> handlesToRollback) {
