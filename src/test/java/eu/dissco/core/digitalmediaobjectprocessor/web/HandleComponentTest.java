@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidAuthenticationException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import java.io.IOException;
@@ -21,6 +22,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -239,6 +243,20 @@ class HandleComponentTest {
     assertThrows(PidCreationException.class, () -> handleComponent.postHandle(requestBody));
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"subjectIdentifier", "mediaUrl"})
+  void testMissingDigitalMediaKey(String attribute) throws Exception {
+    // Given
+    var requestBody = List.of(givenHandleRequest());
+    var responseBody = removeGivenAttribute(attribute);
+    mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.CREATED.value())
+        .setBody(MAPPER.writeValueAsString(responseBody))
+        .addHeader("Content-Type", "application/json"));
+
+    // Then
+    assertThrows(PidCreationException.class, () -> handleComponent.postHandle(requestBody));
+  }
+
   @Test
   void testEmptyResponse() throws Exception {
     // Given
@@ -270,6 +288,12 @@ class HandleComponentTest {
            }
         }
         """);
+  }
+
+
+  private JsonNode removeGivenAttribute(String targetAttribute) throws Exception {
+    var response = (ObjectNode) givenHandleResponse();
+    return ((ObjectNode) response.get("data").get(0).get("attributes")).remove(targetAttribute);
   }
 
   private JsonNode givenHandleResponse() throws Exception{
