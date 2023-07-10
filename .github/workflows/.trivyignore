@@ -1,4 +1,4 @@
-# Date: June 12, 2023
-# Issue: vulnerability in Alpine image
-# Solution: Wait for Alpine to address this CVE
-CVE-2023-2650
+# Date: July 10, 2023
+# Issue: snappy-java high issue, https://www.cvedetails.com/cve/CVE-2023-34453/
+# Solution: Spring needs to update its version
+CVE-2023-34455
