@@ -167,8 +167,8 @@ class ProcessingServiceTest {
     var result = service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent()), false);
 
     // Then
-    then(fdoRecordService).should().buildPostHandleRequest(List.of(givenDigitalMediaObject()));
-    then(handleComponent).should().postHandle(any());
+    then(fdoRecordService).should().buildPatchHandleRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
+    then(handleComponent).should().updateHandle(any());
     then(repository).should().createDigitalMediaRecord(expected);
     then(publisherService).should()
         .publishUpdateEvent(givenDigitalMediaObjectRecordWithVersion(2),
@@ -185,13 +185,13 @@ class ProcessingServiceTest {
         List.of(MEDIA_URL_1))).willReturn(
         List.of(givenDigitalMediaObjectRecord(FORMAT_2)));
     given(fdoRecordService.handleNeedsUpdate(any(), any())).willReturn(true);
-    given(handleComponent.postHandle(any())).willThrow(PidCreationException.class);
+    doThrow(PidCreationException.class).when(handleComponent).updateHandle(any());
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent()), false);
 
     // Then
-    then(fdoRecordService).should().buildPostHandleRequest(List.of(givenDigitalMediaObject()));
+    then(fdoRecordService).should().buildPatchHandleRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
     then(repository).shouldHaveNoMoreInteractions();
     then(publisherService).should().deadLetterEvent(givenDlqTransferEventUpdate());
     assertThat(result).isEmpty();
@@ -206,7 +206,7 @@ class ProcessingServiceTest {
         List.of(MEDIA_URL_1))).willReturn(
         List.of(givenDigitalMediaObjectRecord(FORMAT_2)));
     given(fdoRecordService.handleNeedsUpdate(any(), any())).willReturn(true);
-    given(handleComponent.postHandle(any())).willThrow(PidCreationException.class);
+    doThrow(PidCreationException.class).when(handleComponent).updateHandle(any());
     doThrow(JsonProcessingException.class).when(publisherService)
         .deadLetterEvent(givenDigitalMediaObjectTransferEvent());
 
@@ -215,7 +215,6 @@ class ProcessingServiceTest {
 
     // Then
     then(repository).shouldHaveNoMoreInteractions();
-    then(handleComponent).should().postHandle(any());
     assertThat(result).isEmpty();
   }
 
@@ -588,7 +587,7 @@ class ProcessingServiceTest {
         List.of(givenDigitalMediaObjectTransferEvent(), secondEvent, thirdEvent), false);
 
     // Then
-    then(handleComponent).should().postHandle(any());
+    then(handleComponent).should().updateHandle(any());
     then(fdoRecordService).should().buildRollbackUpdateRequest(List.of(
         givenDigitalMediaObjectRecordPhysical(HANDLE_2, PHYSICAL_SPECIMEN_ID_2,
             DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2, "Another Type")));
@@ -640,7 +639,7 @@ class ProcessingServiceTest {
         List.of(givenDigitalMediaObjectTransferEvent(), secondEvent, thirdEvent), false);
 
     // Then
-    then(handleComponent).should().postHandle(any());
+    then(handleComponent).should().updateHandle(any());
     then(fdoRecordService).should().buildRollbackUpdateRequest(List.of(secondRecord, thirdRecord));
     then(handleComponent).should().rollbackHandleUpdate(any());
     then(repository).should(times(3)).createDigitalMediaRecord(anyList());

@@ -207,7 +207,7 @@ public class ProcessingService {
       List<UpdatedDigitalMediaTuple> updatedDigitalSpecimenTuples) {
     var digitalMediaRecords = getDigitalMediaRecordMap(updatedDigitalSpecimenTuples);
     try {
-      updateHandles(updatedDigitalSpecimenTuples);
+      updateHandles(digitalMediaRecords);
     } catch ( PidCreationException e) {
       log.error("unable to update handle records for given request", e);
       dlqBatchUpdate(digitalMediaRecords);
@@ -426,18 +426,17 @@ public class ProcessingService {
     )).collect(Collectors.toSet());
   }
 
-  public void updateHandles(List<UpdatedDigitalMediaTuple> updatedDigitalMediaTuples)
+  public void updateHandles(Set<UpdatedDigitalMediaRecord> updatedDigitalMediaRecords)
       throws PidCreationException {
-    var handleUpdates = updatedDigitalMediaTuples.stream().filter(
-            tuple -> fdoRecordService.handleNeedsUpdate(
-                tuple.currentDigitalMediaRecord().digitalMediaObject(),
-                tuple.digitalMediaObjectEvent().digitalMediaObject()))
-        .map(UpdatedDigitalMediaTuple::digitalMediaObjectEvent)
-        .map(DigitalMediaObjectEvent::digitalMediaObject)
+    var handleUpdates = updatedDigitalMediaRecords.stream().filter(
+            pair -> fdoRecordService.handleNeedsUpdate(
+                pair.currentDigitalMediaRecord().digitalMediaObject(),
+                pair.digitalMediaObjectRecord().digitalMediaObject()))
+        .map(UpdatedDigitalMediaRecord::digitalMediaObjectRecord)
         .toList();
     if (!handleUpdates.isEmpty()) {
-      var request = fdoRecordService.buildPostHandleRequest(handleUpdates);
-      handleComponent.postHandle(request);
+      var request = fdoRecordService.buildPatchHandleRequest(handleUpdates);
+      handleComponent.updateHandle(request);
     }
   }
 

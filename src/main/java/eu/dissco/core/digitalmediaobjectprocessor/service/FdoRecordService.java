@@ -10,6 +10,7 @@ import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttrib
 import static eu.dissco.core.digitalmediaobjectprocessor.service.ServiceUtils.getMediaUrl;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
@@ -30,6 +31,16 @@ public class FdoRecordService {
     List<JsonNode> requestBody = new ArrayList<>();
     for (var mediaObject : mediaObjects) {
       requestBody.add(buildSingleHandleRequest(mediaObject));
+    }
+    return requestBody;
+  }
+
+  public List<JsonNode> buildPatchHandleRequest(List<DigitalMediaObjectRecord> mediaRecords){
+    List<JsonNode> requestBody = new ArrayList<>();
+    for(var mediaRecord: mediaRecords){
+      var bodyNode = (ObjectNode) buildSingleHandleRequest(mediaRecord.digitalMediaObject());
+      bodyNode.put("id", mediaRecord.id());
+      requestBody.add(bodyNode);
     }
     return requestBody;
   }

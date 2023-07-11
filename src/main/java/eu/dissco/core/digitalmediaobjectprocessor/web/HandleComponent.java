@@ -43,6 +43,12 @@ public class HandleComponent {
     return parseResponse(responseJson);
   }
 
+  public void updateHandle(List<JsonNode> request) throws PidCreationException {
+    var requestBody = BodyInserters.fromValue(request);
+    var response = sendRequest(HttpMethod.PATCH, requestBody, "");
+    validateResponse(response);
+  }
+
   public void rollbackHandleCreation(JsonNode request)
       throws PidCreationException {
     var requestBody = BodyInserters.fromValue(request);
