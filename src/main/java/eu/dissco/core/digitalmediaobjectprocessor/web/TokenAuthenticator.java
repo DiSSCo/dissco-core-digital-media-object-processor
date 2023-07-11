@@ -46,7 +46,7 @@ public class TokenAuthenticator {
       return getToken(tokenNode);
     } catch (InterruptedException | ExecutionException e) {
       Thread.currentThread().interrupt();
-      log.info("Unable to authenticate processing service with Keycloak. Verify client secret is up to-date");
+      log.error("Unable to authenticate processing service with Keycloak. Verify client secret is up to-date");
       throw new PidAuthenticationException(
           "Unable to authenticate processing service with Keycloak. More information: "
               + e.getMessage());
@@ -57,7 +57,7 @@ public class TokenAuthenticator {
     if (tokenNode != null && tokenNode.get("access_token") != null) {
       return tokenNode.get("access_token").asText();
     }
-    log.debug("Unexpected response from keycloak server. Unable to parse access_token");
+    log.error("Unexpected response from keycloak server. Unable to parse access_token");
     throw new PidAuthenticationException(
         "Unable to authenticate processing service with Keycloak. An error has occurred parsing keycloak response");
   }
