@@ -212,39 +212,8 @@ class HandleComponentTest {
     assertThrows(PidCreationException.class, () -> handleComponent.postHandle(requestBody));
   }
 
-  @Test
-  void testDataMissingSubjectIdentifier() throws Exception {
-    // Given
-    var requestBody = List.of(givenHandleRequest());
-    var responseBody = MAPPER.readTree("""
-        {
-          "data": [
-            {
-              "id": "20.5000.1025/V1Z-176-LL4",
-              "type": "digitalSpecimen",
-              "attributes": {
-                "fdoProfile": "https://hdl.handle.net/21.T11148/64396cf36b976ad08267",
-              "digitalObjectType": "https://hdl.handle.net/21.T11148/64396cf36b976ad08267",
-              "issuedForAgent": "https://ror.org/0566bfb96",
-              "mediaHash":"",
-              "mediaHashAlgorithm":"",
-              "subjectSpecimenHost":"",
-              "mediaUrl":"http://data.rbge.org.uk/living/19942272"
-              }
-            }
-          ]
-        }
-        """);
-
-    mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.CREATED.value())
-        .setBody(MAPPER.writeValueAsString(responseBody))
-        .addHeader("Content-Type", "application/json"));
-    // Then
-    assertThrows(PidCreationException.class, () -> handleComponent.postHandle(requestBody));
-  }
-
   @ParameterizedTest
-  @ValueSource(strings = {"subjectIdentifier", "mediaUrl"})
+  @ValueSource(strings = {"subjectLocalId", "mediaUrl"})
   void testMissingDigitalMediaKey(String attribute) throws Exception {
     // Given
     var requestBody = List.of(givenHandleRequest());
@@ -283,13 +252,12 @@ class HandleComponentTest {
               "mediaHashAlgorithm":"",
               "subjectSpecimenHost":"",
               "mediaUrl":"http://data.rbge.org.uk/living/19942272",
-              "subjectIdentifier":"20.5000.1025/460-A7R-QMJ"
+              "subjectLocalId":"20.5000.1025/460-A7R-QMJ"
               }
            }
         }
         """);
   }
-
 
   private JsonNode removeGivenAttribute(String targetAttribute) throws Exception {
     var response = (ObjectNode) givenHandleResponse();
@@ -310,7 +278,7 @@ class HandleComponentTest {
               "mediaHashAlgorithm":"",
               "subjectSpecimenHost":"",
               "mediaUrl":"http://data.rbge.org.uk/living/19942272",
-              "subjectIdentifier":"20.5000.1025/460-A7R-QMJ"
+              "subjectLocalId":"20.5000.1025/460-A7R-QMJ"
               }
            }]
         }
