@@ -2,7 +2,6 @@ package eu.dissco.core.digitalmediaobjectprocessor.web;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectKey;
-import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidAuthenticationException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -37,7 +36,7 @@ public class HandleComponent {
   private static final String UNEXPECTED_LOG = "Unexpected response from Handle API. Missing id and/or primarySpecimenObjectId. Response: {}";
 
   public Map<DigitalMediaObjectKey, String> postHandle(List<JsonNode> request)
-      throws PidAuthenticationException, PidCreationException {
+      throws PidCreationException {
     var requestBody = BodyInserters.fromValue(request);
     var response = sendRequest(HttpMethod.POST, requestBody, "batch");
     var responseJson = validateResponse(response);
@@ -45,14 +44,14 @@ public class HandleComponent {
   }
 
   public void rollbackHandleCreation(JsonNode request)
-      throws PidCreationException, PidAuthenticationException {
+      throws PidCreationException {
     var requestBody = BodyInserters.fromValue(request);
     var response = sendRequest(HttpMethod.DELETE, requestBody, "rollback");
     validateResponse(response);
   }
 
   public void rollbackHandleUpdate(List<JsonNode> request)
-      throws PidCreationException, PidAuthenticationException {
+      throws PidCreationException {
     var requestBody = BodyInserters.fromValue(request);
     var response = sendRequest(HttpMethod.DELETE, requestBody, "rollback/update");
     validateResponse(response);
@@ -60,7 +59,7 @@ public class HandleComponent {
 
   private <T> Mono<JsonNode> sendRequest(HttpMethod httpMethod,
       BodyInserter<T, ReactiveHttpOutputMessage> requestBody, String endpoint)
-      throws PidAuthenticationException {
+      throws PidCreationException {
     var token = "Bearer " + tokenAuthenticator.getToken();
     return handleClient
         .method(httpMethod)
@@ -71,7 +70,7 @@ public class HandleComponent {
         .retrieve()
         .onStatus(HttpStatus.UNAUTHORIZED::equals,
             r -> Mono.error(
-                new PidAuthenticationException("Unable to authenticate with Handle Service.")))
+                new PidCreationException("Unable to authenticate with Handle Service.")))
         .onStatus(HttpStatusCode::is4xxClientError, r -> Mono.error(new PidCreationException(
             "Unable to create PID. Response from Handle API: " + r.statusCode())))
         .bodyToMono(JsonNode.class).retryWhen(
@@ -80,7 +79,7 @@ public class HandleComponent {
                     "External Service failed to process after max retries")));
   }
 
-  private JsonNode validateResponse (Mono<JsonNode> response) throws PidCreationException, PidAuthenticationException {
+  private JsonNode validateResponse (Mono<JsonNode> response) throws PidCreationException {
     try {
       return response.toFuture().get();
     } catch (InterruptedException e) {
@@ -89,10 +88,10 @@ public class HandleComponent {
       throw new PidCreationException(
           "Interrupted execution: A connection error has occurred in creating a handle.");
     } catch (ExecutionException e) {
-      if (e.getCause().getClass().equals(PidAuthenticationException.class)) {
+      if (e.getCause().getClass().equals(PidCreationException.class)) {
         log.error(
             "Token obtained from Keycloak not accepted by Handle Server. Check Keycloak configuration.");
-        throw new PidAuthenticationException(e.getCause().getMessage());
+        throw new PidCreationException(e.getCause().getMessage());
       }
       throw new PidCreationException(e.getCause().getMessage());
     }

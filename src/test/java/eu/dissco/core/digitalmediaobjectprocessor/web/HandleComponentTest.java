@@ -1,8 +1,6 @@
 package eu.dissco.core.digitalmediaobjectprocessor.web;
 
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.DIGITAL_SPECIMEN_ID;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_1;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPidMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -10,10 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidAuthenticationException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -23,7 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -84,7 +79,7 @@ class HandleComponentTest {
         .addHeader("Content-Type", "application/json"));
 
     // Then
-    assertThrows(PidAuthenticationException.class, () -> handleComponent.postHandle(requestBody));
+    assertThrows(PidCreationException.class, () -> handleComponent.postHandle(requestBody));
   }
 
   @Test

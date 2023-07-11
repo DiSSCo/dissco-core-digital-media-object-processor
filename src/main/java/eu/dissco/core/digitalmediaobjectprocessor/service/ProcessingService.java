@@ -15,7 +15,6 @@ import eu.dissco.core.digitalmediaobjectprocessor.domain.ProcessResult;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaTuple;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
-import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidAuthenticationException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalMediaObjectRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalSpecimenRepository;
@@ -209,7 +208,7 @@ public class ProcessingService {
     var digitalMediaRecords = getDigitalMediaRecordMap(updatedDigitalSpecimenTuples);
     try {
       updateHandles(updatedDigitalSpecimenTuples);
-    } catch (PidAuthenticationException | PidCreationException e) {
+    } catch ( PidCreationException e) {
       log.error("unable to update handle records for given request", e);
       dlqBatchUpdate(digitalMediaRecords);
       return Set.of();
@@ -332,7 +331,7 @@ public class ProcessingService {
     var requestBody = fdoRecordService.buildRollbackUpdateRequest(rollbackToVersion);
     try {
       handleComponent.rollbackHandleUpdate(requestBody);
-    } catch (PidCreationException | PidAuthenticationException e) {
+    } catch (PidCreationException e) {
       var handles = recordsToRollback.stream().map(media -> media.digitalMediaObjectRecord().id())
           .toList();
       log.error(
@@ -345,7 +344,7 @@ public class ProcessingService {
     var requestBody = fdoRecordService.buildRollbackCreationRequest(recordsToRollback);
     try {
       handleComponent.rollbackHandleCreation(requestBody);
-    } catch (PidAuthenticationException | PidCreationException e) {
+    } catch ( PidCreationException e) {
       var ids = recordsToRollback.stream().map(DigitalMediaObjectRecord::id).toList();
       log.error("Unable to rollback handle creation. Manually delete the following handles: {} ",
           ids);
@@ -428,7 +427,7 @@ public class ProcessingService {
   }
 
   public void updateHandles(List<UpdatedDigitalMediaTuple> updatedDigitalMediaTuples)
-      throws PidAuthenticationException, PidCreationException {
+      throws PidCreationException {
     var handleUpdates = updatedDigitalMediaTuples.stream().filter(
             tuple -> fdoRecordService.handleNeedsUpdate(
                 tuple.currentDigitalMediaRecord().digitalMediaObject(),
@@ -457,7 +456,7 @@ public class ProcessingService {
     Map<DigitalMediaObjectKey, String> pidMap;
     try {
       pidMap = handleComponent.postHandle(requestBody);
-    } catch (PidCreationException | PidAuthenticationException e) {
+    } catch (PidCreationException e) {
       log.error("Unable to create pids for given request", e);
       dlqBatchCreate(newRecords);
       return Collections.emptySet();

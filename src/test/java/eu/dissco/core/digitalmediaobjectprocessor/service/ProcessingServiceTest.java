@@ -46,7 +46,6 @@ import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTrans
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransferEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
-import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidAuthenticationException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalMediaObjectRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalSpecimenRepository;
@@ -749,7 +748,7 @@ class ProcessingServiceTest {
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
     given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(List.of());
-    given(handleComponent.postHandle(anyList())).willThrow(PidAuthenticationException.class);
+    given(handleComponent.postHandle(anyList())).willThrow(PidCreationException.class);
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent()), false);
@@ -768,7 +767,7 @@ class ProcessingServiceTest {
         Map.of(PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID));
     given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(List.of());
-    given(handleComponent.postHandle(anyList())).willThrow(PidAuthenticationException.class);
+    given(handleComponent.postHandle(anyList())).willThrow(PidCreationException.class);
     doThrow(JsonProcessingException.class).when(publisherService)
         .deadLetterEvent(givenDigitalMediaObjectTransferEvent());
 

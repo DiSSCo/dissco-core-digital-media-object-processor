@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidAuthenticationException;
+import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import eu.dissco.core.digitalmediaobjectprocessor.properties.TokenProperties;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -87,7 +87,7 @@ class TokenAuthenticatorTest {
         .addHeader("Content-Type", "application/json"));
 
     // Then
-    assertThrows(PidAuthenticationException.class, () -> authenticator.getToken());
+    assertThrows(PidCreationException.class, () -> authenticator.getToken());
   }
 
   @Test
@@ -124,7 +124,7 @@ class TokenAuthenticatorTest {
     mockTokenServer.enqueue(new MockResponse().setResponseCode(501));
 
     // Then
-    assertThrows(PidAuthenticationException.class, () -> authenticator.getToken());
+    assertThrows(PidCreationException.class, () -> authenticator.getToken());
     assertThat(mockTokenServer.getRequestCount() - requestCount).isEqualTo(4);
   }
 
@@ -136,7 +136,7 @@ class TokenAuthenticatorTest {
         .addHeader("Content-Type", "application/json"));
 
     // When
-    assertThrows(PidAuthenticationException.class, () -> authenticator.getToken());
+    assertThrows(PidCreationException.class, () -> authenticator.getToken());
   }
 
   @Test
@@ -148,7 +148,7 @@ class TokenAuthenticatorTest {
         .setBody("{}"));
 
     // When
-    assertThrows(PidAuthenticationException.class, () -> authenticator.getToken());
+    assertThrows(PidCreationException.class, () -> authenticator.getToken());
   }
 
   private static JsonNode givenTokenResponse() throws Exception {
