@@ -328,7 +328,7 @@ public class ProcessingService {
     var rollbackToVersion = recordsToRollback.stream()
         .map(UpdatedDigitalMediaRecord::currentDigitalMediaRecord).toList();
 
-    var requestBody = fdoRecordService.buildRollbackUpdateRequest(rollbackToVersion);
+    var requestBody = fdoRecordService.buildPatchDeleteRequest(rollbackToVersion);
     try {
       handleComponent.rollbackHandleUpdate(requestBody);
     } catch (PidCreationException e) {
@@ -435,7 +435,7 @@ public class ProcessingService {
         .map(UpdatedDigitalMediaRecord::digitalMediaObjectRecord)
         .toList();
     if (!handleUpdates.isEmpty()) {
-      var request = fdoRecordService.buildPatchHandleRequest(handleUpdates);
+      var request = fdoRecordService.buildPatchDeleteRequest(handleUpdates);
       handleComponent.updateHandle(request);
     }
   }

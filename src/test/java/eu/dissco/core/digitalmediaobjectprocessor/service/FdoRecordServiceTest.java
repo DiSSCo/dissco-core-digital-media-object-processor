@@ -4,13 +4,10 @@ import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.CREATED;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.DIGITAL_SPECIMEN_ID;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.DIGITAL_SPECIMEN_ID_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.FORMAT;
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.FORMAT_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_1;
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.PHYSICAL_SPECIMEN_ID;
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.PHYSICAL_SPECIMEN_ID_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObject;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecord;
@@ -67,7 +64,7 @@ class FdoRecordServiceTest {
 
     var expected = MAPPER.readTree(expectedString);
     // When
-    var result = fdoRecordService.buildRollbackUpdateRequest(
+    var result = fdoRecordService.buildPatchDeleteRequest(
         List.of(givenDigitalMediaObjectRecord()));
 
     // Then
@@ -81,21 +78,6 @@ class FdoRecordServiceTest {
 
     // When
     var result = fdoRecordService.buildPostHandleRequest(List.of(givenDigitalMediaObject()));
-
-    // Then
-    assertThat(result).isEqualTo(expectedResponse);
-  }
-
-  @Test
-  void testBuildPatchHandleRequest() throws Exception {
-    // Given
-    var requestBody = (ObjectNode) expectedPostRequest();
-    var targetRecord = givenDigitalMediaObjectRecord();
-    ((ObjectNode) requestBody.get("data")).put("id", targetRecord.id());
-    var expectedResponse = List.of(requestBody);
-
-    // When
-    var result = fdoRecordService.buildPatchHandleRequest(List.of(targetRecord));
 
     // Then
     assertThat(result).isEqualTo(expectedResponse);

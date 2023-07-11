@@ -10,7 +10,6 @@ import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttrib
 import static eu.dissco.core.digitalmediaobjectprocessor.service.ServiceUtils.getMediaUrl;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
@@ -31,16 +30,6 @@ public class FdoRecordService {
     List<JsonNode> requestBody = new ArrayList<>();
     for (var mediaObject : mediaObjects) {
       requestBody.add(buildSingleHandleRequest(mediaObject));
-    }
-    return requestBody;
-  }
-
-  public List<JsonNode> buildPatchHandleRequest(List<DigitalMediaObjectRecord> mediaRecords){
-    List<JsonNode> requestBody = new ArrayList<>();
-    for(var mediaRecord: mediaRecords){
-      var bodyNode = buildSingleHandleRequest(mediaRecord.digitalMediaObject());
-      ((ObjectNode)bodyNode.get("data")).put("id", mediaRecord.id());
-      requestBody.add(bodyNode);
     }
     return requestBody;
   }
@@ -77,16 +66,16 @@ public class FdoRecordService {
     return mapper.createObjectNode().set("data", dataArray);
   }
 
-  public List<JsonNode> buildRollbackUpdateRequest(
+  public List<JsonNode> buildPatchDeleteRequest(
       List<DigitalMediaObjectRecord> digitalSpecimenRecords) {
     List<JsonNode> requestBody = new ArrayList<>();
     for (var media : digitalSpecimenRecords) {
-      requestBody.add(buildSingleRollbackUpdateRequest(media));
+      requestBody.add(buildSinglePatchDeleteRequest(media));
     }
     return requestBody;
   }
 
-  private JsonNode buildSingleRollbackUpdateRequest(DigitalMediaObjectRecord mediaObject) {
+  private JsonNode buildSinglePatchDeleteRequest(DigitalMediaObjectRecord mediaObject) {
     var request = mapper.createObjectNode();
     var data = mapper.createObjectNode();
     var attributes = generateAttributes(mediaObject.digitalMediaObject());

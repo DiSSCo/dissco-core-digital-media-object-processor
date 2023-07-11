@@ -40,7 +40,6 @@ import co.elastic.clients.elasticsearch._types.ErrorCause;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectKey;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransfer;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransferEvent;
@@ -167,7 +166,7 @@ class ProcessingServiceTest {
     var result = service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent()), false);
 
     // Then
-    then(fdoRecordService).should().buildPatchHandleRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
+    then(fdoRecordService).should().buildPatchDeleteRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
     then(handleComponent).should().updateHandle(any());
     then(repository).should().createDigitalMediaRecord(expected);
     then(publisherService).should()
@@ -191,7 +190,7 @@ class ProcessingServiceTest {
     var result = service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent()), false);
 
     // Then
-    then(fdoRecordService).should().buildPatchHandleRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
+    then(fdoRecordService).should().buildPatchDeleteRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
     then(repository).shouldHaveNoMoreInteractions();
     then(publisherService).should().deadLetterEvent(givenDlqTransferEventUpdate());
     assertThat(result).isEmpty();
@@ -588,7 +587,7 @@ class ProcessingServiceTest {
 
     // Then
     then(handleComponent).should().updateHandle(any());
-    then(fdoRecordService).should().buildRollbackUpdateRequest(List.of(
+    then(fdoRecordService).should().buildPatchDeleteRequest(List.of(
         givenDigitalMediaObjectRecordPhysical(HANDLE_2, PHYSICAL_SPECIMEN_ID_2,
             DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2, "Another Type")));
     then(handleComponent).should().rollbackHandleUpdate(any());
@@ -640,7 +639,7 @@ class ProcessingServiceTest {
 
     // Then
     then(handleComponent).should().updateHandle(any());
-    then(fdoRecordService).should().buildRollbackUpdateRequest(List.of(secondRecord, thirdRecord));
+    then(fdoRecordService).should().buildPatchDeleteRequest(List.of(secondRecord, thirdRecord));
     then(handleComponent).should().rollbackHandleUpdate(any());
     then(repository).should(times(3)).createDigitalMediaRecord(anyList());
     then(publisherService).should().deadLetterEvent(secondEvent);
@@ -707,7 +706,7 @@ class ProcessingServiceTest {
 
     // Then
     then(fdoRecordService).should()
-        .buildRollbackUpdateRequest(List.of(givenDigitalMediaObjectRecord(FORMAT_2)));
+        .buildPatchDeleteRequest(List.of(givenDigitalMediaObjectRecord(FORMAT_2)));
     then(handleComponent).should().rollbackHandleUpdate(any());
     then(repository).should(times(2)).createDigitalMediaRecord(anyList());
     then(elasticRepository).should().rollbackVersion(givenDigitalMediaObjectRecord(FORMAT_2));
@@ -732,7 +731,7 @@ class ProcessingServiceTest {
     var a = HANDLE;
 
     // Then
-    then(fdoRecordService).should().buildRollbackUpdateRequest(List.of(
+    then(fdoRecordService).should().buildPatchDeleteRequest(List.of(
         givenDigitalMediaObjectRecord(FORMAT_2)));
     then(repository).should(times(2)).createDigitalMediaRecord(anyList());
     then(publisherService).should().deadLetterEvent(givenDigitalMediaObjectTransferEvent());
