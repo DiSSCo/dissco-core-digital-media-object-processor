@@ -110,7 +110,7 @@ public class HandleComponent {
       for (var node : dataNode) {
         var handle = node.get("id");
         var primarySpecimenObjectId = node.get("attributes")
-            .get("subjectIdentifier").asText();
+            .get("subjectLocalId").asText();
         var mediaUrl = node.get("attributes").get("mediaUrl").asText();
         DigitalMediaObjectKey key = new DigitalMediaObjectKey(primarySpecimenObjectId, mediaUrl);
         if (handle == null || primarySpecimenObjectId == null || mediaUrl == null) {
