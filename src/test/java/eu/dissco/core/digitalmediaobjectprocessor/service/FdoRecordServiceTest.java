@@ -91,7 +91,7 @@ class FdoRecordServiceTest {
     // Given
     var requestBody = (ObjectNode) expectedPostRequest();
     var targetRecord = givenDigitalMediaObjectRecord();
-    requestBody.put("id", targetRecord.id());
+    ((ObjectNode) requestBody.get("data")).put("id", targetRecord.id());
     var expectedResponse = List.of(requestBody);
 
     // When

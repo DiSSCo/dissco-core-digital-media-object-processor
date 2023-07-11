@@ -38,8 +38,8 @@ public class FdoRecordService {
   public List<JsonNode> buildPatchHandleRequest(List<DigitalMediaObjectRecord> mediaRecords){
     List<JsonNode> requestBody = new ArrayList<>();
     for(var mediaRecord: mediaRecords){
-      var bodyNode = (ObjectNode) buildSingleHandleRequest(mediaRecord.digitalMediaObject());
-      bodyNode.put("id", mediaRecord.id());
+      var bodyNode = buildSingleHandleRequest(mediaRecord.digitalMediaObject());
+      ((ObjectNode)bodyNode.get("data")).put("id", mediaRecord.id());
       requestBody.add(bodyNode);
     }
     return requestBody;
