@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -80,6 +81,21 @@ class FdoRecordServiceTest {
 
     // When
     var result = fdoRecordService.buildPostHandleRequest(List.of(givenDigitalMediaObject()));
+
+    // Then
+    assertThat(result).isEqualTo(expectedResponse);
+  }
+
+  @Test
+  void testBuildPatchHandleRequest() throws Exception {
+    // Given
+    var requestBody = (ObjectNode) expectedPostRequest();
+    var targetRecord = givenDigitalMediaObjectRecord();
+    requestBody.put("id", targetRecord.id());
+    var expectedResponse = List.of(requestBody);
+
+    // When
+    var result = fdoRecordService.buildPatchHandleRequest(List.of(targetRecord));
 
     // Then
     assertThat(result).isEqualTo(expectedResponse);

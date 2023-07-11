@@ -145,6 +145,17 @@ class HandleComponentTest {
   }
 
   @Test
+  void testUpdateHandle() throws Exception {
+    // Given
+    var requestBody = givenHandleRequest();
+    mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.OK.value())
+        .addHeader("Content-Type", "application/json"));
+
+    // Then
+    assertDoesNotThrow(() -> handleComponent.updateHandle(List.of(requestBody)));
+  }
+
+  @Test
   void testInterruptedException() throws Exception {
     // Given
     var requestBody = givenHandleRequest();
