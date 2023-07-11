@@ -51,5 +51,20 @@ spec:
               value: digital-media-object
             - name: spring.security.oauth2.resourceserver.jwt.issuer-uri
               value: https://login-demo.dissco.eu/auth/realms/dissco
+            - name: token.id
+              value: demo-api-client
+            - name: token.grantType
+              value: client_credentials
+            - name: token.tokenEndpoint
+              value: https://login-demo.dissco.eu/auth/realms/dissco/protocol/openid-connect/token
+            - name: token.secret
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-client
+                  key: keycloak-secret
+            - name: endpoint.handle-endpoint
+              value: https://sandbox.dissco.tech/handle-manager/api/v1/pids/
+            - name: endpoint.token-endpoint
+              value: https://login-demo.dissco.eu/auth/realms/dissco/protocol/openid-connect/token
           securityContext:
             runAsNonRoot: true
