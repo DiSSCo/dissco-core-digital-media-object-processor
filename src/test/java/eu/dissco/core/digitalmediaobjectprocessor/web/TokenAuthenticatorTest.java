@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import eu.dissco.core.digitalmediaobjectprocessor.properties.TokenProperties;
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +25,6 @@ import okhttp3.mockwebserver.MockWebServer;
 
 @ExtendWith(MockitoExtension.class)
 class TokenAuthenticatorTest {
-
   private static MockWebServer mockTokenServer;
 
   @Mock
@@ -37,8 +35,6 @@ class TokenAuthenticatorTest {
     add("client_secret", "secret");
   }};
 
-  @Mock
-  private CompletableFuture<JsonNode> jsonFuture;
   private TokenAuthenticator authenticator;
 
   @BeforeAll

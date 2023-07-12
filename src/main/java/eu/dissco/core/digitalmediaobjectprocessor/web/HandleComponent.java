@@ -94,11 +94,7 @@ public class HandleComponent {
       throw new PidCreationException(
           "Interrupted execution: A connection error has occurred in creating a handle.");
     } catch (ExecutionException e) {
-      if (e.getCause().getClass().equals(PidCreationException.class)) {
-        log.error(
-            "Token obtained from Keycloak not accepted by Handle Server. Check Keycloak configuration.");
-        throw new PidCreationException(e.getCause().getMessage());
-      }
+      log.error("PID creation failed.", e.getCause());
       throw new PidCreationException(e.getCause().getMessage());
     }
   }
