@@ -2,6 +2,7 @@ package eu.dissco.core.digitalmediaobjectprocessor.web;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectKey;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -111,7 +112,7 @@ public class HandleComponent {
       for (var node : dataNode) {
         var handle = node.get("id");
         var primarySpecimenObjectId = node.get("attributes")
-            .get("subjectLocalId").asText();
+            .get(FdoProfileAttributes.SUBJECT_ID.getAttribute()).asText();
         var mediaUrl = node.get("attributes").get("mediaUrl").asText();
         DigitalMediaObjectKey key = new DigitalMediaObjectKey(primarySpecimenObjectId, mediaUrl);
         if (handle == null || primarySpecimenObjectId == null || mediaUrl == null) {

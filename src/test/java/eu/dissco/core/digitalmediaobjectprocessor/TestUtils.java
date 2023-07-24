@@ -1,5 +1,12 @@
 package eu.dissco.core.digitalmediaobjectprocessor;
 
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.DIGITAL_OBJECT_TYPE;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.FDO_PROFILE;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_URL;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.SUBJECT_ID;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -198,6 +205,27 @@ public class TestUtils {
             }
             """, JsonNode.class
     );
+  }
+
+  public static JsonNode givenPostHandleRequest() {
+    var result = MAPPER.createObjectNode();
+    var data = MAPPER.createObjectNode();
+    var attributes = givenPostAttributes();
+    data.put("type", "mediaObject");
+    data.set("attributes", attributes);
+    result.set("data", data);
+    return result;
+  }
+
+  public static JsonNode givenPostAttributes() {
+    var attributes = MAPPER.createObjectNode();
+    attributes.put(FDO_PROFILE.getAttribute(), FDO_PROFILE.getDefaultValue());
+    attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
+    attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
+    attributes.put(REFERENT_NAME.getAttribute(), TYPE + " for " + DIGITAL_SPECIMEN_ID);
+    attributes.put(MEDIA_URL.getAttribute(), MEDIA_URL_1);
+    attributes.put(SUBJECT_ID.getAttribute(), DIGITAL_SPECIMEN_ID);
+    return attributes;
   }
 
 }

@@ -9,7 +9,7 @@ public enum FdoProfileAttributes {
   ISSUED_FOR_AGENT("issuedForAgent", "https://ror.org/0566bfb96"),
   REFERENT_NAME("referentName", null),
   MEDIA_URL("mediaUrl", null),
-  SUBJECT_ID("subjectIdentifier", null);
+  SUBJECT_ID("subjectLocalIdentifier", null);
 
   private final String attribute;
   private final String defaultValue;

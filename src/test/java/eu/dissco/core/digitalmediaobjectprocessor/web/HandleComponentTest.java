@@ -2,6 +2,7 @@ package eu.dissco.core.digitalmediaobjectprocessor.web;
 
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPidMap;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPostHandleRequest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -56,7 +57,7 @@ class HandleComponentTest {
   @Test
   void testPostHandle() throws Exception {
     // Given
-    var requestBody = List.of(givenHandleRequest());
+    var requestBody = List.of(givenPostHandleRequest());
     var responseBody = givenHandleResponse();
     var expected = givenPidMap(1);
     mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.CREATED.value())
@@ -71,9 +72,9 @@ class HandleComponentTest {
   }
 
   @Test
-  void testUnauthorized() throws Exception {
+  void testUnauthorized() {
     // Given
-    var requestBody = List.of(givenHandleRequest());
+    var requestBody = List.of(givenPostHandleRequest());
 
     mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.UNAUTHORIZED.value())
         .addHeader("Content-Type", "application/json"));
@@ -83,9 +84,9 @@ class HandleComponentTest {
   }
 
   @Test
-  void testBadRequest() throws Exception {
+  void testBadRequest() {
     // Given
-    var requestBody = List.of(givenHandleRequest());
+    var requestBody = List.of(givenPostHandleRequest());
 
     mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.BAD_REQUEST.value())
         .addHeader("Content-Type", "application/json"));
@@ -97,7 +98,7 @@ class HandleComponentTest {
   @Test
   void testRetriesSuccess() throws Exception {
     // Given
-    var requestBody = List.of(givenHandleRequest());
+    var requestBody = List.of(givenPostHandleRequest());
     var responseBody = givenHandleResponse();
     var expected = givenPidMap(1);
     int requestCount = mockHandleServer.getRequestCount();
@@ -134,9 +135,9 @@ class HandleComponentTest {
   }
 
   @Test
-  void testRollbackHandleUpdate() throws Exception {
+  void testRollbackHandleUpdate() {
     // Given
-    var requestBody = givenHandleRequest();
+    var requestBody = givenPostHandleRequest();
     mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.OK.value())
         .addHeader("Content-Type", "application/json"));
 
@@ -145,9 +146,9 @@ class HandleComponentTest {
   }
 
   @Test
-  void testUpdateHandle() throws Exception {
+  void testUpdateHandle() {
     // Given
-    var requestBody = givenHandleRequest();
+    var requestBody = givenPostHandleRequest();
     mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.OK.value())
         .addHeader("Content-Type", "application/json"));
 
@@ -158,7 +159,7 @@ class HandleComponentTest {
   @Test
   void testInterruptedException() throws Exception {
     // Given
-    var requestBody = givenHandleRequest();
+    var requestBody = givenPostHandleRequest();
     var responseBody = givenHandleResponse();
 
     mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.OK.value())
@@ -177,9 +178,9 @@ class HandleComponentTest {
   }
 
   @Test
-  void testRetriesFail() throws Exception {
+  void testRetriesFail() {
     // Given
-    var requestBody = List.of(givenHandleRequest());
+    var requestBody = List.of(givenPostHandleRequest());
     int requestCount = mockHandleServer.getRequestCount();
 
     mockHandleServer.enqueue(new MockResponse().setResponseCode(501));
@@ -195,7 +196,7 @@ class HandleComponentTest {
   @Test
   void testDataNodeNotArray() throws Exception {
     // Given
-    var requestBody = List.of(givenHandleRequest());
+    var requestBody = List.of(givenPostHandleRequest());
     var responseBody = MAPPER.createObjectNode();
     responseBody.put("data", "val");
     mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.CREATED.value())
@@ -208,8 +209,8 @@ class HandleComponentTest {
   @Test
   void testDataMissingId() throws Exception {
     // Given
-    var requestBody = List.of(givenHandleRequest());
-    var responseBody = givenHandleRequest();
+    var requestBody = List.of(givenPostHandleRequest());
+    var responseBody = givenPostHandleRequest();
 
     mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.CREATED.value())
         .setBody(MAPPER.writeValueAsString(responseBody))
@@ -222,7 +223,7 @@ class HandleComponentTest {
   @ValueSource(strings = {"subjectLocalId", "mediaUrl"})
   void testMissingDigitalMediaKey(String attribute) throws Exception {
     // Given
-    var requestBody = List.of(givenHandleRequest());
+    var requestBody = List.of(givenPostHandleRequest());
     var responseBody = removeGivenAttribute(attribute);
     mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.CREATED.value())
         .setBody(MAPPER.writeValueAsString(responseBody))
@@ -235,7 +236,7 @@ class HandleComponentTest {
   @Test
   void testEmptyResponse() throws Exception {
     // Given
-    var requestBody = List.of(givenHandleRequest());
+    var requestBody = List.of(givenPostHandleRequest());
     var responseBody = MAPPER.createObjectNode();
 
     mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.CREATED.value())
@@ -245,32 +246,12 @@ class HandleComponentTest {
     assertThrows(PidCreationException.class, () -> handleComponent.postHandle(requestBody));
   }
 
-  private JsonNode givenHandleRequest() throws Exception{
-    return MAPPER.readTree("""
-        {
-        "data": {
-            "type": "mediaObject",
-            "attributes": {
-              "fdoProfile": "https://hdl.handle.net/21.T11148/64396cf36b976ad08267",
-              "digitalObjectType": "https://hdl.handle.net/21.T11148/64396cf36b976ad08267",
-              "issuedForAgent": "https://ror.org/0566bfb96",
-              "mediaHash":"",
-              "mediaHashAlgorithm":"",
-              "subjectSpecimenHost":"",
-              "mediaUrl":"http://data.rbge.org.uk/living/19942272",
-              "subjectLocalId":"20.5000.1025/460-A7R-QMJ"
-              }
-           }
-        }
-        """);
-  }
-
   private JsonNode removeGivenAttribute(String targetAttribute) throws Exception {
     var response = (ObjectNode) givenHandleResponse();
     return ((ObjectNode) response.get("data").get(0).get("attributes")).remove(targetAttribute);
   }
 
-  private JsonNode givenHandleResponse() throws Exception{
+  private JsonNode givenHandleResponse() throws Exception {
     return MAPPER.readTree("""
         {
         "data": [{
@@ -280,16 +261,12 @@ class HandleComponentTest {
               "fdoProfile": "https://hdl.handle.net/21.T11148/64396cf36b976ad08267",
               "digitalObjectType": "https://hdl.handle.net/21.T11148/64396cf36b976ad08267",
               "issuedForAgent": "https://ror.org/0566bfb96",
-              "mediaHash":"",
-              "mediaHashAlgorithm":"",
-              "subjectSpecimenHost":"",
               "mediaUrl":"http://data.rbge.org.uk/living/19942272",
-              "subjectLocalId":"20.5000.1025/460-A7R-QMJ"
+              "subjectLocalIdentifier":"20.5000.1025/460-A7R-QMJ"
               }
            }]
         }
         """);
   }
-
 
 }

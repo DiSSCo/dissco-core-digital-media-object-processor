@@ -1,7 +1,6 @@
 package eu.dissco.core.digitalmediaobjectprocessor.service;
 
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.CREATED;
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.DIGITAL_SPECIMEN_ID;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.DIGITAL_SPECIMEN_ID_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.FORMAT;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE;
@@ -11,17 +10,12 @@ import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.PHYSICAL_SPEC
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObject;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecord;
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.DIGITAL_OBJECT_TYPE;
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.FDO_PROFILE;
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_URL;
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.SUBJECT_ID;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPostAttributes;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPostHandleRequest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -74,7 +68,7 @@ class FdoRecordServiceTest {
   @Test
   void testBuildPostHandleRequest() throws Exception {
     // Given
-    var expectedResponse = List.of(expectedPostRequest());
+    var expectedResponse = List.of(givenPostHandleRequest());
 
     // When
     var result = fdoRecordService.buildPostHandleRequest(List.of(givenDigitalMediaObject()));
@@ -119,30 +113,6 @@ class FdoRecordServiceTest {
           ]
         }
         """);
-  }
-
-  private static JsonNode expectedPostRequest() {
-    var result = MAPPER.createObjectNode();
-    var data = MAPPER.createObjectNode();
-    var attributes = givenPostAttributes();
-    data.put("type", "mediaObject");
-    data.set("attributes", attributes);
-    result.set("data", data);
-    return result;
-  }
-
-  private static JsonNode givenPostAttributes() {
-    var attributes = MAPPER.createObjectNode();
-    attributes.put(FDO_PROFILE.getAttribute(), FDO_PROFILE.getDefaultValue());
-    attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
-    attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
-    attributes.put(REFERENT_NAME.getAttribute(), TYPE + " for " + DIGITAL_SPECIMEN_ID);
-    attributes.put("mediaHash", "");
-    attributes.put("mediaHashAlgorithm", "");
-    attributes.put("subjectSpecimenHost", "");
-    attributes.put(MEDIA_URL.getAttribute(), MEDIA_URL_1);
-    attributes.put(SUBJECT_ID.getAttribute(), DIGITAL_SPECIMEN_ID);
-    return attributes;
   }
 
 

@@ -358,7 +358,6 @@ public class ProcessingService {
       var successfullyPublished = publishUpdateEvent(digitalMediaRecord);
       if (!successfullyPublished) {
         failedRecords.add(digitalMediaRecord);
-
       }
     }
     if (!failedRecords.isEmpty()) {

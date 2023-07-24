@@ -50,9 +50,6 @@ public class FdoRecordService {
     attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
     attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
     attributes.put(REFERENT_NAME.getAttribute(),mediaObject.type() + " for " + mediaObject.digitalSpecimenId());
-    attributes.put("mediaHash", "");
-    attributes.put("mediaHashAlgorithm", "");
-    attributes.put("subjectSpecimenHost", "");
     attributes.put(MEDIA_URL.getAttribute(), getMediaUrl(mediaObject.attributes()));
     attributes.put(SUBJECT_ID.getAttribute(), mediaObject.digitalSpecimenId());
     return attributes;
