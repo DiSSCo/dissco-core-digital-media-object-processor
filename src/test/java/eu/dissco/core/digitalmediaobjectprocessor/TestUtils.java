@@ -1,5 +1,12 @@
 package eu.dissco.core.digitalmediaobjectprocessor;
 
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.DIGITAL_OBJECT_TYPE;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.FDO_PROFILE;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_URL;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.SUBJECT_ID;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,6 +18,7 @@ import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTrans
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransferEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaTuple;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 
 public class TestUtils {
@@ -31,7 +39,7 @@ public class TestUtils {
   public static final String DIGITAL_SPECIMEN_ID = "20.5000.1025/460-A7R-QMJ";
   public static final String DIGITAL_SPECIMEN_ID_2 = "20.5000.1025/460-A7R-XXX";
   public static final String DIGITAL_SPECIMEN_ID_3 = "20.5000.1025/460-A7R-YYY";
-  public static final String MEDIA_URL = "http://data.rbge.org.uk/living/19942272";
+  public static final String MEDIA_URL_1 = "http://data.rbge.org.uk/living/19942272";
   public static final String MEDIA_URL_2 = "http://data.rbge.org.uk/living/1994227X";
   public static final String MEDIA_URL_3 = "http://data.rbge.org.uk/living/1994227Y";
   public static final String FORMAT = "image/jpeg";
@@ -39,7 +47,7 @@ public class TestUtils {
 
   public static DigitalMediaObjectTransferEvent givenMediaEvent() throws JsonProcessingException {
     return new DigitalMediaObjectTransferEvent(
-        List.of("OCR"), givenDigitalMediaTransfer(PHYSICAL_SPECIMEN_ID, MEDIA_URL)
+        List.of("OCR"), givenDigitalMediaTransfer(PHYSICAL_SPECIMEN_ID, MEDIA_URL_1)
     );
   }
 
@@ -56,7 +64,7 @@ public class TestUtils {
 
   public static DigitalMediaObjectTransferEvent givenDigitalMediaObjectTransferEvent()
       throws JsonProcessingException {
-    return givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID, MEDIA_URL);
+    return givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID, MEDIA_URL_1);
   }
 
   public static DigitalMediaObjectTransferEvent givenDigitalMediaObjectTransferEvent(
@@ -68,10 +76,24 @@ public class TestUtils {
     );
   }
 
+  public static HashMap<DigitalMediaObjectKey, String> givenPidMap(int size){
+    HashMap<DigitalMediaObjectKey, String> pidMap = new HashMap<>();
+    pidMap.put(givenDigitalMediaKey(), HANDLE);
+    size = size-1;
+    if (size > 0){
+      pidMap.put(new DigitalMediaObjectKey(DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2), HANDLE_2);
+    }
+    size = size-1;
+    if (size > 0){
+      pidMap.put(new DigitalMediaObjectKey(DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3), HANDLE_3);
+    }
+    return pidMap;
+  }
+
   public static DigitalMediaObjectKey givenDigitalMediaKey() {
     return new DigitalMediaObjectKey(
         DIGITAL_SPECIMEN_ID,
-        MEDIA_URL
+        MEDIA_URL_1
     );
   }
 
@@ -98,7 +120,7 @@ public class TestUtils {
 
   public static DigitalMediaObjectRecord givenDigitalMediaObjectRecord()
       throws JsonProcessingException {
-    return givenDigitalMediaObjectRecord(HANDLE, DIGITAL_SPECIMEN_ID, MEDIA_URL, FORMAT);
+    return givenDigitalMediaObjectRecord(HANDLE, DIGITAL_SPECIMEN_ID, MEDIA_URL_1, FORMAT);
   }
 
   public static DigitalMediaObjectRecord givenDigitalMediaObjectRecordPhysical(
@@ -114,12 +136,12 @@ public class TestUtils {
 
   public static DigitalMediaObjectRecord givenDigitalMediaObjectRecord(String format)
       throws JsonProcessingException {
-    return givenDigitalMediaObjectRecord(HANDLE, DIGITAL_SPECIMEN_ID, MEDIA_URL, format);
+    return givenDigitalMediaObjectRecord(HANDLE, DIGITAL_SPECIMEN_ID, MEDIA_URL_1, format);
   }
 
   public static DigitalMediaObjectRecord givenDigitalMediaObjectRecord(String handle, String format)
       throws JsonProcessingException {
-    return givenDigitalMediaObjectRecord(handle, DIGITAL_SPECIMEN_ID, MEDIA_URL, format);
+    return givenDigitalMediaObjectRecord(handle, DIGITAL_SPECIMEN_ID, MEDIA_URL_1, format);
   }
 
   public static DigitalMediaObjectRecord givenDigitalMediaObjectRecord(String pid,
@@ -140,7 +162,7 @@ public class TestUtils {
   }
 
   public static DigitalMediaObject givenDigitalMediaObject() throws JsonProcessingException {
-    return givenDigitalMediaObject(DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, FORMAT, MEDIA_URL,
+    return givenDigitalMediaObject(DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1,
         TYPE);
   }
 
@@ -183,6 +205,27 @@ public class TestUtils {
             }
             """, JsonNode.class
     );
+  }
+
+  public static JsonNode givenPostHandleRequest() {
+    var result = MAPPER.createObjectNode();
+    var data = MAPPER.createObjectNode();
+    var attributes = givenPostAttributes();
+    data.put("type", "mediaObject");
+    data.set("attributes", attributes);
+    result.set("data", data);
+    return result;
+  }
+
+  public static JsonNode givenPostAttributes() {
+    var attributes = MAPPER.createObjectNode();
+    attributes.put(FDO_PROFILE.getAttribute(), FDO_PROFILE.getDefaultValue());
+    attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
+    attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
+    attributes.put(REFERENT_NAME.getAttribute(), TYPE + " for " + DIGITAL_SPECIMEN_ID);
+    attributes.put(MEDIA_URL.getAttribute(), MEDIA_URL_1);
+    attributes.put(SUBJECT_ID.getAttribute(), DIGITAL_SPECIMEN_ID);
+    return attributes;
   }
 
 }

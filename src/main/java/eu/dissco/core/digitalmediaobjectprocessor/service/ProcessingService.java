@@ -1,10 +1,10 @@
 package eu.dissco.core.digitalmediaobjectprocessor.service;
 
+import static eu.dissco.core.digitalmediaobjectprocessor.service.ServiceUtils.getMediaUrl;
 import static java.util.stream.Collectors.toMap;
 
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectKey;
@@ -15,9 +15,11 @@ import eu.dissco.core.digitalmediaobjectprocessor.domain.ProcessResult;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaTuple;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
+import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalMediaObjectRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalSpecimenRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.ElasticSearchRepository;
+import eu.dissco.core.digitalmediaobjectprocessor.web.HandleComponent;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -29,7 +31,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.xml.transform.TransformerException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,16 +42,10 @@ public class ProcessingService {
 
   private final DigitalMediaObjectRepository repository;
   private final DigitalSpecimenRepository digitalSpecimenRepository;
-  private final HandleService handleService;
+  private final FdoRecordService fdoRecordService;
+  private final HandleComponent handleComponent;
   private final ElasticSearchRepository elasticRepository;
   private final KafkaPublisherService kafkaService;
-
-  private static String getMediaUrl(JsonNode attributes) {
-    if (attributes.get("ac:accessURI") != null){
-      return attributes.get("ac:accessURI").asText();
-    }
-    return null;
-  }
 
   public List<DigitalMediaObjectRecord> handleMessage(List<DigitalMediaObjectTransferEvent> events,
       boolean webProfile) throws DigitalSpecimenNotFoundException {
@@ -65,7 +60,7 @@ public class ProcessingService {
       results.addAll(persistNewDigitalMediaObject(processResult.newMediaObjects()));
     }
     if (!processResult.changedMediaObjects().isEmpty()) {
-      results.addAll(updateExistingDigitalSpecimen(processResult.changedMediaObjects()));
+      results.addAll(updateExistingDigitalMedia(processResult.changedMediaObjects()));
     }
     return results;
   }
@@ -126,7 +121,8 @@ public class ProcessingService {
               currentDigitalMediaObject.id());
           equalMediaObjects.add(currentDigitalMediaObject);
         } else {
-          log.debug("Digital Media Object with id: {} has received an update", currentDigitalMediaObject.id());
+          log.debug("Digital Media Object with id: {} has received an update",
+              currentDigitalMediaObject.id());
           changedMediaObjects.add(
               new UpdatedDigitalMediaTuple(currentDigitalMediaObject, mediaObject));
         }
@@ -207,11 +203,17 @@ public class ProcessingService {
     }
   }
 
-  private Set<DigitalMediaObjectRecord> updateExistingDigitalSpecimen(
+  private Set<DigitalMediaObjectRecord> updateExistingDigitalMedia(
       List<UpdatedDigitalMediaTuple> updatedDigitalSpecimenTuples) {
-    updateHandles(updatedDigitalSpecimenTuples);
-
     var digitalMediaRecords = getDigitalMediaRecordMap(updatedDigitalSpecimenTuples);
+    try {
+      updateHandles(digitalMediaRecords);
+    } catch ( PidCreationException e) {
+      log.error("unable to update handle records for given request", e);
+      dlqBatchUpdate(digitalMediaRecords);
+      return Set.of();
+    }
+
     log.info("Persisting to db");
     repository.createDigitalMediaRecord(
         digitalMediaRecords.stream().map(UpdatedDigitalMediaRecord::digitalMediaObjectRecord)
@@ -234,9 +236,51 @@ public class ProcessingService {
     } catch (IOException e) {
       log.error("Rolling back, failed to insert records in elastic", e);
       digitalMediaRecords.forEach(
-          updatedDigitalMediaObjectRecord -> rollbackUpdatedDigitalMedia(updatedDigitalMediaObjectRecord,
+          updatedDigitalMediaObjectRecord -> rollbackUpdatedDigitalMedia(
+              updatedDigitalMediaObjectRecord,
               false));
+      filterUpdatesAndRollbackHandles(new ArrayList<>(digitalMediaRecords));
       return Set.of();
+    }
+  }
+
+  private void dlqBatchUpdate(Set<UpdatedDigitalMediaRecord> recordsToDlq) {
+    for (var media : recordsToDlq) {
+      try {
+        kafkaService.deadLetterEvent(
+            new DigitalMediaObjectTransferEvent(media.automatedAnnotations(),
+                new DigitalMediaObjectTransfer(
+                    media.digitalMediaObjectRecord().digitalMediaObject().type(),
+                    media.digitalMediaObjectRecord().digitalMediaObject().physicalSpecimenId(),
+                    media.digitalMediaObjectRecord().digitalMediaObject().attributes(),
+                    media.digitalMediaObjectRecord().digitalMediaObject().originalAttributes()
+                )));
+      } catch (JsonProcessingException e) {
+        log.error("Fatal exception, unable to dead letter queue media with url {} for specimen {}",
+            getMediaUrl(media.digitalMediaObjectRecord().digitalMediaObject().attributes()),
+            media.digitalMediaObjectRecord().digitalMediaObject().digitalSpecimenId(),
+            e);
+      }
+    }
+  }
+
+  private void dlqBatchCreate(List<DigitalMediaObjectEvent> recordsToDlq) {
+    for (var media : recordsToDlq) {
+      try {
+        kafkaService.deadLetterEvent(
+            new DigitalMediaObjectTransferEvent(media.enrichmentList(),
+                new DigitalMediaObjectTransfer(
+                    media.digitalMediaObject().type(),
+                    media.digitalMediaObject().physicalSpecimenId(),
+                    media.digitalMediaObject().attributes(),
+                    media.digitalMediaObject().originalAttributes()
+                )));
+      } catch (JsonProcessingException e) {
+        log.error("Fatal exception, unable to dead letter queue media with url {} for specimen {}",
+            getMediaUrl(media.digitalMediaObject().attributes()),
+            media.digitalMediaObject().digitalSpecimenId(),
+            e);
+      }
     }
   }
 
@@ -246,6 +290,7 @@ public class ProcessingService {
         .collect(Collectors.toMap(
             updatedDigitalMediaRecord -> updatedDigitalMediaRecord.digitalMediaObjectRecord()
                 .id(), Function.identity()));
+    List<UpdatedDigitalMediaRecord> handlesToRollback = new ArrayList<>();
     bulkResponse.items().forEach(
         item -> {
           var digitalMediaRecord = digitalMediaMap.get(item.id());
@@ -253,15 +298,57 @@ public class ProcessingService {
             log.error("Failed item to insert into elastic search: {} with errors {}",
                 digitalMediaRecord.digitalMediaObjectRecord().id(), item.error().reason());
             rollbackUpdatedDigitalMedia(digitalMediaRecord, false);
+            handlesToRollback.add(digitalMediaRecord);
             digitalMediaRecords.remove(digitalMediaRecord);
           } else {
             var successfullyPublished = publishUpdateEvent(digitalMediaRecord);
             if (!successfullyPublished) {
+              handlesToRollback.add(digitalMediaRecord);
               digitalMediaRecords.remove(digitalMediaRecord);
             }
           }
         }
     );
+    filterUpdatesAndRollbackHandles(handlesToRollback);
+  }
+
+  private void filterUpdatesAndRollbackHandles(List<UpdatedDigitalMediaRecord> handlesToRollback) {
+    var recordsToRollback = handlesToRollback.stream()
+        .filter(r -> fdoRecordService.handleNeedsUpdate(
+            r.currentDigitalMediaRecord().digitalMediaObject(),
+            r.currentDigitalMediaRecord().digitalMediaObject()))
+        .toList();
+
+    if (!recordsToRollback.isEmpty()) {
+      rollbackHandleUpdate(recordsToRollback);
+    }
+  }
+
+  private void rollbackHandleUpdate(List<UpdatedDigitalMediaRecord> recordsToRollback) {
+    var rollbackToVersion = recordsToRollback.stream()
+        .map(UpdatedDigitalMediaRecord::currentDigitalMediaRecord).toList();
+
+    var requestBody = fdoRecordService.buildPatchDeleteRequest(rollbackToVersion);
+    try {
+      handleComponent.rollbackHandleUpdate(requestBody);
+    } catch (PidCreationException e) {
+      var handles = recordsToRollback.stream().map(media -> media.digitalMediaObjectRecord().id())
+          .toList();
+      log.error(
+          "Unable to rollback handle updates. Handles: {}. Revert handles to the following records {}",
+          handles, recordsToRollback);
+    }
+  }
+
+  private void rollbackHandleCreation(List<DigitalMediaObjectRecord> recordsToRollback) {
+    var requestBody = fdoRecordService.buildRollbackCreationRequest(recordsToRollback);
+    try {
+      handleComponent.rollbackHandleCreation(requestBody);
+    } catch ( PidCreationException e) {
+      var ids = recordsToRollback.stream().map(DigitalMediaObjectRecord::id).toList();
+      log.error("Unable to rollback handle creation. Manually delete the following handles: {} ",
+          ids);
+    }
   }
 
   private void handleSuccessfulElasticUpdate(Set<UpdatedDigitalMediaRecord> digitalMediaRecords) {
@@ -273,7 +360,11 @@ public class ProcessingService {
         failedRecords.add(digitalMediaRecord);
       }
     }
-    digitalMediaRecords.removeAll(failedRecords);
+    if (!failedRecords.isEmpty()) {
+      filterUpdatesAndRollbackHandles(new ArrayList<>(failedRecords));
+      digitalMediaRecords.removeAll(failedRecords);
+    }
+
   }
 
   private boolean publishUpdateEvent(UpdatedDigitalMediaRecord digitalMediaRecord) {
@@ -299,11 +390,6 @@ public class ProcessingService {
       }
     }
     rollBackToEarlierVersion(updatedDigitalMediaRecord.currentDigitalMediaRecord());
-    if (handleNeedsUpdate(
-        updatedDigitalMediaRecord.currentDigitalMediaRecord().digitalMediaObject(),
-        updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObject())) {
-      handleService.deleteVersion(updatedDigitalMediaRecord.currentDigitalMediaRecord());
-    }
     try {
       kafkaService.deadLetterEvent(
           new DigitalMediaObjectTransferEvent(updatedDigitalMediaRecord.automatedAnnotations(),
@@ -339,18 +425,18 @@ public class ProcessingService {
     )).collect(Collectors.toSet());
   }
 
-  public void updateHandles(List<UpdatedDigitalMediaTuple> updatedDigitalMediaTuples) {
-    var handleUpdates = updatedDigitalMediaTuples.stream().filter(
-        tuple -> handleNeedsUpdate(tuple.currentDigitalMediaRecord().digitalMediaObject(),
-            tuple.digitalMediaObjectEvent().digitalMediaObject())).toList();
+  public void updateHandles(Set<UpdatedDigitalMediaRecord> updatedDigitalMediaRecords)
+      throws PidCreationException {
+    var handleUpdates = updatedDigitalMediaRecords.stream().filter(
+            pair -> fdoRecordService.handleNeedsUpdate(
+                pair.currentDigitalMediaRecord().digitalMediaObject(),
+                pair.digitalMediaObjectRecord().digitalMediaObject()))
+        .map(UpdatedDigitalMediaRecord::digitalMediaObjectRecord)
+        .toList();
     if (!handleUpdates.isEmpty()) {
-      handleService.updateHandles(handleUpdates);
+      var request = fdoRecordService.buildPatchDeleteRequest(handleUpdates);
+      handleComponent.updateHandle(request);
     }
-  }
-
-  private boolean handleNeedsUpdate(DigitalMediaObject currentDigitalMediaObject,
-      DigitalMediaObject digitalMediaObject) {
-    return !currentDigitalMediaObject.type().equals(digitalMediaObject.type());
   }
 
   private void processEqualDigitalMedia(List<DigitalMediaObjectRecord> currentDigitalMediaObject) {
@@ -362,10 +448,21 @@ public class ProcessingService {
 
   private Set<DigitalMediaObjectRecord> persistNewDigitalMediaObject(
       List<DigitalMediaObjectEvent> newRecords) {
-    var digitalMediaRecords = newRecords.stream().collect(toMap(
-        this::mapToDigitalMediaRecord,
-        DigitalMediaObjectEvent::enrichmentList
-    ));
+    var newRecordList = newRecords.stream().map(DigitalMediaObjectEvent::digitalMediaObject)
+        .toList();
+    var requestBody = fdoRecordService.buildPostHandleRequest(newRecordList);
+    Map<DigitalMediaObjectKey, String> pidMap;
+    try {
+      pidMap = handleComponent.postHandle(requestBody);
+    } catch (PidCreationException e) {
+      log.error("Unable to create pids for given request", e);
+      dlqBatchCreate(newRecords);
+      return Collections.emptySet();
+    }
+    var digitalMediaRecords = newRecords.stream()
+        .collect(toMap(event -> mapToDigitalMediaRecord(event, pidMap),
+            DigitalMediaObjectEvent::enrichmentList));
+
     digitalMediaRecords.remove(null);
     if (digitalMediaRecords.isEmpty()) {
       return Collections.emptySet();
@@ -385,6 +482,8 @@ public class ProcessingService {
     } catch (IOException e) {
       log.error("Rolling back, failed to insert records in elastic", e);
       digitalMediaRecords.forEach(this::rollbackNewDigitalMedia);
+      var mediaRecords = digitalMediaRecords.keySet().stream().toList();
+      rollbackHandleCreation(mediaRecords);
       return Collections.emptySet();
     }
   }
@@ -393,6 +492,7 @@ public class ProcessingService {
       Map<DigitalMediaObjectRecord, List<String>> digitalMediaRecords, BulkResponse bulkResponse) {
     var digitalMediaMap = digitalMediaRecords.keySet().stream()
         .collect(Collectors.toMap(DigitalMediaObjectRecord::id, Function.identity()));
+    var recordsToRollback = new ArrayList<DigitalMediaObjectRecord>();
     bulkResponse.items().forEach(
         item -> {
           var digitalMediaRecord = digitalMediaMap.get(item.id());
@@ -402,26 +502,32 @@ public class ProcessingService {
             rollbackNewDigitalMedia(digitalMediaRecord,
                 digitalMediaRecords.get(digitalMediaRecord));
             digitalMediaRecords.remove(digitalMediaRecord);
+            recordsToRollback.add(digitalMediaRecord);
           } else {
             var successfullyPublished = publishEvents(digitalMediaRecord,
                 digitalMediaRecords.get(digitalMediaRecord));
             if (!successfullyPublished) {
               digitalMediaRecords.remove(digitalMediaRecord);
+              recordsToRollback.add(digitalMediaRecord);
             }
           }
         }
     );
+    rollbackHandleCreation(recordsToRollback);
   }
 
   private void handleSuccessfulElasticInsert(
       Map<DigitalMediaObjectRecord, List<String>> digitalMediaRecords) {
     log.debug("Successfully indexed {} digital media", digitalMediaRecords);
+    var recordsToRollback = new ArrayList<DigitalMediaObjectRecord>();
     for (var entry : digitalMediaRecords.entrySet()) {
       var successfullyPublished = publishEvents(entry.getKey(), entry.getValue());
       if (!successfullyPublished) {
+        recordsToRollback.add(entry.getKey());
         digitalMediaRecords.remove(entry.getKey());
       }
     }
+    rollbackHandleCreation(recordsToRollback);
   }
 
   private boolean publishEvents(DigitalMediaObjectRecord key, List<String> value) {
@@ -432,13 +538,13 @@ public class ProcessingService {
       rollbackNewDigitalMedia(key, value, true);
       return false;
     }
-    value.forEach(aas -> {
+    value.forEach(mas -> {
       try {
-        kafkaService.publishAnnotationRequestEvent(aas, key);
+        kafkaService.publishAnnotationRequestEvent(mas, key);
       } catch (JsonProcessingException e) {
         log.error(
             "No action taken, failed to publish annotation request event for aas: {} digital media: {}",
-            aas, key.id(), e);
+            mas, key.id(), e);
       }
     });
     return true;
@@ -460,7 +566,6 @@ public class ProcessingService {
       }
     }
     repository.rollBackDigitalMedia(digitalMediaObjectRecord.id());
-    handleService.rollbackHandleCreation(digitalMediaObjectRecord);
     try {
       kafkaService.deadLetterEvent(
           new DigitalMediaObjectTransferEvent(automatedAnnotations,
@@ -476,21 +581,24 @@ public class ProcessingService {
     }
   }
 
-  private DigitalMediaObjectRecord mapToDigitalMediaRecord(DigitalMediaObjectEvent event) {
-    try {
-      return new DigitalMediaObjectRecord(
-          handleService.createNewHandle(event.digitalMediaObject()),
-          1,
-          Instant.now(),
-          event.digitalMediaObject()
-      );
-    } catch (TransformerException ex) {
+  private DigitalMediaObjectRecord mapToDigitalMediaRecord(DigitalMediaObjectEvent event,
+      Map<DigitalMediaObjectKey, String> pidMap) {
+    var targetKey = new DigitalMediaObjectKey(event.digitalMediaObject().digitalSpecimenId(),
+        getMediaUrl(event.digitalMediaObject().attributes()));
+    var handle = pidMap.get(targetKey);
+    if (handle == null) {
       log.error("Failed to process record with ds id: {} and mediaUrl: {}",
           event.digitalMediaObject().digitalSpecimenId(),
-          getMediaUrl(event.digitalMediaObject().attributes()),
-          ex);
+          getMediaUrl(event.digitalMediaObject().attributes()));
       return null;
     }
+    return new DigitalMediaObjectRecord(
+        handle,
+        1,
+        Instant.now(),
+        event.digitalMediaObject()
+    );
+
   }
 
   private Map<String, String> retrieveDigitalSpecimenId(
