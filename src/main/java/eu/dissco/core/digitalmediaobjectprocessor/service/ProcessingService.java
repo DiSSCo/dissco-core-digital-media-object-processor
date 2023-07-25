@@ -208,7 +208,7 @@ public class ProcessingService {
     var digitalMediaRecords = getDigitalMediaRecordMap(updatedDigitalSpecimenTuples);
     try {
       updateHandles(digitalMediaRecords);
-    } catch ( PidCreationException e) {
+    } catch (PidCreationException e) {
       log.error("unable to update handle records for given request", e);
       dlqBatchUpdate(digitalMediaRecords);
       return Set.of();
@@ -344,7 +344,7 @@ public class ProcessingService {
     var requestBody = fdoRecordService.buildRollbackCreationRequest(recordsToRollback);
     try {
       handleComponent.rollbackHandleCreation(requestBody);
-    } catch ( PidCreationException e) {
+    } catch (PidCreationException e) {
       var ids = recordsToRollback.stream().map(DigitalMediaObjectRecord::id).toList();
       log.error("Unable to rollback handle creation. Manually delete the following handles: {} ",
           ids);
@@ -513,7 +513,9 @@ public class ProcessingService {
           }
         }
     );
-    rollbackHandleCreation(recordsToRollback);
+    if (!recordsToRollback.isEmpty()) {
+      rollbackHandleCreation(recordsToRollback);
+    }
   }
 
   private void handleSuccessfulElasticInsert(
@@ -527,7 +529,9 @@ public class ProcessingService {
         digitalMediaRecords.remove(entry.getKey());
       }
     }
-    rollbackHandleCreation(recordsToRollback);
+    if (!recordsToRollback.isEmpty()) {
+      rollbackHandleCreation(recordsToRollback);
+    }
   }
 
   private boolean publishEvents(DigitalMediaObjectRecord key, List<String> value) {
