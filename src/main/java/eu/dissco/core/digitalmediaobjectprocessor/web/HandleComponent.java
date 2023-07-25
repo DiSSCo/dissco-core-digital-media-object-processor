@@ -38,6 +38,7 @@ public class HandleComponent {
 
   public Map<DigitalMediaObjectKey, String> postHandle(List<JsonNode> request)
       throws PidCreationException {
+    log.info("Posting {} Digital Media Objects to Handle API", request.size());
     var requestBody = BodyInserters.fromValue(request);
     var response = sendRequest(HttpMethod.POST, requestBody, "batch");
     var responseJson = validateResponse(response);
@@ -45,6 +46,7 @@ public class HandleComponent {
   }
 
   public void updateHandle(List<JsonNode> request) throws PidCreationException {
+    log.info("Updating {} Digital Media Object Handles", request.size());
     var requestBody = BodyInserters.fromValue(request);
     var response = sendRequest(HttpMethod.PATCH, requestBody, "");
     validateResponse(response);
@@ -52,6 +54,7 @@ public class HandleComponent {
 
   public void rollbackHandleCreation(JsonNode request)
       throws PidCreationException {
+    log.info("Rolling back handle creation");
     var requestBody = BodyInserters.fromValue(request);
     var response = sendRequest(HttpMethod.DELETE, requestBody, "rollback");
     validateResponse(response);
@@ -59,6 +62,7 @@ public class HandleComponent {
 
   public void rollbackHandleUpdate(List<JsonNode> request)
       throws PidCreationException {
+    log.info("Rolling back handle update for {} handles", request.size());
     var requestBody = BodyInserters.fromValue(request);
     var response = sendRequest(HttpMethod.DELETE, requestBody, "rollback/update");
     validateResponse(response);
