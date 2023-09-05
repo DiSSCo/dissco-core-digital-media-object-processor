@@ -3,6 +3,7 @@ package eu.dissco.core.digitalmediaobjectprocessor.service;
 import static eu.dissco.core.digitalmediaobjectprocessor.service.ServiceUtils.getMediaUrl;
 import static java.util.stream.Collectors.toMap;
 
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
@@ -233,7 +234,7 @@ public class ProcessingService {
               Collectors.toSet());
       log.info("Successfully updated {} digital media object", successfullyProcessedRecords.size());
       return successfullyProcessedRecords;
-    } catch (IOException e) {
+    } catch (IOException | ElasticsearchException e) {
       log.error("Rolling back, failed to insert records in elastic", e);
       digitalMediaRecords.forEach(
           updatedDigitalMediaObjectRecord -> rollbackUpdatedDigitalMedia(
@@ -384,7 +385,7 @@ public class ProcessingService {
     if (elasticRollback) {
       try {
         elasticRepository.rollbackVersion(updatedDigitalMediaRecord.currentDigitalMediaRecord());
-      } catch (IOException e) {
+      } catch (IOException | ElasticsearchException e) {
         log.error("Fatal exception, unable to roll back update for: "
             + updatedDigitalMediaRecord.currentDigitalMediaRecord(), e);
       }
@@ -479,7 +480,7 @@ public class ProcessingService {
       }
       log.info("Successfully created {} new digital media", digitalMediaRecords.size());
       return digitalMediaRecords.keySet();
-    } catch (IOException e) {
+    } catch (IOException | ElasticsearchException e) {
       log.error("Rolling back, failed to insert records in elastic", e);
       digitalMediaRecords.forEach(this::rollbackNewDigitalMedia);
       var mediaRecords = digitalMediaRecords.keySet().stream().toList();
@@ -565,7 +566,7 @@ public class ProcessingService {
     if (elasticRollback) {
       try {
         elasticRepository.rollbackDigitalMedia(digitalMediaObjectRecord);
-      } catch (IOException e) {
+      } catch (IOException | ElasticsearchException e) {
         log.error("Fatal exception, unable to roll back: " + digitalMediaObjectRecord.id(), e);
       }
     }
