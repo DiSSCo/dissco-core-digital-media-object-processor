@@ -3,15 +3,19 @@ package eu.dissco.core.digitalmediaobjectprocessor.service;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.DIGITAL_OBJECT_TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.FDO_PROFILE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_URL;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LICENSE_URL;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_FORMAT;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MEDIA_ID;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MO_TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.SUBJECT_ID;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.service.ServiceUtils.getMediaUrl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
 import java.util.ArrayList;
@@ -50,8 +54,17 @@ public class FdoRecordService {
     attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
     attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
     attributes.put(REFERENT_NAME.getAttribute(),mediaObject.type() + " for " + mediaObject.digitalSpecimenId());
-    attributes.put(MEDIA_URL.getAttribute(), getMediaUrl(mediaObject.attributes()));
-    attributes.put(SUBJECT_ID.getAttribute(), mediaObject.digitalSpecimenId());
+    attributes.put(PRIMARY_MEDIA_ID.getAttribute(), getMediaUrl(mediaObject.attributes()));
+    attributes.put(PRIMARY_MO_TYPE.getAttribute(), "resolvable");
+    attributes.put(LINKED_DO_PID.getAttribute(), mediaObject.digitalSpecimenId());
+
+    if (mediaObject.attributes().get("dcterms:license") != null){
+      attributes.put(LICENSE_URL.getAttribute(), mediaObject.attributes().get("dcterms:license").asText());
+    }
+    if (attributes.get("dcterms:type") != null){
+      attributes.put(MEDIA_FORMAT.getAttribute(), "image");
+    }
+
     return attributes;
   }
 

@@ -25,6 +25,8 @@ spec:
               value: web
             - name: spring.datasource.url
               value: jdbc:postgresql://database-1.cbppwfnjypll.eu-west-2.rds.amazonaws.com/dissco
+            - name: springdoc.show-actuator
+              value: "false"
             - name: spring.datasource.username
               valueFrom:
                 secretKeyRef:
