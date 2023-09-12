@@ -47,11 +47,10 @@ class FdoRecordServiceTest {
   }
 
   @AfterEach
-  void takeDown() {
+  void destroy() {
     mockedStatic.close();
     mockedClock.close();
   }
-
 
   @Test
   void testRollbackUpdate() throws Exception {

@@ -38,7 +38,8 @@ public class FdoRecordService {
 
   private final ObjectMapper mapper;
 
-  public List<JsonNode> buildPostHandleRequest(List<DigitalMediaObject> mediaObjects) {
+  public List<JsonNode> buildPostHandleRequest(List<DigitalMediaObject> mediaObjects)
+      throws PidCreationException {
     List<JsonNode> requestBody = new ArrayList<>();
     for (var mediaObject : mediaObjects) {
       requestBody.add(buildSingleHandleRequest(mediaObject));
@@ -46,7 +47,8 @@ public class FdoRecordService {
     return requestBody;
   }
 
-  private JsonNode buildSingleHandleRequest(DigitalMediaObject mediaObject) {
+  private JsonNode buildSingleHandleRequest(DigitalMediaObject mediaObject)
+      throws PidCreationException {
     var request = mapper.createObjectNode();
     var data = mapper.createObjectNode();
     var attributes = generateAttributes(mediaObject);
@@ -56,7 +58,7 @@ public class FdoRecordService {
     return request;
   }
 
-  private JsonNode generateAttributes(DigitalMediaObject mediaObject) {
+  private JsonNode generateAttributes(DigitalMediaObject mediaObject) throws PidCreationException {
     var attributes = mapper.createObjectNode();
     attributes.put(FDO_PROFILE.getAttribute(), FDO_PROFILE.getDefaultValue());
     attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
@@ -80,7 +82,7 @@ public class FdoRecordService {
           mediaObject.attributes().get("dcterms:license").asText());
     } catch (NullPointerException npe) {
       log.error("Missing mandatory element for FDO profile", npe);
-      throw new RuntimeException("Missing mandatory element for FDO profile", npe);
+      throw new PidCreationException("Missing mandatory element for FDO profile");
     }
     if (attributes.get("dcterms:type") != null) {
       attributes.put(MEDIA_FORMAT.getAttribute(), MEDIA_FORMAT.getDefaultValue());
@@ -98,7 +100,7 @@ public class FdoRecordService {
   }
 
   public List<JsonNode> buildPatchDeleteRequest(
-      List<DigitalMediaObjectRecord> digitalSpecimenRecords) {
+      List<DigitalMediaObjectRecord> digitalSpecimenRecords) throws PidCreationException {
     List<JsonNode> requestBody = new ArrayList<>();
     for (var media : digitalSpecimenRecords) {
       requestBody.add(buildSinglePatchDeleteRequest(media));
@@ -106,7 +108,8 @@ public class FdoRecordService {
     return requestBody;
   }
 
-  private JsonNode buildSinglePatchDeleteRequest(DigitalMediaObjectRecord mediaObject) {
+  private JsonNode buildSinglePatchDeleteRequest(DigitalMediaObjectRecord mediaObject)
+      throws PidCreationException {
     var request = mapper.createObjectNode();
     var data = mapper.createObjectNode();
     var attributes = generateAttributes(mediaObject.digitalMediaObject());
