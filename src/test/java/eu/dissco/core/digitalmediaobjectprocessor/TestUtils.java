@@ -53,22 +53,11 @@ public class TestUtils {
   public static final String FORMAT = "image/jpeg";
   public static final String FORMAT_2 = "image/png";
   public static final String MEDIA_HOST_TESTVAL = "https://ror.org/0x123";
-  public static final String LICENSE_TESTVAL = "CC-0";
+  public static final String LICENSE_TESTVAL = "http://creativecommons.org/licenses/by-nc/3.0/";
 
   public static DigitalMediaObjectTransferEvent givenMediaEvent() throws JsonProcessingException {
     return new DigitalMediaObjectTransferEvent(
         List.of("OCR"), givenDigitalMediaTransfer(PHYSICAL_SPECIMEN_ID, MEDIA_URL_1)
-    );
-  }
-
-  public static UpdatedDigitalMediaTuple givenUpdatedDigitalMediaTuple()
-      throws JsonProcessingException {
-    return new UpdatedDigitalMediaTuple(
-        givenDigitalMediaObjectRecord(FORMAT_2),
-        new DigitalMediaObjectEvent(
-            List.of(AAS),
-            givenDigitalMediaObject()
-        )
     );
   }
 

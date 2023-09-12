@@ -166,7 +166,8 @@ class ProcessingServiceTest {
     var result = service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent()), false);
 
     // Then
-    then(fdoRecordService).should().buildPatchDeleteRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
+    then(fdoRecordService).should()
+        .buildPatchDeleteRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
     then(handleComponent).should().updateHandle(any());
     then(repository).should().createDigitalMediaRecord(expected);
     then(publisherService).should()
@@ -190,7 +191,8 @@ class ProcessingServiceTest {
     var result = service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent()), false);
 
     // Then
-    then(fdoRecordService).should().buildPatchDeleteRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
+    then(fdoRecordService).should()
+        .buildPatchDeleteRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
     then(repository).shouldHaveNoMoreInteractions();
     then(publisherService).should().deadLetterEvent(givenDlqTransferEventUpdate());
     assertThat(result).isEmpty();

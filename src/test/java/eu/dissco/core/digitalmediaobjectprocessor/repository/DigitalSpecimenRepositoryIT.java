@@ -42,7 +42,7 @@ class DigitalSpecimenRepositoryIT extends BaseRepositoryIT {
           .set(NEW_DIGITAL_SPECIMEN.TYPE, "BotanySpecimen")
           .set(NEW_DIGITAL_SPECIMEN.MIDSLEVEL, (short) 1)
           .set(NEW_DIGITAL_SPECIMEN.PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID + i)
-          .set(NEW_DIGITAL_SPECIMEN.PHYSICAL_SPECIMEN_TYPE, "combind")
+          .set(NEW_DIGITAL_SPECIMEN.PHYSICAL_SPECIMEN_TYPE, "combined")
           .set(NEW_DIGITAL_SPECIMEN.ORGANIZATION_ID, "123124")
           .set(NEW_DIGITAL_SPECIMEN.SOURCE_SYSTEM_ID, "ssid")
           .set(NEW_DIGITAL_SPECIMEN.CREATED, Instant.now())
