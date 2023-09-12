@@ -11,24 +11,14 @@ public enum FdoProfileAttributes {
   PRIMARY_MEDIA_ID("primaryMediaId", null),
   LINKED_DO_PID("linkedDigitalObjectPid", null),
   MEDIA_HOST("mediaHost", null),
-  MEDIA_HOST_NAME("mediaHostName", null),
-  IS_DERIVED_FROM_SPECIMEN("isDerivedFromSpecimen", null),
-  LINKED_DO_TYPE("linkedDigitalObjectType", null),
-  LINKED_ATTRIBUTE("linkedAttribute", null),
-  PRIMARY_MO_ID_TYPE("primaryMediaObjectIdType", null),
-  PRIMARY_MO_ID_NAME("primaryMediaObjectIdName", null),
-  PRIMARY_MO_TYPE("primaryMediaObjectType", null),
-  MEDIA_MIME_TYPE("mediaMimeType", null),
-  DERIVED_FROM_ENTITY("derivedFromEntity", null),
-  LICENSE_NAME("licenseName", null),
-  LICENSE_URL("licenseUrl", null),
-  RIGHTSHOLDER_NAME("rightsholderName", null),
-  RIGHTSHOLDER_PID("rigthsholderPid", null),
-  RIGHTSHOLDER_PID_TYPE("rightsholderPidType", null),
-  DC_TERMS_CONFORMS("dcterms:conforms", null),
-  MEDIA_FORMAT("mediaFormat", null),;
-
-
+  IS_DERIVED_FROM_SPECIMEN("isDerivedFromSpecimen", "true"),
+  LINKED_DO_TYPE("linkedDigitalObjectType", "digital specimen"),
+  PRIMARY_MO_ID_TYPE("primaryMediaObjectIdType", "resolvable"),
+  PRIMARY_MO_ID_NAME("primaryMediaObjectIdName", "ac:accessUri"),
+  PRIMARY_MO_TYPE("primaryMediaObjectType", "image"),
+  LICENSE("license", null),
+  RIGHTSHOLDER_PID_TYPE("rightsholderPidType", "resolvable"),
+  MEDIA_FORMAT("mediaFormat", "image");
 
   private final String attribute;
   private final String defaultValue;
