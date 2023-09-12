@@ -34,18 +34,24 @@ class FdoRecordServiceTest {
 
   private final Instant instant = Instant.now(Clock.fixed(CREATED, ZoneOffset.UTC));
   private MockedStatic<Instant> mockedStatic;
+  private MockedStatic<Clock> mockedClock;
 
   @BeforeEach
   void setup() {
+    Clock clock = Clock.fixed(CREATED, ZoneOffset.UTC);
     fdoRecordService = new FdoRecordService(MAPPER);
     mockedStatic = mockStatic(Instant.class);
     mockedStatic.when(Instant::now).thenReturn(instant);
+    mockedClock = mockStatic(Clock.class);
+    mockedClock.when(Clock::systemUTC).thenReturn(clock);
   }
 
   @AfterEach
-  void destroy() {
+  void takeDown() {
     mockedStatic.close();
+    mockedClock.close();
   }
+
 
   @Test
   void testRollbackUpdate() throws Exception {

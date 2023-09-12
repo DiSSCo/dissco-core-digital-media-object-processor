@@ -15,10 +15,12 @@ public enum FdoProfileAttributes {
   LINKED_DO_TYPE("linkedDigitalObjectType", "digital specimen"),
   PRIMARY_MO_ID_TYPE("primaryMediaObjectIdType", "resolvable"),
   PRIMARY_MO_ID_NAME("primaryMediaObjectIdName", "ac:accessUri"),
-  PRIMARY_MO_TYPE("primaryMediaObjectType", "image"),
+  PRIMARY_MO_TYPE("primaryMediaObjectType", null),
   LICENSE("license", null),
   RIGHTSHOLDER_PID_TYPE("rightsholderPidType", "resolvable"),
   MEDIA_FORMAT("mediaFormat", "image");
+
+
 
   private final String attribute;
   private final String defaultValue;

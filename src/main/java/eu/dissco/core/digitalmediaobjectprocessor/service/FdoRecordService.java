@@ -73,9 +73,6 @@ public class FdoRecordService {
     attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_NAME.getAttribute(), PRIMARY_MO_ID_NAME.getDefaultValue());
     attributes.put(RIGHTSHOLDER_PID_TYPE.getAttribute(), RIGHTSHOLDER_PID_TYPE.getDefaultValue());
-
-
-
     try {
       attributes.put(MEDIA_HOST.getAttribute(),
           mediaObject.attributes().get("ods:" + MEDIA_HOST.getAttribute()).asText());
