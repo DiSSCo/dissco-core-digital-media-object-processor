@@ -38,6 +38,9 @@ public class FdoRecordService {
 
   private final ObjectMapper mapper;
 
+  private static final String LICENSE_FIELD = "dcterms:license";
+  private static final String TYPE_FIELD = "dcterms:type";
+
   public List<JsonNode> buildPostHandleRequest(List<DigitalMediaObject> mediaObjects)
       throws PidCreationException {
     List<JsonNode> requestBody = new ArrayList<>();
@@ -70,7 +73,8 @@ public class FdoRecordService {
     attributes.put(PRIMARY_MO_TYPE.getAttribute(), PRIMARY_MO_TYPE.getDefaultValue());
     attributes.put(LINKED_DO_PID.getAttribute(), mediaObject.digitalSpecimenId());
 
-    attributes.put(IS_DERIVED_FROM_SPECIMEN.getAttribute(), Boolean.valueOf(IS_DERIVED_FROM_SPECIMEN.getDefaultValue()));
+    attributes.put(IS_DERIVED_FROM_SPECIMEN.getAttribute(),
+        Boolean.valueOf(IS_DERIVED_FROM_SPECIMEN.getDefaultValue()));
     attributes.put(LINKED_DO_TYPE.getAttribute(), LINKED_DO_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_NAME.getAttribute(), PRIMARY_MO_ID_NAME.getDefaultValue());
@@ -79,12 +83,12 @@ public class FdoRecordService {
       attributes.put(MEDIA_HOST.getAttribute(),
           mediaObject.attributes().get("ods:" + MEDIA_HOST.getAttribute()).asText());
       attributes.put(LICENSE.getAttribute(),
-          mediaObject.attributes().get("dcterms:license").asText());
+          mediaObject.attributes().get(LICENSE_FIELD).asText());
     } catch (NullPointerException npe) {
       log.error("Missing mandatory element for FDO profile", npe);
       throw new PidCreationException("Missing mandatory element for FDO profile");
     }
-    if (attributes.get("dcterms:type") != null) {
+    if (attributes.get(TYPE_FIELD) != null) {
       attributes.put(MEDIA_FORMAT.getAttribute(), MEDIA_FORMAT.getDefaultValue());
     }
 
@@ -124,7 +128,12 @@ public class FdoRecordService {
       DigitalMediaObject mediaObject) {
     return (!currentMediaObject.digitalSpecimenId().equals(mediaObject.digitalSpecimenId())
         || !Objects.equals(getMediaUrl(currentMediaObject.attributes()),
-        getMediaUrl(mediaObject.attributes())));
+        getMediaUrl(mediaObject.attributes()))
+        || !currentMediaObject.attributes().get(LICENSE_FIELD)
+        .equals(mediaObject.attributes().get(LICENSE_FIELD))
+        || (currentMediaObject.attributes().get(TYPE_FIELD)!= null && !currentMediaObject.attributes().get(TYPE_FIELD)
+        .equals(mediaObject.attributes().get(TYPE_FIELD)))
+        || !currentMediaObject.type().equals(mediaObject.type()));
   }
 
 }
