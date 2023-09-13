@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import java.time.Clock;
 import java.time.Instant;
@@ -167,8 +168,58 @@ class FdoRecordServiceTest {
 
     // Then
     assertThat(fdoRecordService.handleNeedsUpdate(mediaObject, givenDigitalMediaObject())).isTrue();
+  }
+
+  @Test
+  void testHandleNeedsUpdateType() throws Exception {
+    // Given
+    var attributesCurrent = MAPPER.readTree("""
+         {
+          "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
+          "dcterms:license":"http://creativecommons.org/licenses/by-nc/3.0/",
+          "ods:mediaHost":"https://ror.org/0x123",
+          "dcterms:type":"2dimage"
+        }
+        """);
+
+    var attributesNew = MAPPER.readTree("""
+         {
+          "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
+          "dcterms:license":"http://creativecommons.org/licenses/by-nc/3.0/",
+          "ods:mediaHost":"https://ror.org/0x123",
+          "dcterms:type":"2dimageObject"
+        }
+        """);
+
+    var mediaObjectCurrent = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, attributesCurrent, null);
+    var mediaObjectNew = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, attributesNew, null);
+
+    // Then
+    assertThat(fdoRecordService.handleNeedsUpdate(mediaObjectNew, mediaObjectCurrent)).isTrue();
+  }
+
+  @Test
+  void testDcTermsType() throws Exception {
+    // Given
+    var attributes = MAPPER.readTree("""
+         {
+          "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
+          "dcterms:license":"http://creativecommons.org/licenses/by-nc/3.0/",
+          "ods:mediaHost":"https://ror.org/0x123",
+          "dcterms:type":"2dimageObject"
+        }
+        """);
+
+    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, attributes, null);
+
+    // When
+    var result = fdoRecordService.buildPostHandleRequest(List.of(mediaObject)).get(0);
+
+    // Then
+    assertThat(result.get("data").get("attributes").get(FdoProfileAttributes.MEDIA_FORMAT.getAttribute()).asText()).isEqualTo(FdoProfileAttributes.MEDIA_FORMAT.getDefaultValue());
 
   }
+
 
   private static JsonNode expectedRollbackCreationRequest() throws Exception {
     return MAPPER.readTree("""

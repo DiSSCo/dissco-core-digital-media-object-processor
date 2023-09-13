@@ -88,7 +88,7 @@ public class FdoRecordService {
       log.error("Missing mandatory element for FDO profile", npe);
       throw new PidCreationException("Missing mandatory element for FDO profile");
     }
-    if (attributes.get(TYPE_FIELD) != null) {
+    if (mediaObject.attributes().get(TYPE_FIELD) != null) {
       attributes.put(MEDIA_FORMAT.getAttribute(), MEDIA_FORMAT.getDefaultValue());
     }
 
