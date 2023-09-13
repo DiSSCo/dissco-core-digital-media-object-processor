@@ -109,7 +109,7 @@ class FdoRecordServiceTest {
   }
 
   @Test
-  void testHandleDoesNeedUpdate() throws Exception {
+  void testHandleDoesNeedUpdateId() throws Exception {
     // Then
     assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(),
         givenDigitalMediaObject(DIGITAL_SPECIMEN_ID_2, PHYSICAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1,
@@ -133,7 +133,7 @@ class FdoRecordServiceTest {
 
   @Test
   void testHandleDoesNeedUpdateType() throws Exception {
-    var mediaObject = givenDigitalMediaObject(HANDLE, PHYSICAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1, "differentType");
+    var mediaObject = givenDigitalMediaObject(DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1, "differentType");
 
     // Then
     assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(), mediaObject)).isTrue();
@@ -146,10 +146,28 @@ class FdoRecordServiceTest {
                 "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
                 "dcterms:license":"Different License"
         """);
-    var mediaObject = new DigitalMediaObject("image", DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, attributes, null);
+    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, attributes, null);
 
     // Then
     assertThrows(PidCreationException.class, () -> fdoRecordService.buildPostHandleRequest(List.of(mediaObject)));
+  }
+
+  @Test
+  void testHandleNeedsUpdateMediaUrl() throws Exception {
+    // Given
+    var attributes = MAPPER.readTree("""
+         {
+          "ac:accessURI":"different uri",
+          "dcterms:license":"http://creativecommons.org/licenses/by-nc/3.0/",
+          "ods:mediaHost":"https://ror.org/0x123"
+        }
+        """);
+
+    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, attributes, null);
+
+    // Then
+    assertThat(fdoRecordService.handleNeedsUpdate(mediaObject, givenDigitalMediaObject())).isTrue();
+
   }
 
   private static JsonNode expectedRollbackCreationRequest() throws Exception {
