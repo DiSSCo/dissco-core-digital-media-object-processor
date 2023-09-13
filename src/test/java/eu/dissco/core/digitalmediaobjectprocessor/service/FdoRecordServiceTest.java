@@ -1,6 +1,7 @@
 package eu.dissco.core.digitalmediaobjectprocessor.service;
 
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.CREATED;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.DIGITAL_SPECIMEN_ID;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.DIGITAL_SPECIMEN_ID_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.FORMAT;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE;
@@ -13,9 +14,12 @@ import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalM
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPostAttributes;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPostHandleRequest;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -108,6 +112,39 @@ class FdoRecordServiceTest {
     assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(),
         givenDigitalMediaObject(DIGITAL_SPECIMEN_ID_2, PHYSICAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1,
             TYPE))).isTrue();
+  }
+
+  @Test
+  void testHandleDoesNeedUpdateLicense() throws Exception {
+    var attributes = MAPPER.readTree("""
+                "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
+                "dcterms:license":"Different License",
+                "ods:mediaHost":"https://ror.org/0x123"
+        """);
+    var mediaObject = new DigitalMediaObject("image", DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, attributes, null);
+
+    // Then
+    assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(), mediaObject)).isTrue();
+  }
+
+  @Test
+  void testHandleDoesNeedUpdateType() throws Exception {
+    var alt = givenDigitalMediaObject(HANDLE, PHYSICAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1, "differentType");
+    // Then
+    assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(), alt)).isTrue();
+  }
+
+  @Test
+  void testMissingMandatoryElements() throws Exception {
+    // Given
+    var attributes = MAPPER.readTree("""
+                "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
+                "dcterms:license":"Different License"
+        """);
+    var mediaObject = new DigitalMediaObject("image", DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, attributes, null);
+
+    // Then
+    assertThrows(PidCreationException.class, () -> fdoRecordService.buildPostHandleRequest(List.of(mediaObject)));
   }
 
   private static JsonNode expectedRollbackCreationRequest() throws Exception {
