@@ -123,7 +123,7 @@ class FdoRecordServiceTest {
         {
           "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
           "dcterms:license":"Different License",
-          "ods:mediaHost":"https://ror.org/0x123"
+          "ods:organisationId":"https://ror.org/0x123"
         }
         """);
     var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, attributes, null);
@@ -160,7 +160,7 @@ class FdoRecordServiceTest {
          {
           "ac:accessURI":"different uri",
           "dcterms:license":"http://creativecommons.org/licenses/by-nc/3.0/",
-          "ods:mediaHost":"https://ror.org/0x123"
+          "ods:organisationId":"https://ror.org/0x123"
         }
         """);
 
@@ -177,7 +177,7 @@ class FdoRecordServiceTest {
          {
           "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
           "dcterms:license":"http://creativecommons.org/licenses/by-nc/3.0/",
-          "ods:mediaHost":"https://ror.org/0x123",
+          "ods:organisationId":"https://ror.org/0x123",
           "dcterms:type":"2dimage"
         }
         """);
@@ -186,7 +186,7 @@ class FdoRecordServiceTest {
          {
           "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
           "dcterms:license":"http://creativecommons.org/licenses/by-nc/3.0/",
-          "ods:mediaHost":"https://ror.org/0x123",
+          "ods:organisationId":"https://ror.org/0x123",
           "dcterms:type":"2dimageObject"
         }
         """);
@@ -205,7 +205,7 @@ class FdoRecordServiceTest {
          {
           "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
           "dcterms:license":"http://creativecommons.org/licenses/by-nc/3.0/",
-          "ods:mediaHost":"https://ror.org/0x123",
+          "ods:organisationId":"https://ror.org/0x123",
           "dcterms:type":"2dimageObject"
         }
         """);

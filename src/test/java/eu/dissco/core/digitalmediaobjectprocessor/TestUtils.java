@@ -183,7 +183,7 @@ public class TestUtils {
     objectNode.put("ods:sourceSystemId", "20.5000.1025/WDP-JYE-73C");
     objectNode.put("dcterms:format", format);
     objectNode.put("dcterms:license", "http://creativecommons.org/licenses/by-nc/3.0/");
-    objectNode.put("ods:mediaHost", MEDIA_HOST_TESTVAL);
+    objectNode.put("ods:organisationId", MEDIA_HOST_TESTVAL);
     objectNode.put("dcterms:license", LICENSE_TESTVAL);
     return objectNode;
   }

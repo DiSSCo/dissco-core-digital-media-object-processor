@@ -81,7 +81,7 @@ public class FdoRecordService {
     attributes.put(RIGHTSHOLDER_PID_TYPE.getAttribute(), RIGHTSHOLDER_PID_TYPE.getDefaultValue());
     try {
       attributes.put(MEDIA_HOST.getAttribute(),
-          mediaObject.attributes().get("ods:" + MEDIA_HOST.getAttribute()).asText());
+          mediaObject.attributes().get("ods:organisationId").asText());
       attributes.put(LICENSE.getAttribute(),
           mediaObject.attributes().get(LICENSE_FIELD).asText());
     } catch (NullPointerException npe) {

@@ -85,7 +85,7 @@ class KafkaConsumerServiceTest {
               "ods:sourceSystemId": "20.5000.1025/WDP-JYE-73C",
               "dcterms:format": "image/jpeg",
               "dcterms:license": "http://creativecommons.org/licenses/by-nc/3.0/",
-              "ods:mediaHost":"https://ror.org/0x123"
+              "ods:organisationId":"https://ror.org/0x123"
             },
             "ods:originalAttributes": {
               "dwca:ID": "045db6cb-5f06-4c19-b0f6-9620bdff3ae4",
@@ -116,7 +116,7 @@ class KafkaConsumerServiceTest {
               "ods:sourceSystemId": "20.5000.1025/WDP-JYE-73C",
               "dcterms:format": "image/jpeg",
               "dcterms:license": "http://creativecommons.org/licenses/by-nc/3.0/",
-               "ods:mediaHost":"https://ror.org/0x123"
+               "ods:organisationId":"https://ror.org/0x123"
             },
             "ods:originalAttributes": {
               "dwca:ID": "045db6cb-5f06-4c19-b0f6-9620bdff3ae4",
