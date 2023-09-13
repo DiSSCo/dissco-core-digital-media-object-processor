@@ -63,34 +63,34 @@ public class FdoRecordService {
 
   private JsonNode generateAttributes(DigitalMediaObject mediaObject) throws PidCreationException {
     var attributes = mapper.createObjectNode();
-    attributes.put(FDO_PROFILE.getAttribute(), FDO_PROFILE.getDefaultValue());
-    attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
-    attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
-    attributes.put(REFERENT_NAME.getAttribute(),
-        mediaObject.type() + " for " + mediaObject.digitalSpecimenId());
-
-    attributes.put(PRIMARY_MEDIA_ID.getAttribute(), getMediaUrl(mediaObject.attributes()));
-    attributes.put(PRIMARY_MO_TYPE.getAttribute(), PRIMARY_MO_TYPE.getDefaultValue());
-    attributes.put(LINKED_DO_PID.getAttribute(), mediaObject.digitalSpecimenId());
-
-    attributes.put(IS_DERIVED_FROM_SPECIMEN.getAttribute(),
-        Boolean.valueOf(IS_DERIVED_FROM_SPECIMEN.getDefaultValue()));
-    attributes.put(LINKED_DO_TYPE.getAttribute(), LINKED_DO_TYPE.getDefaultValue());
-    attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());
-    attributes.put(PRIMARY_MO_ID_NAME.getAttribute(), PRIMARY_MO_ID_NAME.getDefaultValue());
-    attributes.put(RIGHTSHOLDER_PID_TYPE.getAttribute(), RIGHTSHOLDER_PID_TYPE.getDefaultValue());
     try {
       attributes.put(MEDIA_HOST.getAttribute(),
           mediaObject.attributes().get("ods:organisationId").asText());
       attributes.put(LICENSE.getAttribute(),
           mediaObject.attributes().get(LICENSE_FIELD).asText());
+      attributes.put(PRIMARY_MEDIA_ID.getAttribute(), getMediaUrl(mediaObject.attributes()));
     } catch (NullPointerException npe) {
       log.error("Missing mandatory element for FDO profile", npe);
       throw new PidCreationException("Missing mandatory element for FDO profile");
     }
+    attributes.put(REFERENT_NAME.getAttribute(),
+        mediaObject.type() + " for " + mediaObject.digitalSpecimenId());
+    attributes.put(LINKED_DO_PID.getAttribute(), mediaObject.digitalSpecimenId());
     if (mediaObject.attributes().get(TYPE_FIELD) != null) {
       attributes.put(MEDIA_FORMAT.getAttribute(), MEDIA_FORMAT.getDefaultValue());
     }
+
+    // Default values
+    attributes.put(FDO_PROFILE.getAttribute(), FDO_PROFILE.getDefaultValue());
+    attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
+    attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
+    attributes.put(PRIMARY_MO_TYPE.getAttribute(), PRIMARY_MO_TYPE.getDefaultValue());
+    attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());
+    attributes.put(PRIMARY_MO_ID_NAME.getAttribute(), PRIMARY_MO_ID_NAME.getDefaultValue());
+    attributes.put(RIGHTSHOLDER_PID_TYPE.getAttribute(), RIGHTSHOLDER_PID_TYPE.getDefaultValue());
+    attributes.put(IS_DERIVED_FROM_SPECIMEN.getAttribute(),
+        Boolean.valueOf(IS_DERIVED_FROM_SPECIMEN.getDefaultValue()));
+    attributes.put(LINKED_DO_TYPE.getAttribute(), LINKED_DO_TYPE.getDefaultValue());
 
     return attributes;
   }
