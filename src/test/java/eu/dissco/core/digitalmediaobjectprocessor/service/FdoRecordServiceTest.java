@@ -13,6 +13,7 @@ import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalM
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecord;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPostAttributes;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPostHandleRequest;
+import static eu.dissco.core.digitalmediaobjectprocessor.service.ServiceUtils.getMediaUrl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mockStatic;
@@ -24,6 +25,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Objects;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -117,11 +119,13 @@ class FdoRecordServiceTest {
   @Test
   void testHandleDoesNeedUpdateLicense() throws Exception {
     var attributes = MAPPER.readTree("""
-                "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
-                "dcterms:license":"Different License",
-                "ods:mediaHost":"https://ror.org/0x123"
+        {
+          "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
+          "dcterms:license":"Different License",
+          "ods:mediaHost":"https://ror.org/0x123"
+        }
         """);
-    var mediaObject = new DigitalMediaObject("image", DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, attributes, null);
+    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, attributes, null);
 
     // Then
     assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(), mediaObject)).isTrue();
@@ -129,9 +133,10 @@ class FdoRecordServiceTest {
 
   @Test
   void testHandleDoesNeedUpdateType() throws Exception {
-    var alt = givenDigitalMediaObject(HANDLE, PHYSICAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1, "differentType");
+    var mediaObject = givenDigitalMediaObject(HANDLE, PHYSICAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1, "differentType");
+
     // Then
-    assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(), alt)).isTrue();
+    assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(), mediaObject)).isTrue();
   }
 
   @Test
