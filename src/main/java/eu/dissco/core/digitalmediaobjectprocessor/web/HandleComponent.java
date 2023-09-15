@@ -116,8 +116,8 @@ public class HandleComponent {
       for (var node : dataNode) {
         var handle = node.get("id");
         var primarySpecimenObjectId = node.get("attributes")
-            .get(FdoProfileAttributes.SUBJECT_ID.getAttribute()).asText();
-        var mediaUrl = node.get("attributes").get("mediaUrl").asText();
+            .get(FdoProfileAttributes.LINKED_DO_PID.getAttribute()).asText();
+        var mediaUrl = node.get("attributes").get(FdoProfileAttributes.PRIMARY_MEDIA_ID.getAttribute()).asText();
         DigitalMediaObjectKey key = new DigitalMediaObjectKey(primarySpecimenObjectId, mediaUrl);
         if (handle == null || primarySpecimenObjectId == null || mediaUrl == null) {
           log.error(UNEXPECTED_LOG, handleResponse.toPrettyString());

@@ -328,9 +328,8 @@ public class ProcessingService {
   private void rollbackHandleUpdate(List<UpdatedDigitalMediaRecord> recordsToRollback) {
     var rollbackToVersion = recordsToRollback.stream()
         .map(UpdatedDigitalMediaRecord::currentDigitalMediaRecord).toList();
-
-    var requestBody = fdoRecordService.buildPatchDeleteRequest(rollbackToVersion);
     try {
+      var requestBody = fdoRecordService.buildPatchDeleteRequest(rollbackToVersion);
       handleComponent.rollbackHandleUpdate(requestBody);
     } catch (PidCreationException e) {
       var handles = recordsToRollback.stream().map(media -> media.digitalMediaObjectRecord().id())
@@ -451,9 +450,9 @@ public class ProcessingService {
       List<DigitalMediaObjectEvent> newRecords) {
     var newRecordList = newRecords.stream().map(DigitalMediaObjectEvent::digitalMediaObject)
         .toList();
-    var requestBody = fdoRecordService.buildPostHandleRequest(newRecordList);
     Map<DigitalMediaObjectKey, String> pidMap;
     try {
+      var requestBody = fdoRecordService.buildPostHandleRequest(newRecordList);
       pidMap = handleComponent.postHandle(requestBody);
     } catch (PidCreationException e) {
       log.error("Unable to create pids for given request", e);

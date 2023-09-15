@@ -166,7 +166,8 @@ class ProcessingServiceTest {
     var result = service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent()), false);
 
     // Then
-    then(fdoRecordService).should().buildPatchDeleteRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
+    then(fdoRecordService).should()
+        .buildPatchDeleteRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
     then(handleComponent).should().updateHandle(any());
     then(repository).should().createDigitalMediaRecord(expected);
     then(publisherService).should()
@@ -190,7 +191,8 @@ class ProcessingServiceTest {
     var result = service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent()), false);
 
     // Then
-    then(fdoRecordService).should().buildPatchDeleteRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
+    then(fdoRecordService).should()
+        .buildPatchDeleteRequest(List.of(givenDigitalMediaObjectRecordWithVersion(2)));
     then(repository).shouldHaveNoMoreInteractions();
     then(publisherService).should().deadLetterEvent(givenDlqTransferEventUpdate());
     assertThat(result).isEmpty();
@@ -332,7 +334,7 @@ class ProcessingServiceTest {
     var secondEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_2, MEDIA_URL_2);
     var thirdEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_3, MEDIA_URL_3);
     given(specimenRepository.getSpecimenId(
-        List.of(PHYSICAL_SPECIMEN_ID_3, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_2))).willReturn(
+        List.of(PHYSICAL_SPECIMEN_ID_2, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_3))).willReturn(
         Map.of(
             PHYSICAL_SPECIMEN_ID_3, DIGITAL_SPECIMEN_ID_3,
             PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID,
@@ -349,10 +351,10 @@ class ProcessingServiceTest {
 
     // Then
     then(fdoRecordService).should().buildPostHandleRequest(List.of(
-        givenDigitalMediaObject(DIGITAL_SPECIMEN_ID_3, PHYSICAL_SPECIMEN_ID_3, FORMAT, MEDIA_URL_3,
+        givenDigitalMediaObject(DIGITAL_SPECIMEN_ID_2, PHYSICAL_SPECIMEN_ID_2, FORMAT, MEDIA_URL_2,
             TYPE),
         givenDigitalMediaObject(),
-        givenDigitalMediaObject(DIGITAL_SPECIMEN_ID_2, PHYSICAL_SPECIMEN_ID_2, FORMAT, MEDIA_URL_2,
+        givenDigitalMediaObject(DIGITAL_SPECIMEN_ID_3, PHYSICAL_SPECIMEN_ID_3, FORMAT, MEDIA_URL_3,
             TYPE)
     ));
     then(fdoRecordService).should().buildRollbackCreationRequest(List.of(
@@ -375,7 +377,7 @@ class ProcessingServiceTest {
     var secondEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_2, MEDIA_URL_2);
     var thirdEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_3, MEDIA_URL_3);
     given(specimenRepository.getSpecimenId(
-        List.of(PHYSICAL_SPECIMEN_ID_3, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_2))).willReturn(
+        List.of(PHYSICAL_SPECIMEN_ID_2, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_3))).willReturn(
         Map.of(
             PHYSICAL_SPECIMEN_ID_3, DIGITAL_SPECIMEN_ID_3,
             PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID,
@@ -401,9 +403,9 @@ class ProcessingServiceTest {
 
     // Then
     then(fdoRecordService).should().buildPostHandleRequest(List.of(
-        thirdRecord.digitalMediaObject(),
+        secondRecord.digitalMediaObject(),
         givenDigitalMediaObject(),
-        secondRecord.digitalMediaObject()
+        thirdRecord.digitalMediaObject()
     ));
     then(fdoRecordService).should()
         .buildRollbackCreationRequest(List.of(secondRecord, thirdRecord));
@@ -424,7 +426,7 @@ class ProcessingServiceTest {
     var secondEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_2, MEDIA_URL_2);
     var thirdEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_3, MEDIA_URL_3);
     given(specimenRepository.getSpecimenId(
-        List.of(PHYSICAL_SPECIMEN_ID_3, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_2))).willReturn(
+        List.of(PHYSICAL_SPECIMEN_ID_2, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_3))).willReturn(
         Map.of(
             PHYSICAL_SPECIMEN_ID_3, DIGITAL_SPECIMEN_ID_3,
             PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID,
@@ -461,7 +463,7 @@ class ProcessingServiceTest {
     var secondEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_2, MEDIA_URL_2);
     var thirdEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_3, MEDIA_URL_3);
     given(specimenRepository.getSpecimenId(
-        List.of(PHYSICAL_SPECIMEN_ID_3, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_2))).willReturn(
+        List.of(PHYSICAL_SPECIMEN_ID_2, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_3))).willReturn(
         Map.of(
             PHYSICAL_SPECIMEN_ID_3, DIGITAL_SPECIMEN_ID_3,
             PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID,
@@ -527,7 +529,7 @@ class ProcessingServiceTest {
     var secondEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_2, MEDIA_URL_2);
     var thirdEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_3, MEDIA_URL_3);
     given(specimenRepository.getSpecimenId(
-        List.of(PHYSICAL_SPECIMEN_ID_3, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_2))).willReturn(
+        List.of(PHYSICAL_SPECIMEN_ID_2, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_3))).willReturn(
         Map.of(
             PHYSICAL_SPECIMEN_ID_3, DIGITAL_SPECIMEN_ID_3,
             PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID,
@@ -563,7 +565,7 @@ class ProcessingServiceTest {
     var secondEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_2, MEDIA_URL_2);
     var thirdEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_3, MEDIA_URL_3);
     given(specimenRepository.getSpecimenId(
-        List.of(PHYSICAL_SPECIMEN_ID_3, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_2))).willReturn(
+        List.of(PHYSICAL_SPECIMEN_ID_2, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_3))).willReturn(
         Map.of(
             PHYSICAL_SPECIMEN_ID_3, DIGITAL_SPECIMEN_ID_3,
             PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID,
@@ -613,7 +615,7 @@ class ProcessingServiceTest {
             TYPE));
 
     given(specimenRepository.getSpecimenId(
-        List.of(PHYSICAL_SPECIMEN_ID_3, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_2))).willReturn(
+        List.of(PHYSICAL_SPECIMEN_ID_2, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_3))).willReturn(
         Map.of(
             PHYSICAL_SPECIMEN_ID_3, DIGITAL_SPECIMEN_ID_3,
             PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID,
@@ -655,7 +657,7 @@ class ProcessingServiceTest {
     var secondEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_2, MEDIA_URL_2);
     var thirdEvent = givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID_3, MEDIA_URL_3);
     given(specimenRepository.getSpecimenId(
-        List.of(PHYSICAL_SPECIMEN_ID_3, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_2))).willReturn(
+        List.of(PHYSICAL_SPECIMEN_ID_2, PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID_3))).willReturn(
         Map.of(
             PHYSICAL_SPECIMEN_ID_3, DIGITAL_SPECIMEN_ID_3,
             PHYSICAL_SPECIMEN_ID, DIGITAL_SPECIMEN_ID,

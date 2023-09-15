@@ -8,8 +8,19 @@ public enum FdoProfileAttributes {
   // Issued for agent should be DiSSCo PID; currently it's set as Naturalis's ROR
   ISSUED_FOR_AGENT("issuedForAgent", "https://ror.org/0566bfb96"),
   REFERENT_NAME("referentName", null),
-  MEDIA_URL("mediaUrl", null),
-  SUBJECT_ID("subjectLocalIdentifier", null);
+  PRIMARY_MEDIA_ID("primaryMediaId", null),
+  LINKED_DO_PID("linkedDigitalObjectPid", null),
+  MEDIA_HOST("organisationId", null),
+  IS_DERIVED_FROM_SPECIMEN("isDerivedFromSpecimen", "true"),
+  LINKED_DO_TYPE("linkedDigitalObjectType", "digital specimen"),
+  PRIMARY_MO_ID_TYPE("primaryMediaObjectIdType", "resolvable"),
+  PRIMARY_MO_ID_NAME("primaryMediaObjectIdName", "ac:accessUri"),
+  PRIMARY_MO_TYPE("primaryMediaObjectType", null),
+  LICENSE("license", null),
+  RIGHTSHOLDER_PID_TYPE("rightsholderPidType", "resolvable"),
+  MEDIA_FORMAT("mediaFormat", "image");
+
+
 
   private final String attribute;
   private final String defaultValue;

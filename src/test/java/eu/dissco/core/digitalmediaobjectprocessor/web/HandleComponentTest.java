@@ -1,20 +1,26 @@
 package eu.dissco.core.digitalmediaobjectprocessor.web;
 
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.CREATED;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPidMap;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPostHandleRequest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +28,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -32,8 +39,12 @@ class HandleComponentTest {
   @Mock
   private TokenAuthenticator tokenAuthenticator;
   private HandleComponent handleComponent;
-
   private static MockWebServer mockHandleServer;
+
+  private MockedStatic<Clock> mockedClock;
+  private MockedStatic<Instant> mockedStatic;
+  private final Instant instant = Instant.now(Clock.fixed(CREATED, ZoneOffset.UTC));
+
 
   @BeforeAll
   static void init() throws IOException {
@@ -47,6 +58,17 @@ class HandleComponentTest {
         String.format("http://%s:%s", mockHandleServer.getHostName(), mockHandleServer.getPort()));
     handleComponent = new HandleComponent(webClient, tokenAuthenticator);
 
+    Clock clock = Clock.fixed(CREATED, ZoneOffset.UTC);
+    mockedStatic = mockStatic(Instant.class);
+    mockedStatic.when(Instant::now).thenReturn(instant);
+    mockedClock = mockStatic(Clock.class);
+    mockedClock.when(Clock::systemUTC).thenReturn(clock);
+  }
+
+  @AfterEach
+  void takeDown() {
+    mockedStatic.close();
+    mockedClock.close();
   }
 
   @AfterAll
@@ -258,11 +280,8 @@ class HandleComponentTest {
             "type": "mediaObject",
             "id":"20.5000.1025/1BY-BHB-AVN",
             "attributes": {
-              "fdoProfile": "https://hdl.handle.net/21.T11148/64396cf36b976ad08267",
-              "digitalObjectType": "https://hdl.handle.net/21.T11148/64396cf36b976ad08267",
-              "issuedForAgent": "https://ror.org/0566bfb96",
-              "mediaUrl":"http://data.rbge.org.uk/living/19942272",
-              "subjectLocalIdentifier":"20.5000.1025/460-A7R-QMJ"
+              "primaryMediaId":"http://data.rbge.org.uk/living/19942272",
+              "linkedDigitalObjectPid":"20.5000.1025/460-A7R-QMJ"
               }
            }]
         }

@@ -3,9 +3,17 @@ package eu.dissco.core.digitalmediaobjectprocessor;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.DIGITAL_OBJECT_TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.FDO_PROFILE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_URL;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.IS_DERIVED_FROM_SPECIMEN;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LICENSE;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LINKED_DO_TYPE;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_HOST;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MEDIA_ID;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_NAME;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_TYPE;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MO_TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.SUBJECT_ID;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.RIGHTSHOLDER_PID_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -44,21 +52,12 @@ public class TestUtils {
   public static final String MEDIA_URL_3 = "http://data.rbge.org.uk/living/1994227Y";
   public static final String FORMAT = "image/jpeg";
   public static final String FORMAT_2 = "image/png";
+  public static final String MEDIA_HOST_TESTVAL = "https://ror.org/0x123";
+  public static final String LICENSE_TESTVAL = "http://creativecommons.org/licenses/by-nc/3.0/";
 
   public static DigitalMediaObjectTransferEvent givenMediaEvent() throws JsonProcessingException {
     return new DigitalMediaObjectTransferEvent(
         List.of("OCR"), givenDigitalMediaTransfer(PHYSICAL_SPECIMEN_ID, MEDIA_URL_1)
-    );
-  }
-
-  public static UpdatedDigitalMediaTuple givenUpdatedDigitalMediaTuple()
-      throws JsonProcessingException {
-    return new UpdatedDigitalMediaTuple(
-        givenDigitalMediaObjectRecord(FORMAT_2),
-        new DigitalMediaObjectEvent(
-            List.of(AAS),
-            givenDigitalMediaObject()
-        )
     );
   }
 
@@ -184,6 +183,8 @@ public class TestUtils {
     objectNode.put("ods:sourceSystemId", "20.5000.1025/WDP-JYE-73C");
     objectNode.put("dcterms:format", format);
     objectNode.put("dcterms:license", "http://creativecommons.org/licenses/by-nc/3.0/");
+    objectNode.put("ods:organisationId", MEDIA_HOST_TESTVAL);
+    objectNode.put("dcterms:license", LICENSE_TESTVAL);
     return objectNode;
   }
 
@@ -223,8 +224,19 @@ public class TestUtils {
     attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
     attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
     attributes.put(REFERENT_NAME.getAttribute(), TYPE + " for " + DIGITAL_SPECIMEN_ID);
-    attributes.put(MEDIA_URL.getAttribute(), MEDIA_URL_1);
-    attributes.put(SUBJECT_ID.getAttribute(), DIGITAL_SPECIMEN_ID);
+    attributes.put(PRIMARY_MEDIA_ID.getAttribute(), MEDIA_URL_1);
+    attributes.put(LINKED_DO_PID.getAttribute(), DIGITAL_SPECIMEN_ID);
+
+    attributes.put(PRIMARY_MO_TYPE.getAttribute(), PRIMARY_MO_TYPE.getDefaultValue());
+    attributes.put(IS_DERIVED_FROM_SPECIMEN.getAttribute(), Boolean.valueOf(IS_DERIVED_FROM_SPECIMEN.getDefaultValue()));
+    attributes.put(LINKED_DO_TYPE.getAttribute(), LINKED_DO_TYPE.getDefaultValue());
+    attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());
+    attributes.put(PRIMARY_MO_ID_NAME.getAttribute(), PRIMARY_MO_ID_NAME.getDefaultValue());
+    attributes.put(RIGHTSHOLDER_PID_TYPE.getAttribute(), RIGHTSHOLDER_PID_TYPE.getDefaultValue());
+
+    attributes.put(MEDIA_HOST.getAttribute(), MEDIA_HOST_TESTVAL);
+    attributes.put(LICENSE.getAttribute(), LICENSE_TESTVAL);
+
     return attributes;
   }
 
