@@ -145,8 +145,8 @@ class ElasticSearchRepositoryIT {
     // Then
     var document = client.get(g -> g.index(INDEX).id(HANDLE),
         DigitalMediaObjectRecord.class);
-    assertThat(document.source().digitalMediaObject().attributes().get("dcterms:format")
-        .asText()).isEqualTo("image/png");
+    assertThat(document.source().digitalMediaObject().attributes().getDctermsFormat()).isEqualTo(
+        "image/png");
   }
 
 

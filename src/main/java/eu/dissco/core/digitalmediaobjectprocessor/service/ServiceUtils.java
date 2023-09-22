@@ -1,14 +1,15 @@
 package eu.dissco.core.digitalmediaobjectprocessor.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import eu.dissco.core.digitalmediaobjectprocessor.schema.DigitalEntity;
 
 public class ServiceUtils {
 
-  private ServiceUtils(){}
+  private ServiceUtils() {
+  }
 
-  protected static String getMediaUrl(JsonNode attributes) {
-    if (attributes.get("ac:accessURI") != null) {
-      return attributes.get("ac:accessURI").asText();
+  protected static String getMediaUrl(DigitalEntity attributes) {
+    if (attributes.getAcAccessUri() != null) {
+      return attributes.getAcAccessUri();
     }
     return null;
   }

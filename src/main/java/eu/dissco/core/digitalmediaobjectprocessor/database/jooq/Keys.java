@@ -4,12 +4,9 @@
 package eu.dissco.core.digitalmediaobjectprocessor.database.jooq;
 
 
-import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.Handles;
-import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.NewDigitalMediaObject;
-import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.NewDigitalSpecimen;
-import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.records.HandlesRecord;
-import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.records.NewDigitalMediaObjectRecord;
-import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.records.NewDigitalSpecimenRecord;
+import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.records.DigitalMediaObjectRecord;
+
 import org.jooq.TableField;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
@@ -17,7 +14,7 @@ import org.jooq.impl.Internal;
 
 
 /**
- * A class modelling foreign key relationships and constraints of tables in 
+ * A class modelling foreign key relationships and constraints of tables in
  * public.
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
@@ -27,7 +24,5 @@ public class Keys {
     // UNIQUE and PRIMARY KEY definitions
     // -------------------------------------------------------------------------
 
-    public static final UniqueKey<HandlesRecord> HANDLES_PKEY = Internal.createUniqueKey(Handles.HANDLES, DSL.name("handles_pkey"), new TableField[] { Handles.HANDLES.HANDLE, Handles.HANDLES.IDX }, true);
-    public static final UniqueKey<NewDigitalMediaObjectRecord> NEW_DIGITAL_MEDIA_OBJECT_PK = Internal.createUniqueKey(NewDigitalMediaObject.NEW_DIGITAL_MEDIA_OBJECT, DSL.name("new_digital_media_object_pk"), new TableField[] { NewDigitalMediaObject.NEW_DIGITAL_MEDIA_OBJECT.ID }, true);
-    public static final UniqueKey<NewDigitalSpecimenRecord> NEW_DIGITAL_SPECIMEN_PK = Internal.createUniqueKey(NewDigitalSpecimen.NEW_DIGITAL_SPECIMEN, DSL.name("new_digital_specimen_pk"), new TableField[] { NewDigitalSpecimen.NEW_DIGITAL_SPECIMEN.ID }, true);
+    public static final UniqueKey<DigitalMediaObjectRecord> DIGITAL_MEDIA_OBJECT_PK = Internal.createUniqueKey(DigitalMediaObject.DIGITAL_MEDIA_OBJECT, DSL.name("digital_media_object_pk"), new TableField[] { DigitalMediaObject.DIGITAL_MEDIA_OBJECT.ID }, true);
 }

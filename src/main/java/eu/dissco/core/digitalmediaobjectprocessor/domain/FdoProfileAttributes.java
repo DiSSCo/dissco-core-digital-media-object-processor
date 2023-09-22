@@ -10,7 +10,7 @@ public enum FdoProfileAttributes {
   REFERENT_NAME("referentName", null),
   PRIMARY_MEDIA_ID("primaryMediaId", null),
   LINKED_DO_PID("linkedDigitalObjectPid", null),
-  MEDIA_HOST("organisationId", null),
+  MEDIA_HOST("mediaHost", null),
   IS_DERIVED_FROM_SPECIMEN("isDerivedFromSpecimen", "true"),
   LINKED_DO_TYPE("linkedDigitalObjectType", "digital specimen"),
   PRIMARY_MO_ID_TYPE("primaryMediaObjectIdType", "resolvable"),

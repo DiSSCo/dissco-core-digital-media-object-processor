@@ -12,12 +12,13 @@ import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_2;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MEDIA_URL_3;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.UPDATED_TIMESTAMP;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecord;
-import static eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Tables.NEW_DIGITAL_MEDIA_OBJECT;
+import static eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Tables.DIGITAL_MEDIA_OBJECT;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mockStatic;
+
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.dissco.core.digitalmediaobjectprocessor.TestUtils;
+import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Tables;
 import java.util.List;
 import org.jooq.Record1;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,9 +77,9 @@ class DigitalMediaObjectRepositoryIT extends BaseRepositoryIT {
     repository.updateLastChecked(List.of(HANDLE));
 
     // Then
-    var result = context.select(NEW_DIGITAL_MEDIA_OBJECT.LAST_CHECKED)
-        .from(NEW_DIGITAL_MEDIA_OBJECT)
-        .where(NEW_DIGITAL_MEDIA_OBJECT.ID.eq(HANDLE)).fetchOne(Record1::value1);
+    var result = context.select(DIGITAL_MEDIA_OBJECT.LAST_CHECKED)
+        .from(DIGITAL_MEDIA_OBJECT)
+        .where(DIGITAL_MEDIA_OBJECT.ID.eq(HANDLE)).fetchOne(Record1::value1);
     assertThat(result).isAfter(UPDATED_TIMESTAMP);
   }
 

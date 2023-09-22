@@ -1,9 +1,8 @@
 package eu.dissco.core.digitalmediaobjectprocessor.controller;
 
 import eu.dissco.core.digitalmediaobjectprocessor.Profiles;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransferEvent;
-import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.NoChangesFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.service.ProcessingService;
 import java.util.List;
@@ -30,19 +29,13 @@ public class DigitalMediaObjectController {
 
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<DigitalMediaObjectRecord> createDigitalMediaObject(@RequestBody
-  DigitalMediaObjectTransferEvent event)
-      throws DigitalSpecimenNotFoundException, NoChangesFoundException {
+  DigitalMediaObjectEvent event) throws NoChangesFoundException {
     log.info("Received digitalMediaObject upsert: {}", event);
-    var result = processingService.handleMessage(List.of(event), true);
-    if (result.isEmpty()){
+    var result = processingService.handleMessage(List.of(event));
+    if (result.isEmpty()) {
       throw new NoChangesFoundException("No changes found for specimen");
     }
     return ResponseEntity.status(HttpStatus.CREATED).body(result.get(0));
-  }
-
-  @ExceptionHandler(DigitalSpecimenNotFoundException.class)
-  public ResponseEntity<String> handleException(DigitalSpecimenNotFoundException e) {
-    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
   }
 
   @ExceptionHandler(NoChangesFoundException.class)

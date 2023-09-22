@@ -1,8 +1,8 @@
 package eu.dissco.core.digitalmediaobjectprocessor.properties;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -13,13 +13,14 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties("token")
 public class TokenProperties {
 
-  @NotBlank
+
+  @Value("${auth.secret}")
   private String secret;
 
-  @NotBlank
+  @Value("${auth.id}")
   private String id;
 
-  @NotBlank
+  @Value("${auth.grantType}")
   private String grantType;
 
   private MultiValueMap<String, String> fromFormData;
