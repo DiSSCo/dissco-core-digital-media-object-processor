@@ -1,6 +1,5 @@
 package eu.dissco.core.digitalmediaobjectprocessor.service;
 
-import static eu.dissco.core.digitalmediaobjectprocessor.service.ServiceUtils.getMediaUrl;
 import static java.util.stream.Collectors.toMap;
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
@@ -91,7 +90,8 @@ public class ProcessingService {
     var uniqueSet = new LinkedHashSet<DigitalMediaObjectEvent>();
     var map = events.stream()
         .collect(
-            Collectors.groupingBy(event -> getMediaUrl(event.digitalMediaObject().attributes())));
+            Collectors.groupingBy(
+                event -> event.digitalMediaObject().attributes().getAcAccessUri()));
     for (Entry<String, List<DigitalMediaObjectEvent>> entry : map.entrySet()) {
       if (entry.getValue().size() > 1) {
         log.warn("Found {} duplicates in batch for id {}", entry.getValue().size(), entry.getKey());
@@ -127,7 +127,7 @@ public class ProcessingService {
     for (var mediaObject : events) {
       var digitalMediaObject = mediaObject.digitalMediaObject();
       var digitalMediaObjectKey = new DigitalMediaObjectKey(
-          digitalMediaObject.digitalSpecimenId(), getMediaUrl(digitalMediaObject.attributes()));
+          digitalMediaObject.digitalSpecimenId(), digitalMediaObject.attributes().getAcAccessUri());
       log.debug("Processing digitalMediaObject: {}", digitalMediaObject);
       if (!currentMediaObjects.containsKey(digitalMediaObjectKey)) {
         log.debug("DigitalMedia with key: {} is completely new", digitalMediaObjectKey);
@@ -153,13 +153,13 @@ public class ProcessingService {
       List<DigitalMediaObject> digitalMediaObjects) {
     return repository.getDigitalMediaObject(
             digitalMediaObjects.stream().map(DigitalMediaObject::digitalSpecimenId).toList(),
-            digitalMediaObjects.stream().map(digitalMedia -> getMediaUrl(digitalMedia.attributes()))
+            digitalMediaObjects.stream().map(digitalMedia -> digitalMedia.attributes().getAcAccessUri())
                 .toList())
         .stream().collect(
             toMap(digitalMediaRecord ->
                     new DigitalMediaObjectKey(
                         digitalMediaRecord.digitalMediaObject().digitalSpecimenId(),
-                        getMediaUrl(digitalMediaRecord.digitalMediaObject().attributes())
+                        digitalMediaRecord.digitalMediaObject().attributes().getAcAccessUri()
                     ),
                 Function.identity(),
                 (dm1, dm2) -> {
@@ -222,7 +222,7 @@ public class ProcessingService {
                 )));
       } catch (JsonProcessingException e) {
         log.error("Fatal exception, unable to dead letter queue media with url {} for specimen {}",
-            getMediaUrl(media.digitalMediaObjectRecord().digitalMediaObject().attributes()),
+            media.digitalMediaObjectRecord().digitalMediaObject().attributes().getAcAccessUri(),
             media.digitalMediaObjectRecord().digitalMediaObject().digitalSpecimenId(),
             e);
       }
@@ -242,7 +242,7 @@ public class ProcessingService {
                 )));
       } catch (JsonProcessingException e) {
         log.error("Fatal exception, unable to dead letter queue media with url {} for specimen {}",
-            getMediaUrl(media.digitalMediaObject().attributes()),
+            media.digitalMediaObject().attributes().getAcAccessUri(),
             media.digitalMediaObject().digitalSpecimenId(),
             e);
       }
@@ -552,12 +552,12 @@ public class ProcessingService {
   private DigitalMediaObjectRecord mapToDigitalMediaRecord(DigitalMediaObjectEvent event,
       Map<DigitalMediaObjectKey, String> pidMap) {
     var targetKey = new DigitalMediaObjectKey(event.digitalMediaObject().digitalSpecimenId(),
-        getMediaUrl(event.digitalMediaObject().attributes()));
+        event.digitalMediaObject().attributes().getAcAccessUri());
     var handle = pidMap.get(targetKey);
     if (handle == null) {
       log.error("Failed to process record with ds id: {} and mediaUrl: {}",
           event.digitalMediaObject().digitalSpecimenId(),
-          getMediaUrl(event.digitalMediaObject().attributes()));
+          event.digitalMediaObject().attributes().getAcAccessUri());
       return null;
     }
     return new DigitalMediaObjectRecord(
