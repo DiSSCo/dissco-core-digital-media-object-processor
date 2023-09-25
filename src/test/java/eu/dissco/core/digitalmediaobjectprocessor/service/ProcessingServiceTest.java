@@ -21,6 +21,7 @@ import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalM
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectTransferEvent;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPidMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
@@ -36,12 +37,15 @@ import co.elastic.clients.elasticsearch._types.ErrorCause;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import eu.dissco.core.digitalmediaobjectprocessor.Profiles;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaRecord;
+import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalMediaObjectRepository;
+import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalSpecimenRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.ElasticSearchRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.web.HandleComponent;
 import java.io.IOException;
@@ -57,12 +61,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.Environment;
 
 @ExtendWith(MockitoExtension.class)
 class ProcessingServiceTest {
 
   @Mock
   private DigitalMediaObjectRepository repository;
+  @Mock
+  private DigitalSpecimenRepository digitalSpecimenRepository;
   @Mock
   private ElasticSearchRepository elasticRepository;
   @Mock
@@ -73,6 +80,8 @@ class ProcessingServiceTest {
   private FdoRecordService fdoRecordService;
   @Mock
   private HandleComponent handleComponent;
+  @Mock
+  private Environment environment;
 
   private MockedStatic<Instant> mockedInstant;
   private MockedStatic<Clock> mockedClock;
@@ -82,7 +91,7 @@ class ProcessingServiceTest {
   @BeforeEach
   void setup() {
     service = new ProcessingService(repository, fdoRecordService, handleComponent,
-        elasticRepository, publisherService);
+        elasticRepository, publisherService, digitalSpecimenRepository, environment);
     Clock clock = Clock.fixed(CREATED, ZoneOffset.UTC);
     Instant instant = Instant.now(clock);
     mockedInstant = mockStatic(Instant.class);
@@ -99,7 +108,7 @@ class ProcessingServiceTest {
   }
 
   @Test
-  void testEqualDigitalMedia() throws JsonProcessingException {
+  void testEqualDigitalMedia() throws JsonProcessingException, DigitalSpecimenNotFoundException {
     // Given
     given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(
@@ -329,9 +338,9 @@ class ProcessingServiceTest {
     then(repository).should().rollBackDigitalMedia(HANDLE_2);
     then(publisherService).should().deadLetterEvent(secondEvent);
     assertThat(result).isEqualTo(List.of(
-        givenDigitalMediaObjectRecord(),
         givenDigitalMediaObjectRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3,
-            TYPE)));
+            TYPE),
+        givenDigitalMediaObjectRecord()));
   }
 
   @Test
@@ -398,9 +407,10 @@ class ProcessingServiceTest {
         givenDigitalMediaObjectRecordPhysical(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2, TYPE)));
     then(handleComponent).should().rollbackHandleCreation(any());
     then(publisherService).should().deadLetterEvent(secondEvent);
-    assertThat(result).isEqualTo(List.of(givenDigitalMediaObjectRecord(),
+    assertThat(result).isEqualTo(List.of(
         givenDigitalMediaObjectRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3,
-            TYPE)));
+            TYPE),
+        givenDigitalMediaObjectRecord()));
   }
 
   @Test
@@ -426,9 +436,9 @@ class ProcessingServiceTest {
     then(fdoRecordService).should().buildRollbackCreationRequest(List.of(
         givenDigitalMediaObjectRecordPhysical(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2, TYPE)));
     assertThat(result).isEqualTo(
-        List.of(givenDigitalMediaObjectRecord(),
-            givenDigitalMediaObjectRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3,
-                TYPE)));
+        List.of(givenDigitalMediaObjectRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3,
+                TYPE),
+            givenDigitalMediaObjectRecord()));
   }
 
   @Test
@@ -680,7 +690,8 @@ class ProcessingServiceTest {
   }
 
   @Test
-  void testDigitalSpecimenMissingKafka() throws JsonProcessingException {
+  void testDigitalMediaMissingKafka()
+      throws JsonProcessingException, DigitalSpecimenNotFoundException {
     // Given
 
     // When
@@ -688,6 +699,18 @@ class ProcessingServiceTest {
 
     // Then
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  void testDigitalSpecimenMissingDoi() {
+    // Given
+    given(digitalSpecimenRepository.getExistingSpecimen(List.of(DIGITAL_SPECIMEN_ID))).willReturn(
+        List.of());
+    given(environment.matchesProfiles(Profiles.WEB)).willReturn(true);
+
+    // When / Then
+    assertThrows(DigitalSpecimenNotFoundException.class,
+        () -> service.handleMessage(List.of(givenDigitalMediaObjectTransferEvent())));
   }
 
   private void givenBulkResponse() {

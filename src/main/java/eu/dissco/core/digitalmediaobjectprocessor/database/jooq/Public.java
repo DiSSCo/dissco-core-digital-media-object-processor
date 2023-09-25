@@ -5,6 +5,7 @@ package eu.dissco.core.digitalmediaobjectprocessor.database.jooq;
 
 
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.DigitalSpecimen;
 
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +34,11 @@ public class Public extends SchemaImpl {
     public final DigitalMediaObject DIGITAL_MEDIA_OBJECT = DigitalMediaObject.DIGITAL_MEDIA_OBJECT;
 
     /**
+     * The table <code>public.digital_specimen</code>.
+     */
+    public final DigitalSpecimen DIGITAL_SPECIMEN = DigitalSpecimen.DIGITAL_SPECIMEN;
+
+    /**
      * No further instances allowed
      */
     private Public() {
@@ -48,7 +54,8 @@ public class Public extends SchemaImpl {
     @Override
     public final List<Table<?>> getTables() {
         return Arrays.asList(
-            DigitalMediaObject.DIGITAL_MEDIA_OBJECT
+            DigitalMediaObject.DIGITAL_MEDIA_OBJECT,
+            DigitalSpecimen.DIGITAL_SPECIMEN
         );
     }
 }

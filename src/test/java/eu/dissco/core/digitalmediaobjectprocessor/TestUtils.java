@@ -7,6 +7,7 @@ import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttrib
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LICENSE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LINKED_DO_TYPE;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_FORMAT;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_HOST;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MEDIA_ID;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_NAME;
@@ -37,7 +38,7 @@ public class TestUtils {
   public static final int VERSION = 1;
   public static final Instant CREATED = Instant.parse("2022-09-16T08:52:27.391Z");
   public static final Instant UPDATED_TIMESTAMP = Instant.parse("2023-03-23T15:41:27.391Z");
-  public static final String TYPE = "2DImageObject";
+  public static final String TYPE = "Image";
   public static final String AAS = "OCR";
   public static final String DIGITAL_SPECIMEN_ID = "20.5000.1025/460-A7R-QMJ";
   public static final String DIGITAL_SPECIMEN_ID_2 = "20.5000.1025/460-A7R-XXX";
@@ -210,23 +211,23 @@ public class TestUtils {
 
   public static JsonNode givenPostAttributes() {
     var attributes = MAPPER.createObjectNode();
+    attributes.put(MEDIA_HOST.getAttribute(), MEDIA_HOST_TESTVAL);
+    attributes.put(LICENSE.getAttribute(), LICENSE_TESTVAL);
+    attributes.put(PRIMARY_MEDIA_ID.getAttribute(), MEDIA_URL_1);
+    attributes.put(REFERENT_NAME.getAttribute(), TYPE + " for " + DIGITAL_SPECIMEN_ID);
+    attributes.put(LINKED_DO_PID.getAttribute(), DIGITAL_SPECIMEN_ID);
+    attributes.put(MEDIA_FORMAT.getAttribute(), "image");
     attributes.put(FDO_PROFILE.getAttribute(), FDO_PROFILE.getDefaultValue());
     attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
     attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
-    attributes.put(REFERENT_NAME.getAttribute(), TYPE + " for " + DIGITAL_SPECIMEN_ID);
-    attributes.put(PRIMARY_MEDIA_ID.getAttribute(), MEDIA_URL_1);
-    attributes.put(LINKED_DO_PID.getAttribute(), DIGITAL_SPECIMEN_ID);
 
     attributes.put(PRIMARY_MO_TYPE.getAttribute(), PRIMARY_MO_TYPE.getDefaultValue());
-    attributes.put(IS_DERIVED_FROM_SPECIMEN.getAttribute(),
-        Boolean.valueOf(IS_DERIVED_FROM_SPECIMEN.getDefaultValue()));
-    attributes.put(LINKED_DO_TYPE.getAttribute(), LINKED_DO_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_NAME.getAttribute(), PRIMARY_MO_ID_NAME.getDefaultValue());
     attributes.put(RIGHTSHOLDER_PID_TYPE.getAttribute(), RIGHTSHOLDER_PID_TYPE.getDefaultValue());
-
-    attributes.put(MEDIA_HOST.getAttribute(), MEDIA_HOST_TESTVAL);
-    attributes.put(LICENSE.getAttribute(), LICENSE_TESTVAL);
+    attributes.put(IS_DERIVED_FROM_SPECIMEN.getAttribute(),
+        Boolean.valueOf(IS_DERIVED_FROM_SPECIMEN.getDefaultValue()));
+    attributes.put(LINKED_DO_TYPE.getAttribute(), LINKED_DO_TYPE.getDefaultValue());
 
     return attributes;
   }

@@ -13,11 +13,15 @@ import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalM
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPostAttributes;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenPostHandleRequest;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes;
+import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
+import eu.dissco.core.digitalmediaobjectprocessor.schema.DigitalEntity;
+import eu.dissco.core.digitalmediaobjectprocessor.schema.DigitalEntity.DctermsType;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -113,20 +117,17 @@ class FdoRecordServiceTest {
         givenDigitalMediaObject())).isFalse();
   }
 
-//  @Test
-//  void testHandleDoesNeedUpdateLicense() throws Exception {
-//    var attributes = MAPPER.readTree("""
-//        {
-//          "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
-//          "dcterms:license":"Different License",
-//          "ods:organisationId":"https://ror.org/0x123"
-//        }
-//        """);
-//    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
-//
-//    // Then
-//    assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(), mediaObject)).isTrue();
-//  }
+  @Test
+  void testHandleDoesNeedUpdateLicense() throws Exception {
+    var attributes = new DigitalEntity()
+        .withDctermsLicense("http://data.rbge.org.uk/living/19942272")
+        .withDctermsLicense("Different License")
+        .withDwcInstitutionId("https://ror.org/0x123");
+    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
+
+    // Then
+    assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(), mediaObject)).isTrue();
+  }
 
   @Test
   void testHandleDoesNeedUpdateId() throws Exception {
@@ -135,63 +136,56 @@ class FdoRecordServiceTest {
         givenDigitalMediaObject(DIGITAL_SPECIMEN_ID_2, FORMAT, MEDIA_URL_1, TYPE))).isTrue();
   }
 
-//  @Test
-//  void testMissingMandatoryElements() throws Exception {
-//    // Given
-//    var attributes = MAPPER.readTree("""
-//                "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
-//                "dcterms:license":"Different License"
-//        """);
-//    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
-//
-//    // Then
-//    assertThrows(PidCreationException.class, () -> fdoRecordService.buildPostHandleRequest(List.of(mediaObject)));
-//  }
+  @Test
+  void testMissingMandatoryElements() {
+    // Given
+    var attributes = new DigitalEntity()
+        .withAcAccessUri("http://data.rbge.org.uk/living/19942272")
+        .withDctermsLicense("Different License");
+    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
 
-//  @Test
-//  void testHandleNeedsUpdateMediaUrl() throws Exception {
-//    // Given
-//    var attributes = MAPPER.readTree("""
-//         {
-//          "ac:accessURI":"different uri",
-//          "dcterms:license":"http://creativecommons.org/licenses/by-nc/3.0/",
-//          "ods:organisationId":"https://ror.org/0x123"
-//        }
-//        """);
-//
-//    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
-//
-//    // Then
-//    assertThat(fdoRecordService.handleNeedsUpdate(mediaObject, givenDigitalMediaObject())).isTrue();
-//  }
+    // Then
+    assertThrows(PidCreationException.class,
+        () -> fdoRecordService.buildPostHandleRequest(List.of(mediaObject)));
+  }
 
-//  @Test
-//  void testHandleNeedsUpdateType() throws Exception {
-//    // Given
-//    var attributesCurrent = MAPPER.readTree("""
-//         {
-//          "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
-//          "dcterms:license":"http://creativecommons.org/licenses/by-nc/3.0/",
-//          "ods:organisationId":"https://ror.org/0x123",
-//          "dcterms:type":"2dimage"
-//        }
-//        """);
-//
-//    var attributesNew = MAPPER.readTree("""
-//         {
-//          "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
-//          "dcterms:license":"http://creativecommons.org/licenses/by-nc/3.0/",
-//          "ods:organisationId":"https://ror.org/0x123",
-//          "dcterms:type":"2dimageObject"
-//        }
-//        """);
-//
-//    var mediaObjectCurrent = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributesCurrent, null);
-//    var mediaObjectNew = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributesNew, null);
-//
-//    // Then
-//    assertThat(fdoRecordService.handleNeedsUpdate(mediaObjectNew, mediaObjectCurrent)).isTrue();
-//  }
+  @Test
+  void testHandleNeedsUpdateMediaUrl() throws Exception {
+    // Given
+    var attributes = new DigitalEntity()
+        .withAcAccessUri("different uri")
+        .withDctermsLicense("http://creativecommons.org/licenses/by-nc/3.0/")
+        .withDwcInstitutionId("https://ror.org/0x123");
+
+    // When
+    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
+
+    // Then
+    assertThat(fdoRecordService.handleNeedsUpdate(mediaObject, givenDigitalMediaObject())).isTrue();
+  }
+
+  @Test
+  void testHandleNeedsUpdateType() {
+    // Given
+    var attributesCurrent = new DigitalEntity()
+        .withAcAccessUri("http://data.rbge.org.uk/living/19942272")
+        .withDctermsLicense("http://creativecommons.org/licenses/by-nc/3.0/")
+        .withDwcInstitutionId("https://ror.org/0x123")
+        .withDctermsType(DctermsType.IMAGE);
+
+    var attributesNew = new DigitalEntity()
+        .withAcAccessUri("http://data.rbge.org.uk/living/19942272")
+        .withDctermsLicense("http://creativecommons.org/licenses/by-nc/3.0/")
+        .withDwcInstitutionId("https://ror.org/0x123")
+        .withDctermsType(DctermsType.MOVING_IMAGE);
+
+    var mediaObjectCurrent = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributesCurrent,
+        null);
+    var mediaObjectNew = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributesNew, null);
+
+    // When / Then
+    assertThat(fdoRecordService.handleNeedsUpdate(mediaObjectNew, mediaObjectCurrent)).isTrue();
+  }
 
   @Test
   void testHandleDoesNeedUpdateType() throws Exception {
@@ -202,26 +196,23 @@ class FdoRecordServiceTest {
     assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(), mediaObject)).isTrue();
   }
 
-//  @Test
-//  void testDcTermsType() throws Exception {
-//    // Given
-//    var attributes = MAPPER.readTree("""
-//         {
-//          "ac:accessURI":"http://data.rbge.org.uk/living/19942272",
-//          "dcterms:license":"http://creativecommons.org/licenses/by-nc/3.0/",
-//          "ods:organisationId":"https://ror.org/0x123",
-//          "dcterms:type":"2dimageObject"
-//        }
-//        """);
-//
-//    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
-//
-//    // When
-//    var result = fdoRecordService.buildPostHandleRequest(List.of(mediaObject)).get(0);
-//
-//    // Then
-//    assertThat(
-//        result.get("data").get("attributes").get(FdoProfileAttributes.MEDIA_FORMAT.getAttribute())
-//            .asText()).isEqualTo(FdoProfileAttributes.MEDIA_FORMAT.getDefaultValue());
-//  }
+  @Test
+  void testDcTermsType() throws Exception {
+    // Given
+    var attributes = new DigitalEntity()
+        .withAcAccessUri("http://data.rbge.org.uk/living/19942272")
+        .withDctermsLicense("http://creativecommons.org/licenses/by-nc/3.0/")
+        .withDwcInstitutionId("https://ror.org/0x123")
+        .withDctermsType(DctermsType.IMAGE);
+
+    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
+
+    // When
+    var result = fdoRecordService.buildPostHandleRequest(List.of(mediaObject)).get(0);
+
+    // Then
+    assertThat(
+        result.get("data").get("attributes").get(FdoProfileAttributes.MEDIA_FORMAT.getAttribute())
+            .asText()).isEqualTo(FdoProfileAttributes.MEDIA_FORMAT.getDefaultValue());
+  }
 }

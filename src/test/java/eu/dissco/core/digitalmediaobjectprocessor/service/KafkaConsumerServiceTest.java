@@ -2,10 +2,10 @@ package eu.dissco.core.digitalmediaobjectprocessor.service;
 
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenMediaEvent;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ class KafkaConsumerServiceTest {
   }
 
   @Test
-  void testGetMessages() throws JsonProcessingException {
+  void testGetMessages() throws JsonProcessingException, DigitalSpecimenNotFoundException {
     // Given
     var message = givenMessage();
 
@@ -60,7 +60,7 @@ class KafkaConsumerServiceTest {
         {
           "enrichmentList": ["OCR"],
           "digitalMediadbject": {
-            "dcterms:type": "2DImageObject",
+            "dcterms:type": "Image",
             "ods:digitalSpecimenId": "20.5000.1025/460-A7R-QMJ",
             "ods:attributes": {
               "ac:accessURI": "http://data.rbge.org.uk/living/19942272",
@@ -91,7 +91,7 @@ class KafkaConsumerServiceTest {
         {
           "enrichmentList": ["OCR"],
           "digitalMediaObject": {
-            "dcterms:type": "2DImageObject",
+            "dcterms:type": "Image",
             "ods:digitalSpecimenId": "20.5000.1025/460-A7R-QMJ",
             "ods:attributes": {
               "ac:accessUri": "http://data.rbge.org.uk/living/19942272",

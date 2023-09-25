@@ -132,6 +132,9 @@ public class FdoRecordService {
         .equals(mediaObject.attributes().getDctermsLicense()))
         || (currentMediaObject.type() != null && !currentMediaObject.type()
         .equals(mediaObject.type()))
+        || (currentMediaObject.attributes().getDctermsType() != null
+        && !currentMediaObject.attributes().getDctermsType()
+        .equals(mediaObject.attributes().getDctermsType()))
         || (currentMediaObject.attributes().getDwcInstitutionId() != null
         && !currentMediaObject.attributes().getDwcInstitutionId()
         .equals(mediaObject.attributes().getDwcInstitutionId())));

@@ -21,11 +21,10 @@ public enum FdoProfileAttributes {
   MEDIA_FORMAT("mediaFormat", "image");
 
 
-
   private final String attribute;
   private final String defaultValue;
 
-  private FdoProfileAttributes(String attribute, String defaultValue) {
+  FdoProfileAttributes(String attribute, String defaultValue) {
     this.attribute = attribute;
     this.defaultValue = defaultValue;
   }

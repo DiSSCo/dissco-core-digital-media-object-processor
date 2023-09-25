@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.dissco.core.digitalmediaobjectprocessor.Profiles;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
+import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
 import java.util.List;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
@@ -35,7 +36,11 @@ public class KafkaConsumerService {
       }
     }).filter(Objects::nonNull).toList();
     if (!events.isEmpty()) {
-      processingService.handleMessage(events);
+      try {
+        processingService.handleMessage(events);
+      } catch (DigitalSpecimenNotFoundException e) {
+        log.error("Throw an exception which should only be thrown in the web profile", e);
+      }
     } else {
       log.info("No more message to process in batch");
     }

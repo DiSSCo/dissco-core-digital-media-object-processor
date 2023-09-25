@@ -15,10 +15,8 @@ import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalM
 import static eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Tables.DIGITAL_MEDIA_OBJECT;
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.dissco.core.digitalmediaobjectprocessor.TestUtils;
-import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Tables;
 import java.util.List;
 import org.jooq.Record1;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +41,8 @@ class DigitalMediaObjectRepositoryIT extends BaseRepositoryIT {
     var result = repository.createDigitalMediaRecord(List.of(digitalMedia));
 
     // Then
-    var actual = repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID), List.of(MEDIA_URL_1));
+    var actual = repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL_1));
     assertThat(result).hasSize(1);
     assertThat(actual).contains(digitalMedia);
   }
@@ -60,7 +59,8 @@ class DigitalMediaObjectRepositoryIT extends BaseRepositoryIT {
     repository.createDigitalMediaRecord(List.of(updatedMedia));
 
     // Then
-    var actual = repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID), List.of(MEDIA_URL_1));
+    var actual = repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL_1));
     assertThat(actual).contains(updatedMedia);
   }
 

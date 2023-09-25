@@ -3,6 +3,7 @@ package eu.dissco.core.digitalmediaobjectprocessor.controller;
 import eu.dissco.core.digitalmediaobjectprocessor.Profiles;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
+import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.NoChangesFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.service.ProcessingService;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpClientErrorException.UnprocessableEntity;
 
 @Slf4j
 @Profile(Profiles.WEB)
@@ -29,7 +31,7 @@ public class DigitalMediaObjectController {
 
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<DigitalMediaObjectRecord> createDigitalMediaObject(@RequestBody
-  DigitalMediaObjectEvent event) throws NoChangesFoundException {
+  DigitalMediaObjectEvent event) throws NoChangesFoundException, DigitalSpecimenNotFoundException {
     log.info("Received digitalMediaObject upsert: {}", event);
     var result = processingService.handleMessage(List.of(event));
     if (result.isEmpty()) {
@@ -41,5 +43,10 @@ public class DigitalMediaObjectController {
   @ExceptionHandler(NoChangesFoundException.class)
   public ResponseEntity<String> handleException(NoChangesFoundException e) {
     return ResponseEntity.status(HttpStatus.OK).body(e.getMessage());
+  }
+
+  @ExceptionHandler(UnprocessableEntity.class)
+  public ResponseEntity<String> handleException(DigitalSpecimenNotFoundException e) {
+    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
   }
 }

@@ -5,7 +5,9 @@ package eu.dissco.core.digitalmediaobjectprocessor.database.jooq;
 
 
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.DigitalSpecimen;
 import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.records.DigitalMediaObjectRecord;
+import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.records.DigitalSpecimenRecord;
 
 import org.jooq.TableField;
 import org.jooq.UniqueKey;
@@ -25,4 +27,5 @@ public class Keys {
     // -------------------------------------------------------------------------
 
     public static final UniqueKey<DigitalMediaObjectRecord> DIGITAL_MEDIA_OBJECT_PK = Internal.createUniqueKey(DigitalMediaObject.DIGITAL_MEDIA_OBJECT, DSL.name("digital_media_object_pk"), new TableField[] { DigitalMediaObject.DIGITAL_MEDIA_OBJECT.ID }, true);
+    public static final UniqueKey<DigitalSpecimenRecord> DIGITAL_SPECIMEN_PK = Internal.createUniqueKey(DigitalSpecimen.DIGITAL_SPECIMEN, DSL.name("digital_specimen_pk"), new TableField[] { DigitalSpecimen.DIGITAL_SPECIMEN.ID }, true);
 }

@@ -6,6 +6,7 @@ import static java.util.stream.Collectors.toMap;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import eu.dissco.core.digitalmediaobjectprocessor.Profiles;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectKey;
@@ -13,8 +14,10 @@ import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecor
 import eu.dissco.core.digitalmediaobjectprocessor.domain.ProcessResult;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaTuple;
+import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalMediaObjectRepository;
+import eu.dissco.core.digitalmediaobjectprocessor.repository.DigitalSpecimenRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.repository.ElasticSearchRepository;
 import eu.dissco.core.digitalmediaobjectprocessor.web.HandleComponent;
 import java.io.IOException;
@@ -31,6 +34,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -43,8 +47,14 @@ public class ProcessingService {
   private final HandleComponent handleComponent;
   private final ElasticSearchRepository elasticRepository;
   private final KafkaPublisherService kafkaService;
+  private final DigitalSpecimenRepository digitalSpecimenRepository;
+  private final Environment environment;
 
-  public List<DigitalMediaObjectRecord> handleMessage(List<DigitalMediaObjectEvent> events) {
+  public List<DigitalMediaObjectRecord> handleMessage(List<DigitalMediaObjectEvent> events)
+      throws DigitalSpecimenNotFoundException {
+    if (environment.matchesProfiles(Profiles.WEB)) {
+      checkIfDigitalSpecimenIdExists(events);
+    }
     log.info("Processing {} digital media objects", events.size());
     var uniqueBatch = removeDuplicatesInBatch(events);
     var processResult = processDigitalMedia(uniqueBatch);
@@ -59,6 +69,21 @@ public class ProcessingService {
       results.addAll(updateExistingDigitalMedia(processResult.changedMediaObjects()));
     }
     return results;
+  }
+
+  private void checkIfDigitalSpecimenIdExists(List<DigitalMediaObjectEvent> events)
+      throws DigitalSpecimenNotFoundException {
+    var digitalSpecimenIds = events.stream().map(DigitalMediaObjectEvent::digitalMediaObject)
+        .map(DigitalMediaObject::digitalSpecimenId).toList();
+    var existingDigitalSpecimenIds = digitalSpecimenRepository.getExistingSpecimen(
+        digitalSpecimenIds);
+    if (!digitalSpecimenIds.equals(existingDigitalSpecimenIds)) {
+      var nonExistingIds = new ArrayList<>(digitalSpecimenIds);
+      nonExistingIds.removeAll(existingDigitalSpecimenIds);
+      log.error("Digital specimen ids {} do not exist in database", nonExistingIds);
+      throw new DigitalSpecimenNotFoundException(
+          "Digital specimen ids: " + nonExistingIds + " do not exist in database");
+    }
   }
 
   private Set<DigitalMediaObjectEvent> removeDuplicatesInBatch(
