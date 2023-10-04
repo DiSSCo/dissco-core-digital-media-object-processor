@@ -6,7 +6,7 @@ public record DigitalMediaObjectRecord(
     String id,
     int version,
     Instant created,
-    DigitalMediaObject digitalMediaObject
+    DigitalMediaObjectWrapper digitalMediaObjectWrapper
 ) {
 
 }

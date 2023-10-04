@@ -32,7 +32,7 @@ public class DigitalMediaObjectController {
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<DigitalMediaObjectRecord> createDigitalMediaObject(@RequestBody
   DigitalMediaObjectEvent event) throws NoChangesFoundException, DigitalSpecimenNotFoundException {
-    log.info("Received digitalMediaObject upsert: {}", event);
+    log.info("Received digitalMediaObjectWrapper upsert: {}", event);
     var result = processingService.handleMessage(List.of(event));
     if (result.isEmpty()) {
       throw new NoChangesFoundException("No changes found for specimen");

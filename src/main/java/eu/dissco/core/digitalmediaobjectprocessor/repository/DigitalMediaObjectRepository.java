@@ -4,7 +4,7 @@ import static eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Tables.DI
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectWrapper;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.schema.DigitalEntity;
 import java.time.Instant;
@@ -36,12 +36,12 @@ public class DigitalMediaObjectRepository {
   }
 
   private DigitalMediaObjectRecord mapDigitalMediaObject(Record dbRecord) {
-    DigitalMediaObject digitalMediaObject = null;
+    DigitalMediaObjectWrapper digitalMediaObjectWrapper = null;
     try {
-      digitalMediaObject = new DigitalMediaObject(
+      digitalMediaObjectWrapper = new DigitalMediaObjectWrapper(
           dbRecord.get(DIGITAL_MEDIA_OBJECT.TYPE),
           dbRecord.get(DIGITAL_MEDIA_OBJECT.DIGITAL_SPECIMEN_ID),
-          mapToDigitalEntity(dbRecord.get(DIGITAL_MEDIA_OBJECT.DATA)),
+          mapper.readValue(dbRecord.get(DIGITAL_MEDIA_OBJECT.DATA).data(), DigitalEntity.class),
           mapper.readTree(dbRecord.get(DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA).data())
       );
     } catch (JsonProcessingException e) {
@@ -51,11 +51,7 @@ public class DigitalMediaObjectRepository {
         dbRecord.get(DIGITAL_MEDIA_OBJECT.ID),
         dbRecord.get(DIGITAL_MEDIA_OBJECT.VERSION),
         dbRecord.get(DIGITAL_MEDIA_OBJECT.CREATED),
-        digitalMediaObject);
-  }
-
-  private DigitalEntity mapToDigitalEntity(JSONB jsonb) throws JsonProcessingException {
-    return mapper.readValue(jsonb.data(), DigitalEntity.class);
+        digitalMediaObjectWrapper);
   }
 
   public int[] createDigitalMediaRecord(
@@ -68,37 +64,37 @@ public class DigitalMediaObjectRepository {
   public Query digitalMediaToQuery(DigitalMediaObjectRecord digitalMediaObjectRecord) {
     return context.insertInto(DIGITAL_MEDIA_OBJECT)
         .set(DIGITAL_MEDIA_OBJECT.ID, digitalMediaObjectRecord.id())
-        .set(DIGITAL_MEDIA_OBJECT.TYPE, digitalMediaObjectRecord.digitalMediaObject().type())
+        .set(DIGITAL_MEDIA_OBJECT.TYPE, digitalMediaObjectRecord.digitalMediaObjectWrapper().type())
         .set(DIGITAL_MEDIA_OBJECT.VERSION, digitalMediaObjectRecord.version())
         .set(DIGITAL_MEDIA_OBJECT.DIGITAL_SPECIMEN_ID,
-            digitalMediaObjectRecord.digitalMediaObject().digitalSpecimenId())
+            digitalMediaObjectRecord.digitalMediaObjectWrapper().digitalSpecimenId())
         .set(DIGITAL_MEDIA_OBJECT.MEDIA_URL,
-            digitalMediaObjectRecord.digitalMediaObject().attributes().getAcAccessUri())
+            digitalMediaObjectRecord.digitalMediaObjectWrapper().attributes().getAcAccessUri())
         .set(DIGITAL_MEDIA_OBJECT.CREATED, digitalMediaObjectRecord.created())
         .set(DIGITAL_MEDIA_OBJECT.LAST_CHECKED, Instant.now())
         .set(DIGITAL_MEDIA_OBJECT.DATA,
             JSONB.jsonb(
-                mapper.valueToTree(digitalMediaObjectRecord.digitalMediaObject().attributes())
+                mapper.valueToTree(digitalMediaObjectRecord.digitalMediaObjectWrapper().attributes())
                     .toString()))
         .set(DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA,
             JSONB.jsonb(
-                digitalMediaObjectRecord.digitalMediaObject().originalAttributes().toString()))
+                digitalMediaObjectRecord.digitalMediaObjectWrapper().originalAttributes().toString()))
         .onConflict(DIGITAL_MEDIA_OBJECT.ID).doUpdate()
-        .set(DIGITAL_MEDIA_OBJECT.TYPE, digitalMediaObjectRecord.digitalMediaObject().type())
+        .set(DIGITAL_MEDIA_OBJECT.TYPE, digitalMediaObjectRecord.digitalMediaObjectWrapper().type())
         .set(DIGITAL_MEDIA_OBJECT.VERSION, digitalMediaObjectRecord.version())
         .set(DIGITAL_MEDIA_OBJECT.DIGITAL_SPECIMEN_ID,
-            digitalMediaObjectRecord.digitalMediaObject().digitalSpecimenId())
+            digitalMediaObjectRecord.digitalMediaObjectWrapper().digitalSpecimenId())
         .set(DIGITAL_MEDIA_OBJECT.MEDIA_URL,
-            digitalMediaObjectRecord.digitalMediaObject().attributes().getAcAccessUri())
+            digitalMediaObjectRecord.digitalMediaObjectWrapper().attributes().getAcAccessUri())
         .set(DIGITAL_MEDIA_OBJECT.CREATED, digitalMediaObjectRecord.created())
         .set(DIGITAL_MEDIA_OBJECT.LAST_CHECKED, Instant.now())
         .set(DIGITAL_MEDIA_OBJECT.DATA,
             JSONB.jsonb(
-                mapper.valueToTree(digitalMediaObjectRecord.digitalMediaObject().attributes())
+                mapper.valueToTree(digitalMediaObjectRecord.digitalMediaObjectWrapper().attributes())
                     .toString()))
         .set(DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA,
             JSONB.jsonb(
-                digitalMediaObjectRecord.digitalMediaObject().originalAttributes().toString()));
+                digitalMediaObjectRecord.digitalMediaObjectWrapper().originalAttributes().toString()));
   }
 
   public void updateLastChecked(List<String> currentDigitalMediaObject) {

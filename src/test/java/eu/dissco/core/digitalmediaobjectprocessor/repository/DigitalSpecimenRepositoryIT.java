@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,12 +25,12 @@ class DigitalSpecimenRepositoryIT extends BaseRepositoryIT {
 
     // When
     var result = repository.getExistingSpecimen(
-        List.of("20.5000.1025/460-A7R-QM0", "20.5000.1025/460-A7R-QM1", "20.5000.1025/460-A7R-QM2",
+        Set.of("20.5000.1025/460-A7R-QM0", "20.5000.1025/460-A7R-QM1", "20.5000.1025/460-A7R-QM2",
             "20.5000.1025/460-A7R-QM3", "20.5000.1025/460-A7R-XXX"));
 
     // Then
     assertThat(result).isEqualTo(
-        List.of("20.5000.1025/460-A7R-QM0", "20.5000.1025/460-A7R-QM1", "20.5000.1025/460-A7R-QM2",
+        Set.of("20.5000.1025/460-A7R-QM0", "20.5000.1025/460-A7R-QM1", "20.5000.1025/460-A7R-QM2",
             "20.5000.1025/460-A7R-QM3"));
   }
 

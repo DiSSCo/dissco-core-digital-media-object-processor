@@ -19,7 +19,7 @@ import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttrib
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectWrapper;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectKey;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
@@ -39,7 +39,7 @@ public class TestUtils {
   public static final Instant CREATED = Instant.parse("2022-09-16T08:52:27.391Z");
   public static final Instant UPDATED_TIMESTAMP = Instant.parse("2023-03-23T15:41:27.391Z");
   public static final String TYPE = "Image";
-  public static final String AAS = "OCR";
+  public static final String MAS = "OCR";
   public static final String DIGITAL_SPECIMEN_ID = "20.5000.1025/460-A7R-QMJ";
   public static final String DIGITAL_SPECIMEN_ID_2 = "20.5000.1025/460-A7R-XXX";
   public static final String DIGITAL_SPECIMEN_ID_3 = "20.5000.1025/460-A7R-YYY";
@@ -53,21 +53,21 @@ public class TestUtils {
 
   public static DigitalMediaObjectEvent givenMediaEvent() throws JsonProcessingException {
     return new DigitalMediaObjectEvent(
-        List.of("OCR"), givenDigitalMediaTransfer(DIGITAL_SPECIMEN_ID, MEDIA_URL_1)
+        List.of("OCR"), givenDigitalMediaWrapper(DIGITAL_SPECIMEN_ID, MEDIA_URL_1)
     );
   }
 
-  public static DigitalMediaObjectEvent givenDigitalMediaObjectTransferEvent()
+  public static DigitalMediaObjectEvent givenDigitalMediaObjectEvent()
       throws JsonProcessingException {
-    return givenDigitalMediaObjectTransferEvent(DIGITAL_SPECIMEN_ID, MEDIA_URL_1);
+    return givenDigitalMediaObjectEvent(DIGITAL_SPECIMEN_ID, MEDIA_URL_1);
   }
 
-  public static DigitalMediaObjectEvent givenDigitalMediaObjectTransferEvent(
+  public static DigitalMediaObjectEvent givenDigitalMediaObjectEvent(
       String digitalSpecimenId, String mediaUrl)
       throws JsonProcessingException {
     return new DigitalMediaObjectEvent(
-        List.of(AAS),
-        givenDigitalMediaTransfer(digitalSpecimenId, mediaUrl)
+        List.of(MAS),
+        givenDigitalMediaWrapper(digitalSpecimenId, mediaUrl)
     );
   }
 
@@ -92,10 +92,10 @@ public class TestUtils {
     );
   }
 
-  private static DigitalMediaObject givenDigitalMediaTransfer(String digitalSpecimenId,
+  private static DigitalMediaObjectWrapper givenDigitalMediaWrapper(String digitalSpecimenId,
       String mediaUrl)
       throws JsonProcessingException {
-    return new DigitalMediaObject(
+    return new DigitalMediaObjectWrapper(
         TYPE,
         digitalSpecimenId,
         generateAttributes(FORMAT, mediaUrl),
@@ -156,14 +156,14 @@ public class TestUtils {
     );
   }
 
-  public static DigitalMediaObject givenDigitalMediaObject() throws JsonProcessingException {
+  public static DigitalMediaObjectWrapper givenDigitalMediaObject() throws JsonProcessingException {
     return givenDigitalMediaObject(DIGITAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1,
         TYPE);
   }
 
-  public static DigitalMediaObject givenDigitalMediaObject(String digitalSpecimenId, String format,
+  public static DigitalMediaObjectWrapper givenDigitalMediaObject(String digitalSpecimenId, String format,
       String mediaUrl, String type) throws JsonProcessingException {
-    return new DigitalMediaObject(
+    return new DigitalMediaObjectWrapper(
         type,
         digitalSpecimenId,
         generateAttributes(format, mediaUrl),

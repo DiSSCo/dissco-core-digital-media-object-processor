@@ -17,7 +17,7 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectWrapper;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import eu.dissco.core.digitalmediaobjectprocessor.schema.DigitalEntity;
@@ -123,7 +123,7 @@ class FdoRecordServiceTest {
         .withDctermsLicense("http://data.rbge.org.uk/living/19942272")
         .withDctermsLicense("Different License")
         .withDwcInstitutionId("https://ror.org/0x123");
-    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
+    var mediaObject = new DigitalMediaObjectWrapper(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
 
     // Then
     assertThat(fdoRecordService.handleNeedsUpdate(givenDigitalMediaObject(), mediaObject)).isTrue();
@@ -142,7 +142,7 @@ class FdoRecordServiceTest {
     var attributes = new DigitalEntity()
         .withAcAccessUri("http://data.rbge.org.uk/living/19942272")
         .withDctermsLicense("Different License");
-    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
+    var mediaObject = new DigitalMediaObjectWrapper(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
 
     // Then
     assertThrows(PidCreationException.class,
@@ -158,7 +158,7 @@ class FdoRecordServiceTest {
         .withDwcInstitutionId("https://ror.org/0x123");
 
     // When
-    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
+    var mediaObject = new DigitalMediaObjectWrapper(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
 
     // Then
     assertThat(fdoRecordService.handleNeedsUpdate(mediaObject, givenDigitalMediaObject())).isTrue();
@@ -179,9 +179,9 @@ class FdoRecordServiceTest {
         .withDwcInstitutionId("https://ror.org/0x123")
         .withDctermsType(DctermsType.MOVING_IMAGE);
 
-    var mediaObjectCurrent = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributesCurrent,
+    var mediaObjectCurrent = new DigitalMediaObjectWrapper(TYPE, DIGITAL_SPECIMEN_ID, attributesCurrent,
         null);
-    var mediaObjectNew = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributesNew, null);
+    var mediaObjectNew = new DigitalMediaObjectWrapper(TYPE, DIGITAL_SPECIMEN_ID, attributesNew, null);
 
     // When / Then
     assertThat(fdoRecordService.handleNeedsUpdate(mediaObjectNew, mediaObjectCurrent)).isTrue();
@@ -205,7 +205,7 @@ class FdoRecordServiceTest {
         .withDwcInstitutionId("https://ror.org/0x123")
         .withDctermsType(DctermsType.IMAGE);
 
-    var mediaObject = new DigitalMediaObject(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
+    var mediaObject = new DigitalMediaObjectWrapper(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
 
     // When
     var result = fdoRecordService.buildPostHandleRequest(List.of(mediaObject)).get(0);

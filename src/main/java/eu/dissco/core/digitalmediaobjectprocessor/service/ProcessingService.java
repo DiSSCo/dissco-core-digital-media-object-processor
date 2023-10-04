@@ -1,15 +1,16 @@
 package eu.dissco.core.digitalmediaobjectprocessor.service;
 
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.dissco.core.digitalmediaobjectprocessor.Profiles;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectKey;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectWrapper;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.ProcessResult;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaTuple;
@@ -72,8 +73,8 @@ public class ProcessingService {
 
   private void checkIfDigitalSpecimenIdExists(List<DigitalMediaObjectEvent> events)
       throws DigitalSpecimenNotFoundException {
-    var digitalSpecimenIds = events.stream().map(DigitalMediaObjectEvent::digitalMediaObject)
-        .map(DigitalMediaObject::digitalSpecimenId).toList();
+    var digitalSpecimenIds = events.stream()
+        .map(event -> event.digitalMediaObjectWrapper().digitalSpecimenId()).collect(toSet());
     var existingDigitalSpecimenIds = digitalSpecimenRepository.getExistingSpecimen(
         digitalSpecimenIds);
     if (!digitalSpecimenIds.equals(existingDigitalSpecimenIds)) {
@@ -91,7 +92,7 @@ public class ProcessingService {
     var map = events.stream()
         .collect(
             Collectors.groupingBy(
-                event -> event.digitalMediaObject().attributes().getAcAccessUri()));
+                event -> event.digitalMediaObjectWrapper().attributes().getAcAccessUri()));
     for (Entry<String, List<DigitalMediaObjectEvent>> entry : map.entrySet()) {
       if (entry.getValue().size() > 1) {
         log.warn("Found {} duplicates in batch for id {}", entry.getValue().size(), entry.getKey());
@@ -119,22 +120,24 @@ public class ProcessingService {
 
   private ProcessResult processDigitalMedia(Set<DigitalMediaObjectEvent> events) {
     var currentMediaObjects = getCurrentDigitalMedia(
-        events.stream().map(DigitalMediaObjectEvent::digitalMediaObject).toList());
+        events.stream().map(DigitalMediaObjectEvent::digitalMediaObjectWrapper).toList());
     var equalMediaObjects = new ArrayList<DigitalMediaObjectRecord>();
     var changedMediaObjects = new ArrayList<UpdatedDigitalMediaTuple>();
     var newMediaObjects = new ArrayList<DigitalMediaObjectEvent>();
 
     for (var mediaObject : events) {
-      var digitalMediaObject = mediaObject.digitalMediaObject();
+      var digitalMediaObjectWrapper = mediaObject.digitalMediaObjectWrapper();
       var digitalMediaObjectKey = new DigitalMediaObjectKey(
-          digitalMediaObject.digitalSpecimenId(), digitalMediaObject.attributes().getAcAccessUri());
-      log.debug("Processing digitalMediaObject: {}", digitalMediaObject);
+          digitalMediaObjectWrapper.digitalSpecimenId(),
+          digitalMediaObjectWrapper.attributes().getAcAccessUri());
+      log.debug("Processing digitalMediaObjectWrapper: {}", digitalMediaObjectWrapper);
       if (!currentMediaObjects.containsKey(digitalMediaObjectKey)) {
         log.debug("DigitalMedia with key: {} is completely new", digitalMediaObjectKey);
         newMediaObjects.add(mediaObject);
       } else {
         var currentDigitalMediaObject = currentMediaObjects.get(digitalMediaObjectKey);
-        if (currentDigitalMediaObject.digitalMediaObject().equals(digitalMediaObject)) {
+        if (currentDigitalMediaObject.digitalMediaObjectWrapper()
+            .equals(digitalMediaObjectWrapper)) {
           log.debug("Received digital media is equal to digital media: {}",
               currentDigitalMediaObject.id());
           equalMediaObjects.add(currentDigitalMediaObject);
@@ -150,16 +153,16 @@ public class ProcessingService {
   }
 
   private Map<DigitalMediaObjectKey, DigitalMediaObjectRecord> getCurrentDigitalMedia(
-      List<DigitalMediaObject> digitalMediaObjects) {
+      List<DigitalMediaObjectWrapper> digitalMediaObjects) {
     return repository.getDigitalMediaObject(
-            digitalMediaObjects.stream().map(DigitalMediaObject::digitalSpecimenId).toList(),
+            digitalMediaObjects.stream().map(DigitalMediaObjectWrapper::digitalSpecimenId).toList(),
             digitalMediaObjects.stream().map(digitalMedia -> digitalMedia.attributes().getAcAccessUri())
                 .toList())
         .stream().collect(
             toMap(digitalMediaRecord ->
                     new DigitalMediaObjectKey(
-                        digitalMediaRecord.digitalMediaObject().digitalSpecimenId(),
-                        digitalMediaRecord.digitalMediaObject().attributes().getAcAccessUri()
+                        digitalMediaRecord.digitalMediaObjectWrapper().digitalSpecimenId(),
+                        digitalMediaRecord.digitalMediaObjectWrapper().attributes().getAcAccessUri()
                     ),
                 Function.identity(),
                 (dm1, dm2) -> {
@@ -195,7 +198,7 @@ public class ProcessingService {
       }
       var successfullyProcessedRecords = digitalMediaRecords.stream()
           .map(UpdatedDigitalMediaRecord::digitalMediaObjectRecord).collect(
-              Collectors.toSet());
+              toSet());
       log.info("Successfully updated {} digital media object", successfullyProcessedRecords.size());
       return successfullyProcessedRecords;
     } catch (IOException | ElasticsearchException e) {
@@ -214,16 +217,19 @@ public class ProcessingService {
       try {
         kafkaService.deadLetterEvent(
             new DigitalMediaObjectEvent(media.automatedAnnotations(),
-                new DigitalMediaObject(
-                    media.digitalMediaObjectRecord().digitalMediaObject().type(),
-                    media.digitalMediaObjectRecord().digitalMediaObject().digitalSpecimenId(),
-                    media.digitalMediaObjectRecord().digitalMediaObject().attributes(),
-                    media.digitalMediaObjectRecord().digitalMediaObject().originalAttributes()
+                new DigitalMediaObjectWrapper(
+                    media.digitalMediaObjectRecord().digitalMediaObjectWrapper().type(),
+                    media.digitalMediaObjectRecord().digitalMediaObjectWrapper()
+                        .digitalSpecimenId(),
+                    media.digitalMediaObjectRecord().digitalMediaObjectWrapper().attributes(),
+                    media.digitalMediaObjectRecord().digitalMediaObjectWrapper()
+                        .originalAttributes()
                 )));
       } catch (JsonProcessingException e) {
         log.error("Fatal exception, unable to dead letter queue media with url {} for specimen {}",
-            media.digitalMediaObjectRecord().digitalMediaObject().attributes().getAcAccessUri(),
-            media.digitalMediaObjectRecord().digitalMediaObject().digitalSpecimenId(),
+            media.digitalMediaObjectRecord().digitalMediaObjectWrapper().attributes()
+                .getAcAccessUri(),
+            media.digitalMediaObjectRecord().digitalMediaObjectWrapper().digitalSpecimenId(),
             e);
       }
     }
@@ -234,16 +240,16 @@ public class ProcessingService {
       try {
         kafkaService.deadLetterEvent(
             new DigitalMediaObjectEvent(media.enrichmentList(),
-                new DigitalMediaObject(
-                    media.digitalMediaObject().type(),
-                    media.digitalMediaObject().digitalSpecimenId(),
-                    media.digitalMediaObject().attributes(),
-                    media.digitalMediaObject().originalAttributes()
+                new DigitalMediaObjectWrapper(
+                    media.digitalMediaObjectWrapper().type(),
+                    media.digitalMediaObjectWrapper().digitalSpecimenId(),
+                    media.digitalMediaObjectWrapper().attributes(),
+                    media.digitalMediaObjectWrapper().originalAttributes()
                 )));
       } catch (JsonProcessingException e) {
         log.error("Fatal exception, unable to dead letter queue media with url {} for specimen {}",
-            media.digitalMediaObject().attributes().getAcAccessUri(),
-            media.digitalMediaObject().digitalSpecimenId(),
+            media.digitalMediaObjectWrapper().attributes().getAcAccessUri(),
+            media.digitalMediaObjectWrapper().digitalSpecimenId(),
             e);
       }
     }
@@ -280,8 +286,8 @@ public class ProcessingService {
   private void filterUpdatesAndRollbackHandles(List<UpdatedDigitalMediaRecord> handlesToRollback) {
     var recordsToRollback = handlesToRollback.stream()
         .filter(r -> fdoRecordService.handleNeedsUpdate(
-            r.currentDigitalMediaRecord().digitalMediaObject(),
-            r.currentDigitalMediaRecord().digitalMediaObject()))
+            r.currentDigitalMediaRecord().digitalMediaObjectWrapper(),
+            r.currentDigitalMediaRecord().digitalMediaObjectWrapper()))
         .toList();
 
     if (!recordsToRollback.isEmpty()) {
@@ -357,13 +363,14 @@ public class ProcessingService {
     try {
       kafkaService.deadLetterEvent(
           new DigitalMediaObjectEvent(updatedDigitalMediaRecord.automatedAnnotations(),
-              new DigitalMediaObject(
-                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObject().type(),
-                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObject()
+              new DigitalMediaObjectWrapper(
+                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObjectWrapper()
+                      .type(),
+                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObjectWrapper()
                       .digitalSpecimenId(),
-                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObject()
+                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObjectWrapper()
                       .attributes(),
-                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObject()
+                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObjectWrapper()
                       .originalAttributes()
               )));
     } catch (JsonProcessingException e) {
@@ -383,18 +390,18 @@ public class ProcessingService {
             tuple.currentDigitalMediaRecord().id(),
             tuple.currentDigitalMediaRecord().version() + 1,
             Instant.now(),
-            tuple.digitalMediaObjectEvent().digitalMediaObject()),
+            tuple.digitalMediaObjectEvent().digitalMediaObjectWrapper()),
         tuple.digitalMediaObjectEvent().enrichmentList(),
         tuple.currentDigitalMediaRecord()
-    )).collect(Collectors.toSet());
+    )).collect(toSet());
   }
 
   public void updateHandles(Set<UpdatedDigitalMediaRecord> updatedDigitalMediaRecords)
       throws PidCreationException {
     var handleUpdates = updatedDigitalMediaRecords.stream().filter(
             pair -> fdoRecordService.handleNeedsUpdate(
-                pair.currentDigitalMediaRecord().digitalMediaObject(),
-                pair.digitalMediaObjectRecord().digitalMediaObject()))
+                pair.currentDigitalMediaRecord().digitalMediaObjectWrapper(),
+                pair.digitalMediaObjectRecord().digitalMediaObjectWrapper()))
         .map(UpdatedDigitalMediaRecord::digitalMediaObjectRecord)
         .toList();
     if (!handleUpdates.isEmpty()) {
@@ -412,7 +419,7 @@ public class ProcessingService {
 
   private Set<DigitalMediaObjectRecord> persistNewDigitalMediaObject(
       List<DigitalMediaObjectEvent> newRecords) {
-    var newRecordList = newRecords.stream().map(DigitalMediaObjectEvent::digitalMediaObject)
+    var newRecordList = newRecords.stream().map(DigitalMediaObjectEvent::digitalMediaObjectWrapper)
         .toList();
     Map<DigitalMediaObjectKey, String> pidMap;
     try {
@@ -537,11 +544,11 @@ public class ProcessingService {
     try {
       kafkaService.deadLetterEvent(
           new DigitalMediaObjectEvent(automatedAnnotations,
-              new DigitalMediaObject(
-                  digitalMediaObjectRecord.digitalMediaObject().type(),
-                  digitalMediaObjectRecord.digitalMediaObject().digitalSpecimenId(),
-                  digitalMediaObjectRecord.digitalMediaObject().attributes(),
-                  digitalMediaObjectRecord.digitalMediaObject().originalAttributes()
+              new DigitalMediaObjectWrapper(
+                  digitalMediaObjectRecord.digitalMediaObjectWrapper().type(),
+                  digitalMediaObjectRecord.digitalMediaObjectWrapper().digitalSpecimenId(),
+                  digitalMediaObjectRecord.digitalMediaObjectWrapper().attributes(),
+                  digitalMediaObjectRecord.digitalMediaObjectWrapper().originalAttributes()
               )));
     } catch (JsonProcessingException e) {
       log.error("Fatal exception, unable to dead letter queue: " + digitalMediaObjectRecord.id(),
@@ -551,20 +558,20 @@ public class ProcessingService {
 
   private DigitalMediaObjectRecord mapToDigitalMediaRecord(DigitalMediaObjectEvent event,
       Map<DigitalMediaObjectKey, String> pidMap) {
-    var targetKey = new DigitalMediaObjectKey(event.digitalMediaObject().digitalSpecimenId(),
-        event.digitalMediaObject().attributes().getAcAccessUri());
+    var targetKey = new DigitalMediaObjectKey(event.digitalMediaObjectWrapper().digitalSpecimenId(),
+        event.digitalMediaObjectWrapper().attributes().getAcAccessUri());
     var handle = pidMap.get(targetKey);
     if (handle == null) {
       log.error("Failed to process record with ds id: {} and mediaUrl: {}",
-          event.digitalMediaObject().digitalSpecimenId(),
-          event.digitalMediaObject().attributes().getAcAccessUri());
+          event.digitalMediaObjectWrapper().digitalSpecimenId(),
+          event.digitalMediaObjectWrapper().attributes().getAcAccessUri());
       return null;
     }
     return new DigitalMediaObjectRecord(
         handle,
         1,
         Instant.now(),
-        event.digitalMediaObject()
+        event.digitalMediaObjectWrapper()
     );
 
   }

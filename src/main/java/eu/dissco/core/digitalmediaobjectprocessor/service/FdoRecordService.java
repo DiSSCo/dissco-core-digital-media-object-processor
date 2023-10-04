@@ -20,7 +20,7 @@ import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttrib
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectWrapper;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class FdoRecordService {
 
   private final ObjectMapper mapper;
 
-  public List<JsonNode> buildPostHandleRequest(List<DigitalMediaObject> mediaObjects)
+  public List<JsonNode> buildPostHandleRequest(List<DigitalMediaObjectWrapper> mediaObjects)
       throws PidCreationException {
     List<JsonNode> requestBody = new ArrayList<>();
     for (var mediaObject : mediaObjects) {
@@ -45,7 +45,7 @@ public class FdoRecordService {
     return requestBody;
   }
 
-  private JsonNode buildSingleHandleRequest(DigitalMediaObject mediaObject)
+  private JsonNode buildSingleHandleRequest(DigitalMediaObjectWrapper mediaObject)
       throws PidCreationException {
     var request = mapper.createObjectNode();
     var data = mapper.createObjectNode();
@@ -56,7 +56,7 @@ public class FdoRecordService {
     return request;
   }
 
-  private JsonNode generateAttributes(DigitalMediaObject mediaObject) throws PidCreationException {
+  private JsonNode generateAttributes(DigitalMediaObjectWrapper mediaObject) throws PidCreationException {
     var attributes = mapper.createObjectNode();
     if (mediaObject.attributes().getDwcInstitutionId() != null
         && mediaObject.attributes().getDctermsLicense() != null
@@ -114,7 +114,7 @@ public class FdoRecordService {
       throws PidCreationException {
     var request = mapper.createObjectNode();
     var data = mapper.createObjectNode();
-    var attributes = generateAttributes(mediaObject.digitalMediaObject());
+    var attributes = generateAttributes(mediaObject.digitalMediaObjectWrapper());
     data.put(TYPE.getAttribute(), TYPE.getDefaultValue());
     data.put("id", mediaObject.id());
     data.set("attributes", attributes);
@@ -122,8 +122,8 @@ public class FdoRecordService {
     return request;
   }
 
-  public boolean handleNeedsUpdate(DigitalMediaObject currentMediaObject,
-      DigitalMediaObject mediaObject) {
+  public boolean handleNeedsUpdate(DigitalMediaObjectWrapper currentMediaObject,
+      DigitalMediaObjectWrapper mediaObject) {
     return (!currentMediaObject.digitalSpecimenId().equals(mediaObject.digitalSpecimenId())
         || !currentMediaObject.attributes().getAcAccessUri()
         .equals(mediaObject.attributes().getAcAccessUri())

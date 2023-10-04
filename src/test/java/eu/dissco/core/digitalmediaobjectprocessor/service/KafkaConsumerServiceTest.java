@@ -59,8 +59,8 @@ class KafkaConsumerServiceTest {
     return """
         {
           "enrichmentList": ["OCR"],
-          "digitalMediadbject": {
-            "dcterms:type": "Image",
+          "digitalMediadbjectWrapper": {
+            "ods:type": "Image",
             "ods:digitalSpecimenId": "20.5000.1025/460-A7R-QMJ",
             "ods:attributes": {
               "ac:accessURI": "http://data.rbge.org.uk/living/19942272",
@@ -90,8 +90,8 @@ class KafkaConsumerServiceTest {
     return """
         {
           "enrichmentList": ["OCR"],
-          "digitalMediaObject": {
-            "dcterms:type": "Image",
+          "digitalMediaObjectWrapper": {
+            "ods:type": "Image",
             "ods:digitalSpecimenId": "20.5000.1025/460-A7R-QMJ",
             "ods:attributes": {
               "ac:accessUri": "http://data.rbge.org.uk/living/19942272",
