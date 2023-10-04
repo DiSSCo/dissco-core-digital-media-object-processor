@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.diff.JsonDiff;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.CreateUpdateDeleteEvent;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransferEvent;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -57,11 +57,11 @@ public class KafkaPublisherService {
 
   private JsonNode createJsonPatch(DigitalMediaObjectRecord currentDigitalMediaRecord,
       DigitalMediaObjectRecord digitalMediaObjectRecord) {
-    return JsonDiff.asJson(mapper.valueToTree(currentDigitalMediaRecord.digitalMediaObject()),
-        mapper.valueToTree(digitalMediaObjectRecord.digitalMediaObject()));
+    return JsonDiff.asJson(mapper.valueToTree(currentDigitalMediaRecord.digitalMediaObjectWrapper()),
+        mapper.valueToTree(digitalMediaObjectRecord.digitalMediaObjectWrapper()));
   }
 
-  public void republishDigitalMediaObject(DigitalMediaObjectTransferEvent event)
+  public void republishDigitalMediaObject(DigitalMediaObjectEvent event)
       throws JsonProcessingException {
     kafkaTemplate.send("digital-media-object", mapper.writeValueAsString(event));
   }
@@ -70,7 +70,7 @@ public class KafkaPublisherService {
     kafkaTemplate.send("digital-media-object-dlq", message);
   }
 
-  public void deadLetterEvent(DigitalMediaObjectTransferEvent event)
+  public void deadLetterEvent(DigitalMediaObjectEvent event)
       throws JsonProcessingException {
     kafkaTemplate.send("digital-media-object-dlq", mapper.writeValueAsString(event));
   }

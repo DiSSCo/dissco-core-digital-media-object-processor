@@ -1,17 +1,16 @@
 package eu.dissco.core.digitalmediaobjectprocessor.service;
 
-import static eu.dissco.core.digitalmediaobjectprocessor.service.ServiceUtils.getMediaUrl;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.Profiles;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectKey;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransfer;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransferEvent;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectWrapper;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.ProcessResult;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaTuple;
@@ -26,6 +25,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,6 +34,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -42,17 +43,21 @@ import org.springframework.stereotype.Service;
 public class ProcessingService {
 
   private final DigitalMediaObjectRepository repository;
-  private final DigitalSpecimenRepository digitalSpecimenRepository;
   private final FdoRecordService fdoRecordService;
   private final HandleComponent handleComponent;
   private final ElasticSearchRepository elasticRepository;
   private final KafkaPublisherService kafkaService;
+  private final DigitalSpecimenRepository digitalSpecimenRepository;
+  private final Environment environment;
 
-  public List<DigitalMediaObjectRecord> handleMessage(List<DigitalMediaObjectTransferEvent> events,
-      boolean webProfile) throws DigitalSpecimenNotFoundException {
+  public List<DigitalMediaObjectRecord> handleMessage(List<DigitalMediaObjectEvent> events)
+      throws DigitalSpecimenNotFoundException {
+    if (environment.matchesProfiles(Profiles.WEB)) {
+      checkIfDigitalSpecimenIdExists(events);
+    }
     log.info("Processing {} digital media objects", events.size());
     var uniqueBatch = removeDuplicatesInBatch(events);
-    var processResult = processDigitalMedia(uniqueBatch, webProfile);
+    var processResult = processDigitalMedia(uniqueBatch);
     var results = new ArrayList<DigitalMediaObjectRecord>();
     if (!processResult.equalMediaObjects().isEmpty()) {
       processEqualDigitalMedia(processResult.equalMediaObjects());
@@ -66,13 +71,29 @@ public class ProcessingService {
     return results;
   }
 
-  private Set<DigitalMediaObjectTransferEvent> removeDuplicatesInBatch(
-      List<DigitalMediaObjectTransferEvent> events) {
-    var uniqueSet = new HashSet<DigitalMediaObjectTransferEvent>();
+  private void checkIfDigitalSpecimenIdExists(List<DigitalMediaObjectEvent> events)
+      throws DigitalSpecimenNotFoundException {
+    var digitalSpecimenIds = events.stream()
+        .map(event -> event.digitalMediaObjectWrapper().digitalSpecimenId()).collect(toSet());
+    var existingDigitalSpecimenIds = digitalSpecimenRepository.getExistingSpecimen(
+        digitalSpecimenIds);
+    if (!digitalSpecimenIds.equals(existingDigitalSpecimenIds)) {
+      var nonExistingIds = new ArrayList<>(digitalSpecimenIds);
+      nonExistingIds.removeAll(existingDigitalSpecimenIds);
+      log.error("Digital specimen ids {} do not exist in database", nonExistingIds);
+      throw new DigitalSpecimenNotFoundException(
+          "Digital specimen ids: " + nonExistingIds + " do not exist in database");
+    }
+  }
+
+  private Set<DigitalMediaObjectEvent> removeDuplicatesInBatch(
+      List<DigitalMediaObjectEvent> events) {
+    var uniqueSet = new LinkedHashSet<DigitalMediaObjectEvent>();
     var map = events.stream()
         .collect(
-            Collectors.groupingBy(event -> getMediaUrl(event.digitalMediaObject().attributes())));
-    for (Entry<String, List<DigitalMediaObjectTransferEvent>> entry : map.entrySet()) {
+            Collectors.groupingBy(
+                event -> event.digitalMediaObjectWrapper().attributes().getAcAccessUri()));
+    for (Entry<String, List<DigitalMediaObjectEvent>> entry : map.entrySet()) {
       if (entry.getValue().size() > 1) {
         log.warn("Found {} duplicates in batch for id {}", entry.getValue().size(), entry.getKey());
         for (int i = 0; i < entry.getValue().size(); i++) {
@@ -89,7 +110,7 @@ public class ProcessingService {
     return uniqueSet;
   }
 
-  private void republishEvent(DigitalMediaObjectTransferEvent event) {
+  private void republishEvent(DigitalMediaObjectEvent event) {
     try {
       kafkaService.republishDigitalMediaObject(event);
     } catch (JsonProcessingException e) {
@@ -97,27 +118,26 @@ public class ProcessingService {
     }
   }
 
-  private ProcessResult processDigitalMedia(Set<DigitalMediaObjectTransferEvent> events,
-      boolean webProfile)
-      throws DigitalSpecimenNotFoundException {
-    var convertedMediaObjects = getDigitalSpecimenId(events, webProfile);
+  private ProcessResult processDigitalMedia(Set<DigitalMediaObjectEvent> events) {
     var currentMediaObjects = getCurrentDigitalMedia(
-        convertedMediaObjects.stream().map(DigitalMediaObjectEvent::digitalMediaObject).toList());
+        events.stream().map(DigitalMediaObjectEvent::digitalMediaObjectWrapper).toList());
     var equalMediaObjects = new ArrayList<DigitalMediaObjectRecord>();
     var changedMediaObjects = new ArrayList<UpdatedDigitalMediaTuple>();
     var newMediaObjects = new ArrayList<DigitalMediaObjectEvent>();
 
-    for (var mediaObject : convertedMediaObjects) {
-      var digitalMediaObject = mediaObject.digitalMediaObject();
+    for (var mediaObject : events) {
+      var digitalMediaObjectWrapper = mediaObject.digitalMediaObjectWrapper();
       var digitalMediaObjectKey = new DigitalMediaObjectKey(
-          digitalMediaObject.digitalSpecimenId(), getMediaUrl(digitalMediaObject.attributes()));
-      log.debug("Processing digitalMediaObject: {}", digitalMediaObject);
+          digitalMediaObjectWrapper.digitalSpecimenId(),
+          digitalMediaObjectWrapper.attributes().getAcAccessUri());
+      log.debug("Processing digitalMediaObjectWrapper: {}", digitalMediaObjectWrapper);
       if (!currentMediaObjects.containsKey(digitalMediaObjectKey)) {
         log.debug("DigitalMedia with key: {} is completely new", digitalMediaObjectKey);
         newMediaObjects.add(mediaObject);
       } else {
         var currentDigitalMediaObject = currentMediaObjects.get(digitalMediaObjectKey);
-        if (currentDigitalMediaObject.digitalMediaObject().equals(digitalMediaObject)) {
+        if (currentDigitalMediaObject.digitalMediaObjectWrapper()
+            .equals(digitalMediaObjectWrapper)) {
           log.debug("Received digital media is equal to digital media: {}",
               currentDigitalMediaObject.id());
           equalMediaObjects.add(currentDigitalMediaObject);
@@ -132,76 +152,23 @@ public class ProcessingService {
     return new ProcessResult(equalMediaObjects, changedMediaObjects, newMediaObjects);
   }
 
-  private List<DigitalMediaObjectEvent> getDigitalSpecimenId(
-      Set<DigitalMediaObjectTransferEvent> events, boolean webProfile)
-      throws DigitalSpecimenNotFoundException {
-    var physicalSpecimenIds = events.stream()
-        .map(event -> event.digitalMediaObject().physicalSpecimenId()).toList();
-    var digitalSpecimenInformation = retrieveDigitalSpecimenId(physicalSpecimenIds);
-    return convertToDigitalMediaObject(events, digitalSpecimenInformation, webProfile);
-  }
-
-  private List<DigitalMediaObjectEvent> convertToDigitalMediaObject(
-      Set<DigitalMediaObjectTransferEvent> digitalMediaObjectEvents,
-      Map<String, String> digitalSpecimenInformation, boolean webProfile)
-      throws DigitalSpecimenNotFoundException {
-    var convertedRecords = new ArrayList<DigitalMediaObjectEvent>();
-    for (var mediaObjectEvent : digitalMediaObjectEvents) {
-      if (digitalSpecimenInformation.containsKey(
-          mediaObjectEvent.digitalMediaObject().physicalSpecimenId())) {
-        convertedRecords.add(new DigitalMediaObjectEvent(
-            mediaObjectEvent.enrichmentList(),
-            new DigitalMediaObject(
-                mediaObjectEvent.digitalMediaObject().type(),
-                digitalSpecimenInformation.get(
-                    mediaObjectEvent.digitalMediaObject().physicalSpecimenId()),
-                mediaObjectEvent.digitalMediaObject().physicalSpecimenId(),
-                mediaObjectEvent.digitalMediaObject().attributes(),
-                mediaObjectEvent.digitalMediaObject().originalAttributes()))
-        );
-      } else {
-        digitalSpecimenMissing(mediaObjectEvent, webProfile);
-      }
-    }
-    return convertedRecords;
-  }
-
   private Map<DigitalMediaObjectKey, DigitalMediaObjectRecord> getCurrentDigitalMedia(
-      List<DigitalMediaObject> digitalMediaObjects) {
+      List<DigitalMediaObjectWrapper> digitalMediaObjects) {
     return repository.getDigitalMediaObject(
-            digitalMediaObjects.stream().map(DigitalMediaObject::digitalSpecimenId).toList(),
-            digitalMediaObjects.stream().map(digitalMedia -> getMediaUrl(digitalMedia.attributes()))
+            digitalMediaObjects.stream().map(DigitalMediaObjectWrapper::digitalSpecimenId).toList(),
+            digitalMediaObjects.stream().map(digitalMedia -> digitalMedia.attributes().getAcAccessUri())
                 .toList())
         .stream().collect(
             toMap(digitalMediaRecord ->
                     new DigitalMediaObjectKey(
-                        digitalMediaRecord.digitalMediaObject().digitalSpecimenId(),
-                        getMediaUrl(digitalMediaRecord.digitalMediaObject().attributes())
-
+                        digitalMediaRecord.digitalMediaObjectWrapper().digitalSpecimenId(),
+                        digitalMediaRecord.digitalMediaObjectWrapper().attributes().getAcAccessUri()
                     ),
                 Function.identity(),
                 (dm1, dm2) -> {
                   log.warn("Duplicate keys found: {} and {}", dm1, dm2);
                   return dm1;
                 }));
-  }
-
-  private void digitalSpecimenMissing(DigitalMediaObjectTransferEvent event, boolean webProfile)
-      throws DigitalSpecimenNotFoundException {
-    log.error("Digital specimen for physicalSpecimen: {} and sourceSystem: {} is not available",
-        event.digitalMediaObject().physicalSpecimenId(),
-        event.digitalMediaObject().attributes().get("ods:sourceSystemId").asText());
-    if (webProfile) {
-      throw new DigitalSpecimenNotFoundException(
-          "Digital Specimen with id: " + event.digitalMediaObject().physicalSpecimenId()
-              + " was not found");
-    } else {
-      try {
-        kafkaService.republishDigitalMediaObject(event);
-      } catch (JsonProcessingException e) {
-        log.error("Fatal exception, unable to republish message due to invalid json", e);
-      }
-    }
   }
 
   private Set<DigitalMediaObjectRecord> updateExistingDigitalMedia(
@@ -231,7 +198,7 @@ public class ProcessingService {
       }
       var successfullyProcessedRecords = digitalMediaRecords.stream()
           .map(UpdatedDigitalMediaRecord::digitalMediaObjectRecord).collect(
-              Collectors.toSet());
+              toSet());
       log.info("Successfully updated {} digital media object", successfullyProcessedRecords.size());
       return successfullyProcessedRecords;
     } catch (IOException | ElasticsearchException e) {
@@ -249,17 +216,20 @@ public class ProcessingService {
     for (var media : recordsToDlq) {
       try {
         kafkaService.deadLetterEvent(
-            new DigitalMediaObjectTransferEvent(media.automatedAnnotations(),
-                new DigitalMediaObjectTransfer(
-                    media.digitalMediaObjectRecord().digitalMediaObject().type(),
-                    media.digitalMediaObjectRecord().digitalMediaObject().physicalSpecimenId(),
-                    media.digitalMediaObjectRecord().digitalMediaObject().attributes(),
-                    media.digitalMediaObjectRecord().digitalMediaObject().originalAttributes()
+            new DigitalMediaObjectEvent(media.automatedAnnotations(),
+                new DigitalMediaObjectWrapper(
+                    media.digitalMediaObjectRecord().digitalMediaObjectWrapper().type(),
+                    media.digitalMediaObjectRecord().digitalMediaObjectWrapper()
+                        .digitalSpecimenId(),
+                    media.digitalMediaObjectRecord().digitalMediaObjectWrapper().attributes(),
+                    media.digitalMediaObjectRecord().digitalMediaObjectWrapper()
+                        .originalAttributes()
                 )));
       } catch (JsonProcessingException e) {
         log.error("Fatal exception, unable to dead letter queue media with url {} for specimen {}",
-            getMediaUrl(media.digitalMediaObjectRecord().digitalMediaObject().attributes()),
-            media.digitalMediaObjectRecord().digitalMediaObject().digitalSpecimenId(),
+            media.digitalMediaObjectRecord().digitalMediaObjectWrapper().attributes()
+                .getAcAccessUri(),
+            media.digitalMediaObjectRecord().digitalMediaObjectWrapper().digitalSpecimenId(),
             e);
       }
     }
@@ -269,17 +239,17 @@ public class ProcessingService {
     for (var media : recordsToDlq) {
       try {
         kafkaService.deadLetterEvent(
-            new DigitalMediaObjectTransferEvent(media.enrichmentList(),
-                new DigitalMediaObjectTransfer(
-                    media.digitalMediaObject().type(),
-                    media.digitalMediaObject().physicalSpecimenId(),
-                    media.digitalMediaObject().attributes(),
-                    media.digitalMediaObject().originalAttributes()
+            new DigitalMediaObjectEvent(media.enrichmentList(),
+                new DigitalMediaObjectWrapper(
+                    media.digitalMediaObjectWrapper().type(),
+                    media.digitalMediaObjectWrapper().digitalSpecimenId(),
+                    media.digitalMediaObjectWrapper().attributes(),
+                    media.digitalMediaObjectWrapper().originalAttributes()
                 )));
       } catch (JsonProcessingException e) {
         log.error("Fatal exception, unable to dead letter queue media with url {} for specimen {}",
-            getMediaUrl(media.digitalMediaObject().attributes()),
-            media.digitalMediaObject().digitalSpecimenId(),
+            media.digitalMediaObjectWrapper().attributes().getAcAccessUri(),
+            media.digitalMediaObjectWrapper().digitalSpecimenId(),
             e);
       }
     }
@@ -316,8 +286,8 @@ public class ProcessingService {
   private void filterUpdatesAndRollbackHandles(List<UpdatedDigitalMediaRecord> handlesToRollback) {
     var recordsToRollback = handlesToRollback.stream()
         .filter(r -> fdoRecordService.handleNeedsUpdate(
-            r.currentDigitalMediaRecord().digitalMediaObject(),
-            r.currentDigitalMediaRecord().digitalMediaObject()))
+            r.currentDigitalMediaRecord().digitalMediaObjectWrapper(),
+            r.currentDigitalMediaRecord().digitalMediaObjectWrapper()))
         .toList();
 
     if (!recordsToRollback.isEmpty()) {
@@ -392,14 +362,15 @@ public class ProcessingService {
     rollBackToEarlierVersion(updatedDigitalMediaRecord.currentDigitalMediaRecord());
     try {
       kafkaService.deadLetterEvent(
-          new DigitalMediaObjectTransferEvent(updatedDigitalMediaRecord.automatedAnnotations(),
-              new DigitalMediaObjectTransfer(
-                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObject().type(),
-                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObject()
-                      .physicalSpecimenId(),
-                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObject()
+          new DigitalMediaObjectEvent(updatedDigitalMediaRecord.automatedAnnotations(),
+              new DigitalMediaObjectWrapper(
+                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObjectWrapper()
+                      .type(),
+                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObjectWrapper()
+                      .digitalSpecimenId(),
+                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObjectWrapper()
                       .attributes(),
-                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObject()
+                  updatedDigitalMediaRecord.digitalMediaObjectRecord().digitalMediaObjectWrapper()
                       .originalAttributes()
               )));
     } catch (JsonProcessingException e) {
@@ -419,18 +390,18 @@ public class ProcessingService {
             tuple.currentDigitalMediaRecord().id(),
             tuple.currentDigitalMediaRecord().version() + 1,
             Instant.now(),
-            tuple.digitalMediaObjectEvent().digitalMediaObject()),
+            tuple.digitalMediaObjectEvent().digitalMediaObjectWrapper()),
         tuple.digitalMediaObjectEvent().enrichmentList(),
         tuple.currentDigitalMediaRecord()
-    )).collect(Collectors.toSet());
+    )).collect(toSet());
   }
 
   public void updateHandles(Set<UpdatedDigitalMediaRecord> updatedDigitalMediaRecords)
       throws PidCreationException {
     var handleUpdates = updatedDigitalMediaRecords.stream().filter(
             pair -> fdoRecordService.handleNeedsUpdate(
-                pair.currentDigitalMediaRecord().digitalMediaObject(),
-                pair.digitalMediaObjectRecord().digitalMediaObject()))
+                pair.currentDigitalMediaRecord().digitalMediaObjectWrapper(),
+                pair.digitalMediaObjectRecord().digitalMediaObjectWrapper()))
         .map(UpdatedDigitalMediaRecord::digitalMediaObjectRecord)
         .toList();
     if (!handleUpdates.isEmpty()) {
@@ -448,7 +419,7 @@ public class ProcessingService {
 
   private Set<DigitalMediaObjectRecord> persistNewDigitalMediaObject(
       List<DigitalMediaObjectEvent> newRecords) {
-    var newRecordList = newRecords.stream().map(DigitalMediaObjectEvent::digitalMediaObject)
+    var newRecordList = newRecords.stream().map(DigitalMediaObjectEvent::digitalMediaObjectWrapper)
         .toList();
     Map<DigitalMediaObjectKey, String> pidMap;
     try {
@@ -572,12 +543,12 @@ public class ProcessingService {
     repository.rollBackDigitalMedia(digitalMediaObjectRecord.id());
     try {
       kafkaService.deadLetterEvent(
-          new DigitalMediaObjectTransferEvent(automatedAnnotations,
-              new DigitalMediaObjectTransfer(
-                  digitalMediaObjectRecord.digitalMediaObject().type(),
-                  digitalMediaObjectRecord.digitalMediaObject().physicalSpecimenId(),
-                  digitalMediaObjectRecord.digitalMediaObject().attributes(),
-                  digitalMediaObjectRecord.digitalMediaObject().originalAttributes()
+          new DigitalMediaObjectEvent(automatedAnnotations,
+              new DigitalMediaObjectWrapper(
+                  digitalMediaObjectRecord.digitalMediaObjectWrapper().type(),
+                  digitalMediaObjectRecord.digitalMediaObjectWrapper().digitalSpecimenId(),
+                  digitalMediaObjectRecord.digitalMediaObjectWrapper().attributes(),
+                  digitalMediaObjectRecord.digitalMediaObjectWrapper().originalAttributes()
               )));
     } catch (JsonProcessingException e) {
       log.error("Fatal exception, unable to dead letter queue: " + digitalMediaObjectRecord.id(),
@@ -587,26 +558,21 @@ public class ProcessingService {
 
   private DigitalMediaObjectRecord mapToDigitalMediaRecord(DigitalMediaObjectEvent event,
       Map<DigitalMediaObjectKey, String> pidMap) {
-    var targetKey = new DigitalMediaObjectKey(event.digitalMediaObject().digitalSpecimenId(),
-        getMediaUrl(event.digitalMediaObject().attributes()));
+    var targetKey = new DigitalMediaObjectKey(event.digitalMediaObjectWrapper().digitalSpecimenId(),
+        event.digitalMediaObjectWrapper().attributes().getAcAccessUri());
     var handle = pidMap.get(targetKey);
     if (handle == null) {
       log.error("Failed to process record with ds id: {} and mediaUrl: {}",
-          event.digitalMediaObject().digitalSpecimenId(),
-          getMediaUrl(event.digitalMediaObject().attributes()));
+          event.digitalMediaObjectWrapper().digitalSpecimenId(),
+          event.digitalMediaObjectWrapper().attributes().getAcAccessUri());
       return null;
     }
     return new DigitalMediaObjectRecord(
         handle,
         1,
         Instant.now(),
-        event.digitalMediaObject()
+        event.digitalMediaObjectWrapper()
     );
 
-  }
-
-  private Map<String, String> retrieveDigitalSpecimenId(
-      List<String> physicalSpecimenIds) {
-    return digitalSpecimenRepository.getSpecimenId(physicalSpecimenIds);
   }
 }

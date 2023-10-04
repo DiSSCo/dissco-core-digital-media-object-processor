@@ -1,10 +1,10 @@
 package eu.dissco.core.digitalmediaobjectprocessor.service;
 
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.AAS;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAS;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectRecord;
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectTransferEvent;
+import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenDigitalMediaObjectEvent;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenMediaEvent;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -47,10 +47,10 @@ class KafkaPublisherServiceTest {
     // Given
 
     // When
-    service.publishAnnotationRequestEvent(AAS, givenDigitalMediaObjectRecord());
+    service.publishAnnotationRequestEvent(MAS, givenDigitalMediaObjectRecord());
 
     // Then
-    then(kafkaTemplate).should().send(eq(AAS), anyString());
+    then(kafkaTemplate).should().send(eq(MAS), anyString());
   }
 
   @Test
@@ -93,7 +93,7 @@ class KafkaPublisherServiceTest {
   @Test
   void testDeadLetterEvent() throws JsonProcessingException {
     // Given
-    var event = givenDigitalMediaObjectTransferEvent();
+    var event = givenDigitalMediaObjectEvent();
 
     // When
     service.deadLetterEvent(event);

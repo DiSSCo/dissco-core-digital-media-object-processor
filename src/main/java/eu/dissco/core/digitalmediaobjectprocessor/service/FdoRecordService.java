@@ -5,6 +5,7 @@ import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttrib
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.IS_DERIVED_FROM_SPECIMEN;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LICENSE;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LINKED_DO_TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_FORMAT;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_HOST;
@@ -13,20 +14,17 @@ import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttrib
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MO_TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.RIGHTSHOLDER_PID_TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.TYPE;
-import static eu.dissco.core.digitalmediaobjectprocessor.service.ServiceUtils.getMediaUrl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectWrapper;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,10 +36,7 @@ public class FdoRecordService {
 
   private final ObjectMapper mapper;
 
-  private static final String LICENSE_FIELD = "dcterms:license";
-  private static final String TYPE_FIELD = "dcterms:type";
-
-  public List<JsonNode> buildPostHandleRequest(List<DigitalMediaObject> mediaObjects)
+  public List<JsonNode> buildPostHandleRequest(List<DigitalMediaObjectWrapper> mediaObjects)
       throws PidCreationException {
     List<JsonNode> requestBody = new ArrayList<>();
     for (var mediaObject : mediaObjects) {
@@ -50,7 +45,7 @@ public class FdoRecordService {
     return requestBody;
   }
 
-  private JsonNode buildSingleHandleRequest(DigitalMediaObject mediaObject)
+  private JsonNode buildSingleHandleRequest(DigitalMediaObjectWrapper mediaObject)
       throws PidCreationException {
     var request = mapper.createObjectNode();
     var data = mapper.createObjectNode();
@@ -61,22 +56,24 @@ public class FdoRecordService {
     return request;
   }
 
-  private JsonNode generateAttributes(DigitalMediaObject mediaObject) throws PidCreationException {
+  private JsonNode generateAttributes(DigitalMediaObjectWrapper mediaObject) throws PidCreationException {
     var attributes = mapper.createObjectNode();
-    try {
+    if (mediaObject.attributes().getDwcInstitutionId() != null
+        && mediaObject.attributes().getDctermsLicense() != null
+        && mediaObject.attributes().getAcAccessUri() != null) {
       attributes.put(MEDIA_HOST.getAttribute(),
-          mediaObject.attributes().get("ods:organisationId").asText());
+          mediaObject.attributes().getDwcInstitutionId());
       attributes.put(LICENSE.getAttribute(),
-          mediaObject.attributes().get(LICENSE_FIELD).asText());
-      attributes.put(PRIMARY_MEDIA_ID.getAttribute(), getMediaUrl(mediaObject.attributes()));
-    } catch (NullPointerException npe) {
-      log.error("Missing mandatory element for FDO profile", npe);
+          mediaObject.attributes().getDctermsLicense());
+      attributes.put(PRIMARY_MEDIA_ID.getAttribute(), mediaObject.attributes().getAcAccessUri());
+    } else {
+      log.error("Missing mandatory element for FDO profile");
       throw new PidCreationException("Missing mandatory element for FDO profile");
     }
     attributes.put(REFERENT_NAME.getAttribute(),
         mediaObject.type() + " for " + mediaObject.digitalSpecimenId());
     attributes.put(LINKED_DO_PID.getAttribute(), mediaObject.digitalSpecimenId());
-    if (mediaObject.attributes().get(TYPE_FIELD) != null) {
+    if (mediaObject.type() != null) {
       attributes.put(MEDIA_FORMAT.getAttribute(), MEDIA_FORMAT.getDefaultValue());
     }
 
@@ -95,7 +92,8 @@ public class FdoRecordService {
     return attributes;
   }
 
-  public JsonNode buildRollbackCreationRequest(List<DigitalMediaObjectRecord> digitalMediaObjects) {
+  public JsonNode buildRollbackCreationRequest
+      (List<DigitalMediaObjectRecord> digitalMediaObjects) {
     var handles = digitalMediaObjects.stream().map(DigitalMediaObjectRecord::id).toList();
     var dataNode = handles.stream().map(handle -> mapper.createObjectNode().put("id", handle))
         .toList();
@@ -116,7 +114,7 @@ public class FdoRecordService {
       throws PidCreationException {
     var request = mapper.createObjectNode();
     var data = mapper.createObjectNode();
-    var attributes = generateAttributes(mediaObject.digitalMediaObject());
+    var attributes = generateAttributes(mediaObject.digitalMediaObjectWrapper());
     data.put(TYPE.getAttribute(), TYPE.getDefaultValue());
     data.put("id", mediaObject.id());
     data.set("attributes", attributes);
@@ -124,16 +122,22 @@ public class FdoRecordService {
     return request;
   }
 
-  public boolean handleNeedsUpdate(DigitalMediaObject currentMediaObject,
-      DigitalMediaObject mediaObject) {
+  public boolean handleNeedsUpdate(DigitalMediaObjectWrapper currentMediaObject,
+      DigitalMediaObjectWrapper mediaObject) {
     return (!currentMediaObject.digitalSpecimenId().equals(mediaObject.digitalSpecimenId())
-        || !Objects.equals(getMediaUrl(currentMediaObject.attributes()),
-        getMediaUrl(mediaObject.attributes()))
-        || !currentMediaObject.attributes().get(LICENSE_FIELD)
-        .equals(mediaObject.attributes().get(LICENSE_FIELD))
-        || (currentMediaObject.attributes().get(TYPE_FIELD)!= null && !currentMediaObject.attributes().get(TYPE_FIELD)
-        .equals(mediaObject.attributes().get(TYPE_FIELD)))
-        || !currentMediaObject.type().equals(mediaObject.type()));
+        || !currentMediaObject.attributes().getAcAccessUri()
+        .equals(mediaObject.attributes().getAcAccessUri())
+        || (currentMediaObject.attributes().getDctermsLicense() != null
+        && !currentMediaObject.attributes().getDctermsLicense()
+        .equals(mediaObject.attributes().getDctermsLicense()))
+        || (currentMediaObject.type() != null && !currentMediaObject.type()
+        .equals(mediaObject.type()))
+        || (currentMediaObject.attributes().getDctermsType() != null
+        && !currentMediaObject.attributes().getDctermsType()
+        .equals(mediaObject.attributes().getDctermsType()))
+        || (currentMediaObject.attributes().getDwcInstitutionId() != null
+        && !currentMediaObject.attributes().getDwcInstitutionId()
+        .equals(mediaObject.attributes().getDwcInstitutionId())));
   }
 
 }

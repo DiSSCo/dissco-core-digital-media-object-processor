@@ -1,9 +1,9 @@
 <configuration xmlns="http://www.jooq.org/xsd/jooq-codegen-3.16.6.xsd">
   <jdbc>
     <driver>org.postgresql.Driver</driver>
-    <url></url>
-    <user></user>
-    <password></password>
+    <url>jdbc:postgresql://database-1.cbppwfnjypll.eu-west-2.rds.amazonaws.com/dissco</url>
+    <user>sleeflang</user>
+    <password>5Z5Z1D6MOnp0eUYfa7To</password>
   </jdbc>
   <generator>
     <generate>
@@ -13,7 +13,7 @@
     <database>
       <name>org.jooq.meta.postgres.PostgresDatabase</name>
       <inputSchema>public</inputSchema>
-      <includes>new_digital_media_object | new_digital_specimen | handles</includes>
+      <includes>digital_media_object | digital_specimen</includes>
       <forcedTypes>
         <forcedType>
           <name>INSTANT</name>

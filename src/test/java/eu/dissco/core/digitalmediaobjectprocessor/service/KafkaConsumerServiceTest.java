@@ -2,7 +2,6 @@ package eu.dissco.core.digitalmediaobjectprocessor.service;
 
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenMediaEvent;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -31,8 +30,7 @@ class KafkaConsumerServiceTest {
   }
 
   @Test
-  void testGetMessages()
-      throws DigitalSpecimenNotFoundException, JsonProcessingException {
+  void testGetMessages() throws JsonProcessingException, DigitalSpecimenNotFoundException {
     // Given
     var message = givenMessage();
 
@@ -40,7 +38,7 @@ class KafkaConsumerServiceTest {
     service.getMessages(List.of(message));
 
     // Then
-    then(processingService).should().handleMessage(List.of(givenMediaEvent()), false);
+    then(processingService).should().handleMessage(List.of(givenMediaEvent()));
     then(publisherService).shouldHaveNoInteractions();
   }
 
@@ -57,29 +55,13 @@ class KafkaConsumerServiceTest {
     then(publisherService).should().deadLetterRaw(message);
   }
 
-  @Test
-  void testProcessingThrowsException()
-      throws JsonProcessingException, DigitalSpecimenNotFoundException {
-    // Given
-    var message = givenMessage();
-    given(processingService.handleMessage(List.of(givenMediaEvent()), false)).willThrow(
-        new DigitalSpecimenNotFoundException("Not found"));
-
-    // When
-    service.getMessages(List.of(message));
-
-    // Then
-    then(publisherService).shouldHaveNoInteractions();
-    then(processingService).shouldHaveNoMoreInteractions();
-  }
-
   private String givenInvalidMessage() {
     return """
         {
           "enrichmentList": ["OCR"],
-          "digitalMediaasdbject": {
-            "dcterms:type": "2DImageObject",
-            "ods:physicalSpecimenId": "045db6cb-5f06-4c19-b0f6-9620bdff3ae4:040ck2b86",
+          "digitalMediadbjectWrapper": {
+            "ods:type": "Image",
+            "ods:digitalSpecimenId": "20.5000.1025/460-A7R-QMJ",
             "ods:attributes": {
               "ac:accessURI": "http://data.rbge.org.uk/living/19942272",
               "ods:sourceSystemId": "20.5000.1025/WDP-JYE-73C",
@@ -108,15 +90,14 @@ class KafkaConsumerServiceTest {
     return """
         {
           "enrichmentList": ["OCR"],
-          "digitalMediaObject": {
-            "dcterms:type": "2DImageObject",
-            "ods:physicalSpecimenId": "045db6cb-5f06-4c19-b0f6-9620bdff3ae4:040ck2b86",
+          "digitalMediaObjectWrapper": {
+            "ods:type": "Image",
+            "ods:digitalSpecimenId": "20.5000.1025/460-A7R-QMJ",
             "ods:attributes": {
-              "ac:accessURI": "http://data.rbge.org.uk/living/19942272",
-              "ods:sourceSystemId": "20.5000.1025/WDP-JYE-73C",
+              "ac:accessUri": "http://data.rbge.org.uk/living/19942272",
               "dcterms:format": "image/jpeg",
               "dcterms:license": "http://creativecommons.org/licenses/by-nc/3.0/",
-               "ods:organisationId":"https://ror.org/0x123"
+              "dwc:institutionId":"https://ror.org/0x123"
             },
             "ods:originalAttributes": {
               "dwca:ID": "045db6cb-5f06-4c19-b0f6-9620bdff3ae4",

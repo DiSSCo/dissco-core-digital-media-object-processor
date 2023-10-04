@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
 import eu.dissco.core.digitalmediaobjectprocessor.properties.TokenProperties;
 import java.io.IOException;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,21 +22,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
 
 @ExtendWith(MockitoExtension.class)
 class TokenAuthenticatorTest {
-  private static MockWebServer mockTokenServer;
 
-  @Mock
-  private TokenProperties properties;
+  private static MockWebServer mockTokenServer;
   private final MultiValueMap<String, String> testFromFormData = new LinkedMultiValueMap<>() {{
     add("grant_type", "grantType");
     add("client_id", "clientId");
     add("client_secret", "secret");
   }};
-
+  @Mock
+  private TokenProperties properties;
   private TokenAuthenticator authenticator;
 
   @BeforeAll
@@ -43,16 +42,32 @@ class TokenAuthenticatorTest {
     mockTokenServer.start();
   }
 
+  @AfterAll
+  static void destroy() throws IOException {
+    mockTokenServer.shutdown();
+  }
+
+  private static JsonNode givenTokenResponse() throws Exception {
+    return MAPPER.readTree("""
+        {
+          "access_token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "expires_in": 3600,
+          "refresh_expires_in": 0,
+          "token_type": "Bearer",
+          "not-before-policy": 0,
+          "scope": ""
+        }
+        """);
+  }
+
   @BeforeEach
   void setup() {
     WebClient webClient = WebClient.create(
         String.format("http://%s:%s", mockTokenServer.getHostName(), mockTokenServer.getPort()));
     authenticator = new TokenAuthenticator(properties, webClient);
-  }
-
-  @AfterAll
-  static void destroy() throws IOException {
-    mockTokenServer.shutdown();
   }
 
   @Test
@@ -145,22 +160,6 @@ class TokenAuthenticatorTest {
 
     // When
     assertThrows(PidCreationException.class, () -> authenticator.getToken());
-  }
-
-  private static JsonNode givenTokenResponse() throws Exception {
-    return MAPPER.readTree("""
-        {
-          "access_token": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
-          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
-          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
-          aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          "expires_in": 3600,
-          "refresh_expires_in": 0,
-          "token_type": "Bearer",
-          "not-before-policy": 0,
-          "scope": ""
-        }
-        """);
   }
 
 }

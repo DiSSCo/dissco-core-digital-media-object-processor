@@ -2,14 +2,15 @@ package eu.dissco.core.digitalmediaobjectprocessor.domain;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import eu.dissco.core.digitalmediaobjectprocessor.schema.DigitalEntity;
 
-public record DigitalMediaObjectTransfer(
-    @JsonProperty("dcterms:type")
+public record DigitalMediaObjectWrapper(
+    @JsonProperty("ods:type")
     String type,
-    @JsonProperty("ods:physicalSpecimenId")
-    String physicalSpecimenId,
+    @JsonProperty("ods:digitalSpecimenId")
+    String digitalSpecimenId,
     @JsonProperty("ods:attributes")
-    JsonNode attributes,
+    DigitalEntity attributes,
     @JsonProperty("ods:originalAttributes")
     JsonNode originalAttributes) {
 

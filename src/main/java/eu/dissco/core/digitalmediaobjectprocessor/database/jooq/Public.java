@@ -4,11 +4,12 @@
 package eu.dissco.core.digitalmediaobjectprocessor.database.jooq;
 
 
-import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.Handles;
-import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.NewDigitalMediaObject;
-import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.NewDigitalSpecimen;
+import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.database.jooq.tables.DigitalSpecimen;
+
 import java.util.Arrays;
 import java.util.List;
+
 import org.jooq.Catalog;
 import org.jooq.Table;
 import org.jooq.impl.SchemaImpl;
@@ -28,19 +29,14 @@ public class Public extends SchemaImpl {
     public static final Public PUBLIC = new Public();
 
     /**
-     * The table <code>public.handles</code>.
+     * The table <code>public.digital_media_object</code>.
      */
-    public final Handles HANDLES = Handles.HANDLES;
+    public final DigitalMediaObject DIGITAL_MEDIA_OBJECT = DigitalMediaObject.DIGITAL_MEDIA_OBJECT;
 
     /**
-     * The table <code>public.new_digital_media_object</code>.
+     * The table <code>public.digital_specimen</code>.
      */
-    public final NewDigitalMediaObject NEW_DIGITAL_MEDIA_OBJECT = NewDigitalMediaObject.NEW_DIGITAL_MEDIA_OBJECT;
-
-    /**
-     * The table <code>public.new_digital_specimen</code>.
-     */
-    public final NewDigitalSpecimen NEW_DIGITAL_SPECIMEN = NewDigitalSpecimen.NEW_DIGITAL_SPECIMEN;
+    public final DigitalSpecimen DIGITAL_SPECIMEN = DigitalSpecimen.DIGITAL_SPECIMEN;
 
     /**
      * No further instances allowed
@@ -57,9 +53,9 @@ public class Public extends SchemaImpl {
 
     @Override
     public final List<Table<?>> getTables() {
-        return Arrays.<Table<?>>asList(
-            Handles.HANDLES,
-            NewDigitalMediaObject.NEW_DIGITAL_MEDIA_OBJECT,
-            NewDigitalSpecimen.NEW_DIGITAL_SPECIMEN);
+        return Arrays.asList(
+            DigitalMediaObject.DIGITAL_MEDIA_OBJECT,
+            DigitalSpecimen.DIGITAL_SPECIMEN
+        );
     }
 }

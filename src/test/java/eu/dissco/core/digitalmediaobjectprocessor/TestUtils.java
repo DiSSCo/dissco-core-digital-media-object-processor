@@ -5,26 +5,25 @@ import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttrib
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.IS_DERIVED_FROM_SPECIMEN;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LICENSE;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LINKED_DO_TYPE;
+import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_FORMAT;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.MEDIA_HOST;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MEDIA_ID;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_NAME;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.PRIMARY_MO_TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.RIGHTSHOLDER_PID_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObject;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectWrapper;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectKey;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransfer;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransferEvent;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.UpdatedDigitalMediaTuple;
+import eu.dissco.core.digitalmediaobjectprocessor.schema.DigitalEntity;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -39,11 +38,8 @@ public class TestUtils {
   public static final int VERSION = 1;
   public static final Instant CREATED = Instant.parse("2022-09-16T08:52:27.391Z");
   public static final Instant UPDATED_TIMESTAMP = Instant.parse("2023-03-23T15:41:27.391Z");
-  public static final String TYPE = "2DImageObject";
-  public static final String AAS = "OCR";
-  public static final String PHYSICAL_SPECIMEN_ID = "045db6cb-5f06-4c19-b0f6-9620bdff3ae4:040ck2b86";
-  public static final String PHYSICAL_SPECIMEN_ID_2 = "045db6cb-5f06-4c19-b0f6-9620bdff3ae4:041ck2b86";
-  public static final String PHYSICAL_SPECIMEN_ID_3 = "045db6cb-5f06-4c19-b0f6-9620bdff3ae4:042ck2b86";
+  public static final String TYPE = "Image";
+  public static final String MAS = "OCR";
   public static final String DIGITAL_SPECIMEN_ID = "20.5000.1025/460-A7R-QMJ";
   public static final String DIGITAL_SPECIMEN_ID_2 = "20.5000.1025/460-A7R-XXX";
   public static final String DIGITAL_SPECIMEN_ID_3 = "20.5000.1025/460-A7R-YYY";
@@ -55,35 +51,35 @@ public class TestUtils {
   public static final String MEDIA_HOST_TESTVAL = "https://ror.org/0x123";
   public static final String LICENSE_TESTVAL = "http://creativecommons.org/licenses/by-nc/3.0/";
 
-  public static DigitalMediaObjectTransferEvent givenMediaEvent() throws JsonProcessingException {
-    return new DigitalMediaObjectTransferEvent(
-        List.of("OCR"), givenDigitalMediaTransfer(PHYSICAL_SPECIMEN_ID, MEDIA_URL_1)
+  public static DigitalMediaObjectEvent givenMediaEvent() throws JsonProcessingException {
+    return new DigitalMediaObjectEvent(
+        List.of("OCR"), givenDigitalMediaWrapper(DIGITAL_SPECIMEN_ID, MEDIA_URL_1)
     );
   }
 
-  public static DigitalMediaObjectTransferEvent givenDigitalMediaObjectTransferEvent()
+  public static DigitalMediaObjectEvent givenDigitalMediaObjectEvent()
       throws JsonProcessingException {
-    return givenDigitalMediaObjectTransferEvent(PHYSICAL_SPECIMEN_ID, MEDIA_URL_1);
+    return givenDigitalMediaObjectEvent(DIGITAL_SPECIMEN_ID, MEDIA_URL_1);
   }
 
-  public static DigitalMediaObjectTransferEvent givenDigitalMediaObjectTransferEvent(
-      String physicalSpecimenId, String mediaUrl)
+  public static DigitalMediaObjectEvent givenDigitalMediaObjectEvent(
+      String digitalSpecimenId, String mediaUrl)
       throws JsonProcessingException {
-    return new DigitalMediaObjectTransferEvent(
-        List.of(AAS),
-        givenDigitalMediaTransfer(physicalSpecimenId, mediaUrl)
+    return new DigitalMediaObjectEvent(
+        List.of(MAS),
+        givenDigitalMediaWrapper(digitalSpecimenId, mediaUrl)
     );
   }
 
-  public static HashMap<DigitalMediaObjectKey, String> givenPidMap(int size){
+  public static HashMap<DigitalMediaObjectKey, String> givenPidMap(int size) {
     HashMap<DigitalMediaObjectKey, String> pidMap = new HashMap<>();
     pidMap.put(givenDigitalMediaKey(), HANDLE);
-    size = size-1;
-    if (size > 0){
+    size = size - 1;
+    if (size > 0) {
       pidMap.put(new DigitalMediaObjectKey(DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2), HANDLE_2);
     }
-    size = size-1;
-    if (size > 0){
+    size = size - 1;
+    if (size > 0) {
       pidMap.put(new DigitalMediaObjectKey(DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3), HANDLE_3);
     }
     return pidMap;
@@ -96,12 +92,12 @@ public class TestUtils {
     );
   }
 
-  private static DigitalMediaObjectTransfer givenDigitalMediaTransfer(String physicalSpecimenId,
+  private static DigitalMediaObjectWrapper givenDigitalMediaWrapper(String digitalSpecimenId,
       String mediaUrl)
       throws JsonProcessingException {
-    return new DigitalMediaObjectTransfer(
+    return new DigitalMediaObjectWrapper(
         TYPE,
-        physicalSpecimenId,
+        digitalSpecimenId,
         generateAttributes(FORMAT, mediaUrl),
         generateOriginalAttributes()
     );
@@ -123,13 +119,13 @@ public class TestUtils {
   }
 
   public static DigitalMediaObjectRecord givenDigitalMediaObjectRecordPhysical(
-      String handle, String physicalSpecimenId, String digitalSpecimenId, String mediaUrl, String type)
+      String handle, String digitalSpecimenId, String mediaUrl, String type)
       throws JsonProcessingException {
     return new DigitalMediaObjectRecord(
         handle,
         VERSION,
         CREATED,
-        givenDigitalMediaObject(digitalSpecimenId, physicalSpecimenId, FORMAT, mediaUrl, type)
+        givenDigitalMediaObject(digitalSpecimenId, FORMAT, mediaUrl, type)
     );
   }
 
@@ -156,36 +152,31 @@ public class TestUtils {
         pid,
         VERSION,
         CREATED,
-        givenDigitalMediaObject(digitalSpecimenId, PHYSICAL_SPECIMEN_ID, format, mediaUrl, TYPE)
+        givenDigitalMediaObject(digitalSpecimenId, format, mediaUrl, TYPE)
     );
   }
 
-  public static DigitalMediaObject givenDigitalMediaObject() throws JsonProcessingException {
-    return givenDigitalMediaObject(DIGITAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1,
+  public static DigitalMediaObjectWrapper givenDigitalMediaObject() throws JsonProcessingException {
+    return givenDigitalMediaObject(DIGITAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1,
         TYPE);
   }
 
-  public static DigitalMediaObject givenDigitalMediaObject(String digitalSpecimenId,
-      String physicalSpecimenId, String format,
+  public static DigitalMediaObjectWrapper givenDigitalMediaObject(String digitalSpecimenId, String format,
       String mediaUrl, String type) throws JsonProcessingException {
-    return new DigitalMediaObject(
+    return new DigitalMediaObjectWrapper(
         type,
         digitalSpecimenId,
-        physicalSpecimenId,
         generateAttributes(format, mediaUrl),
         generateOriginalAttributes()
     );
   }
 
-  private static JsonNode generateAttributes(String format, String mediaUrl) {
-    var objectNode = MAPPER.createObjectNode();
-    objectNode.put("ac:accessURI", mediaUrl);
-    objectNode.put("ods:sourceSystemId", "20.5000.1025/WDP-JYE-73C");
-    objectNode.put("dcterms:format", format);
-    objectNode.put("dcterms:license", "http://creativecommons.org/licenses/by-nc/3.0/");
-    objectNode.put("ods:organisationId", MEDIA_HOST_TESTVAL);
-    objectNode.put("dcterms:license", LICENSE_TESTVAL);
-    return objectNode;
+  private static DigitalEntity generateAttributes(String format, String mediaUrl) {
+    return new DigitalEntity()
+        .withAcAccessUri(mediaUrl)
+        .withDctermsFormat(format)
+        .withDctermsLicense(LICENSE_TESTVAL)
+        .withDwcInstitutionId(MEDIA_HOST_TESTVAL);
   }
 
   private static JsonNode generateOriginalAttributes() throws JsonProcessingException {
@@ -220,22 +211,23 @@ public class TestUtils {
 
   public static JsonNode givenPostAttributes() {
     var attributes = MAPPER.createObjectNode();
+    attributes.put(MEDIA_HOST.getAttribute(), MEDIA_HOST_TESTVAL);
+    attributes.put(LICENSE.getAttribute(), LICENSE_TESTVAL);
+    attributes.put(PRIMARY_MEDIA_ID.getAttribute(), MEDIA_URL_1);
+    attributes.put(REFERENT_NAME.getAttribute(), TYPE + " for " + DIGITAL_SPECIMEN_ID);
+    attributes.put(LINKED_DO_PID.getAttribute(), DIGITAL_SPECIMEN_ID);
+    attributes.put(MEDIA_FORMAT.getAttribute(), "image");
     attributes.put(FDO_PROFILE.getAttribute(), FDO_PROFILE.getDefaultValue());
     attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
     attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
-    attributes.put(REFERENT_NAME.getAttribute(), TYPE + " for " + DIGITAL_SPECIMEN_ID);
-    attributes.put(PRIMARY_MEDIA_ID.getAttribute(), MEDIA_URL_1);
-    attributes.put(LINKED_DO_PID.getAttribute(), DIGITAL_SPECIMEN_ID);
 
     attributes.put(PRIMARY_MO_TYPE.getAttribute(), PRIMARY_MO_TYPE.getDefaultValue());
-    attributes.put(IS_DERIVED_FROM_SPECIMEN.getAttribute(), Boolean.valueOf(IS_DERIVED_FROM_SPECIMEN.getDefaultValue()));
-    attributes.put(LINKED_DO_TYPE.getAttribute(), LINKED_DO_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_NAME.getAttribute(), PRIMARY_MO_ID_NAME.getDefaultValue());
     attributes.put(RIGHTSHOLDER_PID_TYPE.getAttribute(), RIGHTSHOLDER_PID_TYPE.getDefaultValue());
-
-    attributes.put(MEDIA_HOST.getAttribute(), MEDIA_HOST_TESTVAL);
-    attributes.put(LICENSE.getAttribute(), LICENSE_TESTVAL);
+    attributes.put(IS_DERIVED_FROM_SPECIMEN.getAttribute(),
+        Boolean.valueOf(IS_DERIVED_FROM_SPECIMEN.getDefaultValue()));
+    attributes.put(LINKED_DO_TYPE.getAttribute(), LINKED_DO_TYPE.getDefaultValue());
 
     return attributes;
   }

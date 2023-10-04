@@ -36,20 +36,23 @@ import org.springframework.web.reactive.function.client.WebClient;
 @ExtendWith(MockitoExtension.class)
 class HandleComponentTest {
 
+  private static MockWebServer mockHandleServer;
+  private final Instant instant = Instant.now(Clock.fixed(CREATED, ZoneOffset.UTC));
   @Mock
   private TokenAuthenticator tokenAuthenticator;
   private HandleComponent handleComponent;
-  private static MockWebServer mockHandleServer;
-
   private MockedStatic<Clock> mockedClock;
   private MockedStatic<Instant> mockedStatic;
-  private final Instant instant = Instant.now(Clock.fixed(CREATED, ZoneOffset.UTC));
-
 
   @BeforeAll
   static void init() throws IOException {
     mockHandleServer = new MockWebServer();
     mockHandleServer.start();
+  }
+
+  @AfterAll
+  static void destroy() throws IOException {
+    mockHandleServer.shutdown();
   }
 
   @BeforeEach
@@ -69,11 +72,6 @@ class HandleComponentTest {
   void takeDown() {
     mockedStatic.close();
     mockedClock.close();
-  }
-
-  @AfterAll
-  static void destroy() throws IOException {
-    mockHandleServer.shutdown();
   }
 
   @Test

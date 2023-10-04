@@ -5,7 +5,6 @@ import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.givenMediaEve
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.NoChangesFoundException;
 import eu.dissco.core.digitalmediaobjectprocessor.service.ProcessingService;
@@ -30,10 +29,9 @@ class DigitalMediaControllerTest {
   }
 
   @Test
-  void testCreateDigitalMediaObject()
-      throws JsonProcessingException, DigitalSpecimenNotFoundException, NoChangesFoundException {
+  void testCreateDigitalMediaObject() throws Exception {
     // Given
-    given(service.handleMessage(List.of(givenMediaEvent()), true)).willReturn(
+    given(service.handleMessage(List.of(givenMediaEvent()))).willReturn(
         List.of(givenDigitalMediaObjectRecord()));
 
     // When
@@ -56,11 +54,12 @@ class DigitalMediaControllerTest {
   }
 
   @Test
-  void testDSNotFound() {
+  void testDigitalSpecimenNotFound() {
     // Given
 
     // When
-    var result = controller.handleException(new DigitalSpecimenNotFoundException("No ds"));
+    var result = controller.handleException(
+        new DigitalSpecimenNotFoundException("No digital specimen found"));
 
     // Then
     assertThat(result.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);

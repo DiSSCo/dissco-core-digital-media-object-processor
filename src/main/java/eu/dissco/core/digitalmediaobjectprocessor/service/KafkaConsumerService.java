@@ -3,7 +3,7 @@ package eu.dissco.core.digitalmediaobjectprocessor.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.dissco.core.digitalmediaobjectprocessor.Profiles;
-import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectTransferEvent;
+import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectEvent;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.DigitalSpecimenNotFoundException;
 import java.util.List;
 import java.util.Objects;
@@ -28,7 +28,7 @@ public class KafkaConsumerService {
   public void getMessages(@Payload List<String> messages) {
     var events = messages.stream().map(message -> {
       try {
-        return mapper.readValue(message, DigitalMediaObjectTransferEvent.class);
+        return mapper.readValue(message, DigitalMediaObjectEvent.class);
       } catch (JsonProcessingException e) {
         log.error("Moving message to DLQ, failed to parse event message", e);
         publisherService.deadLetterRaw(message);
@@ -37,11 +37,11 @@ public class KafkaConsumerService {
     }).filter(Objects::nonNull).toList();
     if (!events.isEmpty()) {
       try {
-        processingService.handleMessage(events, false);
+        processingService.handleMessage(events);
       } catch (DigitalSpecimenNotFoundException e) {
-        log.error("Exception should only be thrown when webProfile is active", e);
+        log.error("Throw an exception which should only be thrown in the web profile", e);
       }
-    } else{
+    } else {
       log.info("No more message to process in batch");
     }
   }

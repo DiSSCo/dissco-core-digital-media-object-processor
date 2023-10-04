@@ -1,12 +1,11 @@
 package eu.dissco.core.digitalmediaobjectprocessor.repository;
 
-import static eu.dissco.core.digitalmediaobjectprocessor.TestUtils.PHYSICAL_SPECIMEN_ID;
-import static eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Tables.NEW_DIGITAL_SPECIMEN;
+import static eu.dissco.core.digitalmediaobjectprocessor.database.jooq.Tables.DIGITAL_SPECIMEN;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,28 +24,30 @@ class DigitalSpecimenRepositoryIT extends BaseRepositoryIT {
     givenSpecimenInserted();
 
     // When
-    var result = repository.getSpecimenId(
-        List.of("045db6cb-5f06-4c19-b0f6-9620bdff3ae4:040ck2b864"));
+    var result = repository.getExistingSpecimen(
+        Set.of("20.5000.1025/460-A7R-QM0", "20.5000.1025/460-A7R-QM1", "20.5000.1025/460-A7R-QM2",
+            "20.5000.1025/460-A7R-QM3", "20.5000.1025/460-A7R-XXX"));
 
     // Then
     assertThat(result).isEqualTo(
-        Map.of("045db6cb-5f06-4c19-b0f6-9620bdff3ae4:040ck2b864", "20.5000.1025/460-A7R-QM4"));
+        Set.of("20.5000.1025/460-A7R-QM0", "20.5000.1025/460-A7R-QM1", "20.5000.1025/460-A7R-QM2",
+            "20.5000.1025/460-A7R-QM3"));
   }
 
   private void givenSpecimenInserted() {
     for (int i = 0; i < 10; i++) {
 
-      context.insertInto(NEW_DIGITAL_SPECIMEN)
-          .set(NEW_DIGITAL_SPECIMEN.ID, "20.5000.1025/460-A7R-QM" + i)
-          .set(NEW_DIGITAL_SPECIMEN.VERSION, 1)
-          .set(NEW_DIGITAL_SPECIMEN.TYPE, "BotanySpecimen")
-          .set(NEW_DIGITAL_SPECIMEN.MIDSLEVEL, (short) 1)
-          .set(NEW_DIGITAL_SPECIMEN.PHYSICAL_SPECIMEN_ID, PHYSICAL_SPECIMEN_ID + i)
-          .set(NEW_DIGITAL_SPECIMEN.PHYSICAL_SPECIMEN_TYPE, "combined")
-          .set(NEW_DIGITAL_SPECIMEN.ORGANIZATION_ID, "123124")
-          .set(NEW_DIGITAL_SPECIMEN.SOURCE_SYSTEM_ID, "ssid")
-          .set(NEW_DIGITAL_SPECIMEN.CREATED, Instant.now())
-          .set(NEW_DIGITAL_SPECIMEN.LAST_CHECKED, Instant.now())
+      context.insertInto(DIGITAL_SPECIMEN)
+          .set(DIGITAL_SPECIMEN.ID, "20.5000.1025/460-A7R-QM" + i)
+          .set(DIGITAL_SPECIMEN.VERSION, 1)
+          .set(DIGITAL_SPECIMEN.TYPE, "BotanySpecimen")
+          .set(DIGITAL_SPECIMEN.MIDSLEVEL, (short) 1)
+          .set(DIGITAL_SPECIMEN.PHYSICAL_SPECIMEN_ID, "ASJIDJISA:" + i)
+          .set(DIGITAL_SPECIMEN.PHYSICAL_SPECIMEN_TYPE, "combined")
+          .set(DIGITAL_SPECIMEN.ORGANIZATION_ID, "123124")
+          .set(DIGITAL_SPECIMEN.SOURCE_SYSTEM_ID, "ssid")
+          .set(DIGITAL_SPECIMEN.CREATED, Instant.now())
+          .set(DIGITAL_SPECIMEN.LAST_CHECKED, Instant.now())
           .execute();
     }
   }
