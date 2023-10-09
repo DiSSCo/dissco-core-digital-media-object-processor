@@ -45,11 +45,11 @@ public class TokenAuthenticator {
       var tokenNode = response.toFuture().get();
       return getToken(tokenNode);
     } catch (InterruptedException | ExecutionException e) {
-      Thread.currentThread().interrupt();
-      log.error("Unable to authenticate processing service with Keycloak. Verify client secret is up to-date");
-      throw new PidCreationException(
-          "Unable to authenticate processing service with Keycloak. More information: "
-              + e.getMessage());
+      if (e instanceof InterruptedException){
+        Thread.currentThread().interrupt();
+      }
+      log.error("Unable to authenticate processing service with Keycloak. Verify client secret is up to-date", e);
+      throw new PidCreationException("Unable to authenticate processing service with Keycloak");
     }
   }
 

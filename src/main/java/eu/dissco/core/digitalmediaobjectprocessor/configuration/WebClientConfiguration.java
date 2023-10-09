@@ -1,5 +1,6 @@
 package eu.dissco.core.digitalmediaobjectprocessor.configuration;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -15,9 +16,11 @@ import reactor.netty.http.client.HttpClient;
 @RequiredArgsConstructor
 public class WebClientConfiguration {
 
+  @NotBlank
   @Value("${auth.tokenEndpoint}")
   private String tokenEndpoint;
 
+  @NotBlank
   @Value("${handle.endpoint}")
   private String handleEndpoint;
 
