@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.1.3</version>
+		<version>3.2.2</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>eu.dissco.core</groupId>
@@ -15,14 +15,13 @@
 	<description>Processing service for digital media objects</description>
 	<properties>
 		<java.version>17</java.version>
-		<elasticsearch.version>8.4.1</elasticsearch.version>
-		<snakeyaml.version>2.2</snakeyaml.version>
+		<elasticsearch.version>8.12.1</elasticsearch.version>
 		<snappy-java.version>1.1.10.5</snappy-java.version>
 		<kafka.version>3.5.1</kafka.version>
 		<jakarta.json.version>2.1.1</jakarta.json.version>
 		<json-patch.version>1.13</json-patch.version>
 		<mockito-inline.version>5.2.0</mockito-inline.version>
-		<testcontainers.version>1.17.6</testcontainers.version>
+		<testcontainers.version>1.19.5</testcontainers.version>
 		<springdoc.version>2.1.0</springdoc.version>
 		<sonar.organization>dissco</sonar.organization>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
