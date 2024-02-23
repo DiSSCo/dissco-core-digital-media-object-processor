@@ -21,6 +21,8 @@
 		<jakarta.json.version>2.1.1</jakarta.json.version>
 		<json-patch.version>1.13</json-patch.version>
 		<mockito-inline.version>5.2.0</mockito-inline.version>
+		<postgresql.version>42.6.1</postgresql.version> <!--Spring Boot 3.2.2 uses 42.6.0, Feb23/24 -->
+		<spring-security.version>6.2.2</spring-security.version> <!--Spring Boot 3.2.2 uses 6.2.1, Feb23/24 -->
 		<testcontainers.version>1.19.5</testcontainers.version>
 		<springdoc.version>2.1.0</springdoc.version>
 		<sonar.organization>dissco</sonar.organization>
@@ -118,13 +120,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
-		<!-- Overwrite kafka client snappy version as it contains high prio security issues (02-10-2023) -->
-		<dependency>
-			<groupId>org.xerial.snappy</groupId>
-			<artifactId>snappy-java</artifactId>
-			<version>${snappy-java.version}</version>
-		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
