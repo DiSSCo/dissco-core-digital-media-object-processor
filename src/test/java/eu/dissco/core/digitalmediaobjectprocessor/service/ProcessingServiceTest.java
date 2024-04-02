@@ -56,6 +56,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Set;
+import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -743,6 +744,40 @@ class ProcessingServiceTest {
     then(publisherService).should(times(3))
         .publishAnnotationRequestEvent(eq(MAS), any(DigitalMediaObjectRecord.class));
     assertThat(result).hasSameElementsAs(expected);
+  }
+
+  @Test
+  void testCreateMediaDataAccessException() throws Exception {
+    given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL_1))).willReturn(List.of());
+    given(handleComponent.postHandle(anyList())).willReturn(givenPidMap(1));
+    doThrow(DataAccessException.class).when(repository).createDigitalMediaRecord(any());
+
+    // When
+    var result = service.handleMessage(List.of(givenDigitalMediaObjectEvent()));
+
+    // Then
+    assertThat(result).isEmpty();
+    then(handleComponent).should().rollbackHandleCreation(any());
+    then(publisherService).should().deadLetterEvent(any());
+  }
+
+  @Test
+  void testUpdateMediaDataAccessException() throws Exception {
+    var expected = List.of(givenDigitalMediaObjectRecordWithVersion(2));
+    given(repository.getDigitalMediaObject(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL_1))).willReturn(
+        List.of(givenDigitalMediaObjectRecord(FORMAT_2)));
+    given(fdoRecordService.handleNeedsUpdate(any(), any())).willReturn(true);
+    doThrow(DataAccessException.class).when(repository).createDigitalMediaRecord(any());
+
+    // When
+    var result = service.handleMessage(List.of(givenDigitalMediaObjectEvent()));
+
+    // Then
+    assertThat(result).isEmpty();
+    then(handleComponent).should().rollbackHandleUpdate(any());
+    then(publisherService).should().deadLetterEvent(any());
   }
 
   private void givenBulkResponse() {
