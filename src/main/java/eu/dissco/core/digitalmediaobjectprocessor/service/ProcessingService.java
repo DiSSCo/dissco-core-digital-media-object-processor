@@ -34,6 +34,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.exception.DataAccessException;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
@@ -181,11 +182,23 @@ public class ProcessingService {
       dlqBatchUpdate(digitalMediaRecords);
       return Set.of();
     }
-
     log.info("Persisting to db");
-    repository.createDigitalMediaRecord(
-        digitalMediaRecords.stream().map(UpdatedDigitalMediaRecord::digitalMediaObjectRecord)
-            .toList());
+    try {
+      repository.createDigitalMediaRecord(
+          digitalMediaRecords.stream().map(UpdatedDigitalMediaRecord::digitalMediaObjectRecord)
+              .toList());
+    } catch (DataAccessException e) {
+      log.error("Database exception: unable to post updates to db", e);
+      rollbackHandleUpdate(new ArrayList<>(digitalMediaRecords));
+      for (var updatedRecord: digitalMediaRecords) {
+        try {
+          kafkaService.deadLetterEvent(mapUpdatedRecordToEvent(updatedRecord));
+        } catch (JsonProcessingException e2){
+          log.error("Fatal exception: unable to DLQ failed event", e);
+        }
+      }
+      return Collections.emptySet();
+    }
     log.info("Persisting to elastic");
     try {
       var bulkResponse = elasticRepository.indexDigitalMediaObject(
@@ -215,16 +228,7 @@ public class ProcessingService {
   private void dlqBatchUpdate(Set<UpdatedDigitalMediaRecord> recordsToDlq) {
     for (var media : recordsToDlq) {
       try {
-        kafkaService.deadLetterEvent(
-            new DigitalMediaObjectEvent(media.automatedAnnotations(),
-                new DigitalMediaObjectWrapper(
-                    media.digitalMediaObjectRecord().digitalMediaObjectWrapper().type(),
-                    media.digitalMediaObjectRecord().digitalMediaObjectWrapper()
-                        .digitalSpecimenId(),
-                    media.digitalMediaObjectRecord().digitalMediaObjectWrapper().attributes(),
-                    media.digitalMediaObjectRecord().digitalMediaObjectWrapper()
-                        .originalAttributes()
-                )));
+        kafkaService.deadLetterEvent(mapUpdatedRecordToEvent(media));
       } catch (JsonProcessingException e) {
         log.error("Fatal exception, unable to dead letter queue media with url {} for specimen {}",
             media.digitalMediaObjectRecord().digitalMediaObjectWrapper().attributes()
@@ -233,6 +237,18 @@ public class ProcessingService {
             e);
       }
     }
+  }
+
+  private static DigitalMediaObjectEvent mapUpdatedRecordToEvent(UpdatedDigitalMediaRecord media){
+    return new DigitalMediaObjectEvent(media.automatedAnnotations(),
+        new DigitalMediaObjectWrapper(
+            media.digitalMediaObjectRecord().digitalMediaObjectWrapper().type(),
+            media.digitalMediaObjectRecord().digitalMediaObjectWrapper()
+                .digitalSpecimenId(),
+            media.digitalMediaObjectRecord().digitalMediaObjectWrapper().attributes(),
+            media.digitalMediaObjectRecord().digitalMediaObjectWrapper()
+                .originalAttributes()
+        ));
   }
 
   private void dlqBatchCreate(List<DigitalMediaObjectEvent> recordsToDlq) {
@@ -380,7 +396,12 @@ public class ProcessingService {
   }
 
   private void rollBackToEarlierVersion(DigitalMediaObjectRecord currentDigitalMedia) {
-    repository.createDigitalMediaRecord(List.of(currentDigitalMedia));
+    try {
+      repository.createDigitalMediaRecord(List.of(currentDigitalMedia));
+    } catch (DataAccessException e) {
+      log.error("Database exception: Unable to rollback media to earlier version", e);
+    }
+
   }
 
   private Set<UpdatedDigitalMediaRecord> getDigitalMediaRecordMap(
@@ -438,7 +459,21 @@ public class ProcessingService {
     if (digitalMediaRecords.isEmpty()) {
       return Collections.emptySet();
     }
-    repository.createDigitalMediaRecord(digitalMediaRecords.keySet());
+    try {
+      repository.createDigitalMediaRecord(digitalMediaRecords.keySet());
+    } catch (DataAccessException e) {
+      log.error("Database exception, unable to post new media objects to database", e);
+      rollbackHandleCreation(new ArrayList<>(digitalMediaRecords.keySet()));
+      for (var event: newRecords){
+        try {
+          kafkaService.deadLetterEvent(event);
+        } catch (JsonProcessingException e2) {
+          log.error("Fatal Exception: unable to post event to DLQ", e);
+        }
+      }
+      return Collections.emptySet();
+    }
+
     log.info("{} digitalMediaObjects has been successfully committed to database",
         newRecords.size());
     try {
