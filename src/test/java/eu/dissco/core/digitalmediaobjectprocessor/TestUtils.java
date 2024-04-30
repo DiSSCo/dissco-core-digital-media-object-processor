@@ -1,6 +1,5 @@
 package eu.dissco.core.digitalmediaobjectprocessor;
 
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.DIGITAL_OBJECT_TYPE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.FDO_PROFILE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.IS_DERIVED_FROM_SPECIMEN;
@@ -203,7 +202,7 @@ public class TestUtils {
     var result = MAPPER.createObjectNode();
     var data = MAPPER.createObjectNode();
     var attributes = givenPostAttributes();
-    data.put("type", "mediaObject");
+    data.put("type", "https://hdl.handle.net/21.T11148/bbad8c4e101e8af01115");
     data.set("attributes", attributes);
     result.set("data", data);
     return result;
@@ -218,9 +217,7 @@ public class TestUtils {
     attributes.put(LINKED_DO_PID.getAttribute(), DIGITAL_SPECIMEN_ID);
     attributes.put(MEDIA_FORMAT.getAttribute(), "image");
     attributes.put(FDO_PROFILE.getAttribute(), FDO_PROFILE.getDefaultValue());
-    attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
     attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
-
     attributes.put(PRIMARY_MO_TYPE.getAttribute(), PRIMARY_MO_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_NAME.getAttribute(), PRIMARY_MO_ID_NAME.getDefaultValue());
