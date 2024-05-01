@@ -1,5 +1,8 @@
 package eu.dissco.core.digitalmediaobjectprocessor.domain;
 
+import lombok.Getter;
+
+@Getter
 public enum FdoProfileAttributes {
 
   TYPE("type", "https://hdl.handle.net/21.T11148/bbad8c4e101e8af01115"),
@@ -13,11 +16,10 @@ public enum FdoProfileAttributes {
   LINKED_DO_TYPE("linkedDigitalObjectType", "digital specimen"),
   PRIMARY_MO_ID_TYPE("primaryMediaObjectIdType", "Resolvable"),
   PRIMARY_MO_ID_NAME("primaryMediaObjectIdName", "ac:accessUri"),
-  PRIMARY_MO_TYPE("primaryMediaObjectType", null),
+  PRIMARY_MO_TYPE("dcterms:type", null),
   LICENSE("license", null),
   RIGHTSHOLDER_PID_TYPE("rightsholderPidType", "Resolvable"),
-  MEDIA_FORMAT("mediaFormat", "image");
-
+  MEDIA_FORMAT("dcterms:format", "image");
 
   private final String attribute;
   private final String defaultValue;
@@ -27,11 +29,4 @@ public enum FdoProfileAttributes {
     this.defaultValue = defaultValue;
   }
 
-  public String getAttribute() {
-    return attribute;
-  }
-
-  public String getDefaultValue() {
-    return defaultValue;
-  }
 }
