@@ -3,7 +3,6 @@ package eu.dissco.core.digitalmediaobjectprocessor.domain;
 public enum FdoProfileAttributes {
 
   TYPE("type", "https://hdl.handle.net/21.T11148/bbad8c4e101e8af01115"),
-  FDO_PROFILE("fdoProfile", "https://hdl.handle.net/21.T11148/bbad8c4e101e8af01115"),
   // Issued for agent should be DiSSCo PID; currently it's set as Naturalis's ROR
   ISSUED_FOR_AGENT("issuedForAgent", "https://ror.org/0566bfb96"),
   REFERENT_NAME("referentName", null),
