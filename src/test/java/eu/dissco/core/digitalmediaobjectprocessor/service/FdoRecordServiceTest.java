@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectWrapper;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
+import eu.dissco.core.digitalmediaobjectprocessor.properties.FdoProperties;
 import eu.dissco.core.digitalmediaobjectprocessor.schema.DigitalEntity;
 import eu.dissco.core.digitalmediaobjectprocessor.schema.DigitalEntity.DctermsType;
 import java.time.Clock;
@@ -54,7 +55,7 @@ class FdoRecordServiceTest {
   @BeforeEach
   void setup() {
     Clock clock = Clock.fixed(CREATED, ZoneOffset.UTC);
-    fdoRecordService = new FdoRecordService(MAPPER);
+    fdoRecordService = new FdoRecordService(MAPPER, new FdoProperties());
     mockedStatic = mockStatic(Instant.class);
     mockedStatic.when(Instant::now).thenReturn(instant);
     mockedClock = mockStatic(Clock.class);
