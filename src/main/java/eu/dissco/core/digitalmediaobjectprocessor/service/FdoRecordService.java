@@ -1,7 +1,5 @@
 package eu.dissco.core.digitalmediaobjectprocessor.service;
 
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.DIGITAL_OBJECT_TYPE;
-import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.FDO_PROFILE;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.IS_DERIVED_FROM_SPECIMEN;
 import static eu.dissco.core.digitalmediaobjectprocessor.domain.FdoProfileAttributes.LICENSE;
@@ -23,6 +21,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectWrapper;
 import eu.dissco.core.digitalmediaobjectprocessor.domain.DigitalMediaObjectRecord;
 import eu.dissco.core.digitalmediaobjectprocessor.exceptions.PidCreationException;
+import eu.dissco.core.digitalmediaobjectprocessor.properties.FdoProperties;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +34,7 @@ import org.springframework.stereotype.Service;
 public class FdoRecordService {
 
   private final ObjectMapper mapper;
+  private final FdoProperties fdoProperties;
 
   public List<JsonNode> buildPostHandleRequest(List<DigitalMediaObjectWrapper> mediaObjects)
       throws PidCreationException {
@@ -50,7 +50,7 @@ public class FdoRecordService {
     var request = mapper.createObjectNode();
     var data = mapper.createObjectNode();
     var attributes = generateAttributes(mediaObject);
-    data.put(TYPE.getAttribute(), TYPE.getDefaultValue());
+    data.put(TYPE.getAttribute(), fdoProperties.getType());
     data.set("attributes", attributes);
     request.set("data", data);
     return request;
@@ -78,9 +78,7 @@ public class FdoRecordService {
     }
 
     // Default values
-    attributes.put(FDO_PROFILE.getAttribute(), FDO_PROFILE.getDefaultValue());
-    attributes.put(DIGITAL_OBJECT_TYPE.getAttribute(), DIGITAL_OBJECT_TYPE.getDefaultValue());
-    attributes.put(ISSUED_FOR_AGENT.getAttribute(), ISSUED_FOR_AGENT.getDefaultValue());
+    attributes.put(ISSUED_FOR_AGENT.getAttribute(), fdoProperties.getIssuedForAgent());
     attributes.put(PRIMARY_MO_TYPE.getAttribute(), PRIMARY_MO_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_NAME.getAttribute(), PRIMARY_MO_ID_NAME.getDefaultValue());
@@ -115,7 +113,7 @@ public class FdoRecordService {
     var request = mapper.createObjectNode();
     var data = mapper.createObjectNode();
     var attributes = generateAttributes(mediaObject.digitalMediaObjectWrapper());
-    data.put(TYPE.getAttribute(), TYPE.getDefaultValue());
+    data.put(TYPE.getAttribute(), fdoProperties.getType());
     data.put("id", mediaObject.id());
     data.set("attributes", attributes);
     request.set("data", data);
