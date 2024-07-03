@@ -13,7 +13,7 @@
     <database>
       <name>org.jooq.meta.postgres.PostgresDatabase</name>
       <inputSchema>public</inputSchema>
-      <includes>digital_media_object | digital_specimen</includes>
+      <includes>digital_media_object | digital_specimen | source_system | translator_type</includes>
       <forcedTypes>
         <forcedType>
           <name>INSTANT</name>
@@ -22,7 +22,7 @@
       </forcedTypes>
     </database>
     <target>
-      <packageName>eu.dissco.core.digitalmediaobjectprocessor.database.jooq</packageName>
+      <packageName>eu.dissco.core.digitalmediaprocessor.database.jooq</packageName>
       <directory>src/main/java</directory>
     </target>
   </generator>
