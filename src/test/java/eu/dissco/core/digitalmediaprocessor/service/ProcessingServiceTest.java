@@ -764,7 +764,6 @@ class ProcessingServiceTest {
 
   @Test
   void testUpdateMediaDataAccessException() throws Exception {
-    var expected = List.of(givenDigitalMediaRecordWithVersion(2));
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(
         List.of(givenDigitalMediaRecord(FORMAT_2)));

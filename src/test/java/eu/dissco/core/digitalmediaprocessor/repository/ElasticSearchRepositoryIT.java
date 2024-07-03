@@ -8,7 +8,6 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE_3;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_2;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_3;
-import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;

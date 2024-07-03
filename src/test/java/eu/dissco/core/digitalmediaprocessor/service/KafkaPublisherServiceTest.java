@@ -1,22 +1,16 @@
 package eu.dissco.core.digitalmediaprocessor.service;
 
-import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAS;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAPPER;
-import static eu.dissco.core.digitalmediaprocessor.TestUtils.SOURCE_SYSTEM_ID;
-import static eu.dissco.core.digitalmediaprocessor.TestUtils.SOURCE_SYSTEM_NAME;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAS;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
-import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaEvent;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenMediaEvent;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.dissco.core.digitalmediaprocessor.TestUtils;
-import eu.dissco.core.digitalmediaprocessor.component.SourceSystemNameComponent;
-import eu.dissco.core.digitalmediaprocessor.schema.CreateUpdateTombstoneEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

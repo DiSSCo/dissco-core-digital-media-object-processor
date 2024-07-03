@@ -9,7 +9,6 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_1;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.TYPE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMedia;
-import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostAttributes;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostHandleRequest;
 import static org.assertj.core.api.Assertions.assertThat;

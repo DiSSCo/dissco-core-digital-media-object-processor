@@ -11,7 +11,6 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_1;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_2;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_3;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.UPDATED_TIMESTAMP;
-import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
 import static eu.dissco.core.digitalmediaprocessor.database.jooq.Tables.DIGITAL_MEDIA_OBJECT;
 import static org.assertj.core.api.Assertions.assertThat;
 
