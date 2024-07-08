@@ -33,6 +33,7 @@ public class TestUtils {
   public static final String HANDLE = "20.5000.1025/1BY-BHB-AVN";
   public static final String HANDLE_2 = "20.5000.1025/1BY-BHB-XXX";
   public static final String HANDLE_3 = "20.5000.1025/1BY-BHB-YYY";
+  public static final String DOI_PREFIX = "https://doi.org/";
   public static final int VERSION = 1;
   public static final Instant CREATED = Instant.parse("2022-09-16T08:52:27.391Z");
   public static final Instant UPDATED_TIMESTAMP = Instant.parse("2023-03-23T15:41:27.391Z");
@@ -111,7 +112,7 @@ public class TestUtils {
         HANDLE,
         version,
         CREATED,
-        givenDigitalMedia()
+        givenDigitalMediaWrapper()
     );
   }
 
@@ -127,7 +128,7 @@ public class TestUtils {
         handle,
         VERSION,
         CREATED,
-        givenDigitalMedia(digitalSpecimenId, FORMAT, mediaUrl, type)
+        givenDigitalMediaWrapper(digitalSpecimenId, FORMAT, mediaUrl, type)
     );
   }
 
@@ -154,16 +155,16 @@ public class TestUtils {
         pid,
         VERSION,
         CREATED,
-        givenDigitalMedia(digitalSpecimenId, format, mediaUrl, TYPE)
+        givenDigitalMediaWrapper(digitalSpecimenId, format, mediaUrl, TYPE)
     );
   }
 
-  public static DigitalMediaWrapper givenDigitalMedia() throws JsonProcessingException {
-    return givenDigitalMedia(DIGITAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1,
+  public static DigitalMediaWrapper givenDigitalMediaWrapper() throws JsonProcessingException {
+    return givenDigitalMediaWrapper(DIGITAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1,
         TYPE);
   }
 
-  public static DigitalMediaWrapper givenDigitalMedia(String digitalSpecimenId, String format,
+  public static DigitalMediaWrapper givenDigitalMediaWrapper(String digitalSpecimenId, String format,
       String mediaUrl, String type) throws JsonProcessingException {
     return new DigitalMediaWrapper(
         type,
@@ -173,12 +174,13 @@ public class TestUtils {
     );
   }
 
-  private static DigitalMedia generateAttributes(String format, String mediaUrl) {
+  public static DigitalMedia generateAttributes(String format, String mediaUrl) {
     return new DigitalMedia()
         .withAcAccessURI(mediaUrl)
         .withDctermsFormat(format)
         .withDctermsLicense(LICENSE_TESTVAL)
         .withOdsOrganisationID(MEDIA_HOST_TESTVAL)
+        .withDctermsModified("2022-09-16T08:52:27.391Z")
         .withOdsSourceSystemID(SOURCE_SYSTEM_ID);
   }
 

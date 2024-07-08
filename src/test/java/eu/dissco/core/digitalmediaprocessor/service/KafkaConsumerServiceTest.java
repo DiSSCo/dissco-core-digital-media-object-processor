@@ -98,7 +98,8 @@ class KafkaConsumerServiceTest {
               "dcterms:format": "image/jpeg",
               "dcterms:license": "http://creativecommons.org/licenses/by-nc/3.0/",
               "ods:organisationID":"https://ror.org/0x123",
-              "ods:sourceSystemID": "https://hdl.handle.net/TEST/57Z-6PC-64W"
+              "ods:sourceSystemID": "https://hdl.handle.net/TEST/57Z-6PC-64W",
+              "dcterms:modified": "2022-09-16T08:52:27.391Z"
             },
             "ods:originalAttributes": {
               "dwca:ID": "045db6cb-5f06-4c19-b0f6-9620bdff3ae4",

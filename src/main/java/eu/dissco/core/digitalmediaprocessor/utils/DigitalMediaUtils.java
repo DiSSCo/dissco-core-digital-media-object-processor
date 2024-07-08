@@ -6,16 +6,18 @@ import java.util.Date;
 
 public class DigitalMediaUtils {
 
+  public static String DOI_PREFIX = "https://doi.org/";
+
   private DigitalMediaUtils() {
     // This is a utility class, so it should not be instantiated
   }
 
-  public static DigitalMedia flattenToDigitalMedia(DigitalMediaRecord digitalMediaRecord){
+  public static DigitalMedia flattenToDigitalMedia(DigitalMediaRecord digitalMediaRecord) {
     var digitalMedia = digitalMediaRecord.digitalMediaWrapper().attributes();
-    digitalMedia.setId(digitalMediaRecord.id());
-    digitalMedia.setOdsID(digitalMediaRecord.id());
+    digitalMedia.setId(DOI_PREFIX + digitalMediaRecord.id());
+    digitalMedia.setOdsID(DOI_PREFIX + digitalMediaRecord.id());
     digitalMedia.setOdsVersion(digitalMediaRecord.version());
-    digitalMedia.setOdsCreated(Date.from(digitalMediaRecord.created()));
+    digitalMedia.setDctermsCreated(Date.from(digitalMediaRecord.created()));
     return digitalMedia;
   }
 }

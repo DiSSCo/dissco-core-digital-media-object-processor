@@ -8,7 +8,7 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_1;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.TYPE;
-import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMedia;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaWrapper;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostAttributes;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostHandleRequest;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -92,7 +92,7 @@ class FdoRecordServiceTest {
     var expectedResponse = List.of(givenPostHandleRequest());
 
     // When
-    var result = fdoRecordService.buildPostHandleRequest(List.of(TestUtils.givenDigitalMedia()));
+    var result = fdoRecordService.buildPostHandleRequest(List.of(TestUtils.givenDigitalMediaWrapper()));
 
     // Then
     assertThat(result).isEqualTo(expectedResponse);
@@ -114,8 +114,8 @@ class FdoRecordServiceTest {
   @Test
   void testHandleDoesNotNeedUpdate() throws Exception {
     // Then
-    assertThat(fdoRecordService.handleNeedsUpdate(TestUtils.givenDigitalMedia(),
-        TestUtils.givenDigitalMedia())).isFalse();
+    assertThat(fdoRecordService.handleNeedsUpdate(TestUtils.givenDigitalMediaWrapper(),
+        TestUtils.givenDigitalMediaWrapper())).isFalse();
   }
 
   @Test
@@ -127,14 +127,14 @@ class FdoRecordServiceTest {
     var mediaObject = new DigitalMediaWrapper(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
 
     // Then
-    assertThat(fdoRecordService.handleNeedsUpdate(TestUtils.givenDigitalMedia(), mediaObject)).isTrue();
+    assertThat(fdoRecordService.handleNeedsUpdate(TestUtils.givenDigitalMediaWrapper(), mediaObject)).isTrue();
   }
 
   @Test
   void testHandleDoesNeedUpdateId() throws Exception {
     // Then
-    assertThat(fdoRecordService.handleNeedsUpdate(TestUtils.givenDigitalMedia(),
-        givenDigitalMedia(DIGITAL_SPECIMEN_ID_2, FORMAT, MEDIA_URL_1, TYPE))).isTrue();
+    assertThat(fdoRecordService.handleNeedsUpdate(TestUtils.givenDigitalMediaWrapper(),
+        givenDigitalMediaWrapper(DIGITAL_SPECIMEN_ID_2, FORMAT, MEDIA_URL_1, TYPE))).isTrue();
   }
 
   @Test
@@ -162,7 +162,7 @@ class FdoRecordServiceTest {
     var mediaObject = new DigitalMediaWrapper(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
 
     // Then
-    assertThat(fdoRecordService.handleNeedsUpdate(mediaObject, TestUtils.givenDigitalMedia())).isTrue();
+    assertThat(fdoRecordService.handleNeedsUpdate(mediaObject, TestUtils.givenDigitalMediaWrapper())).isTrue();
   }
 
   @Test
@@ -190,11 +190,11 @@ class FdoRecordServiceTest {
 
   @Test
   void testHandleDoesNeedUpdateType() throws Exception {
-    var mediaObject = givenDigitalMedia(DIGITAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1,
+    var mediaObject = givenDigitalMediaWrapper(DIGITAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1,
         "differentType");
 
     // Then
-    assertThat(fdoRecordService.handleNeedsUpdate(TestUtils.givenDigitalMedia(), mediaObject)).isTrue();
+    assertThat(fdoRecordService.handleNeedsUpdate(TestUtils.givenDigitalMediaWrapper(), mediaObject)).isTrue();
   }
 
   @Test

@@ -1,5 +1,6 @@
 package eu.dissco.core.digitalmediaprocessor.service;
 
+import static eu.dissco.core.digitalmediaprocessor.configuration.ApplicationConfiguration.DATE_STRING;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -19,9 +20,12 @@ import eu.dissco.core.digitalmediaprocessor.exceptions.PidCreationException;
 import eu.dissco.core.digitalmediaprocessor.repository.DigitalMediaRepository;
 import eu.dissco.core.digitalmediaprocessor.repository.DigitalSpecimenRepository;
 import eu.dissco.core.digitalmediaprocessor.repository.ElasticSearchRepository;
+import eu.dissco.core.digitalmediaprocessor.schema.EntityRelationship;
 import eu.dissco.core.digitalmediaprocessor.web.HandleComponent;
 import java.io.IOException;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -43,6 +47,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ProcessingService {
 
+  private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_STRING)
+      .withZone(ZoneOffset.UTC);
+
   private final DigitalMediaRepository repository;
   private final FdoRecordService fdoRecordService;
   private final HandleComponent handleComponent;
@@ -50,6 +57,18 @@ public class ProcessingService {
   private final KafkaPublisherService kafkaService;
   private final DigitalSpecimenRepository digitalSpecimenRepository;
   private final Environment environment;
+
+  private static DigitalMediaEvent mapUpdatedRecordToEvent(UpdatedDigitalMediaRecord media) {
+    return new DigitalMediaEvent(media.automatedAnnotations(),
+        new DigitalMediaWrapper(
+            media.digitalMediaRecord().digitalMediaWrapper().type(),
+            media.digitalMediaRecord().digitalMediaWrapper()
+                .digitalSpecimenID(),
+            media.digitalMediaRecord().digitalMediaWrapper().attributes(),
+            media.digitalMediaRecord().digitalMediaWrapper()
+                .originalAttributes()
+        ));
+  }
 
   public List<DigitalMediaRecord> handleMessage(List<DigitalMediaEvent> events)
       throws DigitalSpecimenNotFoundException {
@@ -137,8 +156,7 @@ public class ProcessingService {
         newMediaObjects.add(mediaObject);
       } else {
         var currentDigitalMedia = currentMediaObjects.get(digitalMediaKey);
-        if (currentDigitalMedia.digitalMediaWrapper()
-            .equals(digitalMediaWrapper)) {
+        if (isEquals(currentDigitalMedia.digitalMediaWrapper(), digitalMediaWrapper)) {
           log.debug("Received digital media is equal to digital media: {}",
               currentDigitalMedia.id());
           equalMediaObjects.add(currentDigitalMedia);
@@ -153,11 +171,57 @@ public class ProcessingService {
     return new ProcessResult(equalMediaObjects, changedMediaObjects, newMediaObjects);
   }
 
+  private boolean isEquals(DigitalMediaWrapper currentDigitalMediaWrapper,
+      DigitalMediaWrapper digitalMediaWrapper) {
+    if (currentDigitalMediaWrapper.attributes() == null) {
+      return false;
+    }
+    var currentModified = currentDigitalMediaWrapper.attributes().getDctermsModified();
+    currentDigitalMediaWrapper.attributes().setDctermsModified(null);
+    digitalMediaWrapper.attributes().setDctermsModified(null);
+    var entityRelationships = digitalMediaWrapper.attributes().getOdsHasEntityRelationship();
+    digitalMediaWrapper.attributes().setOdsHasEntityRelationship(
+        entityRelationships.stream().map(this::deepcopyEntityRelationship).toList());
+    ignoreTimestampEntityRelationship(
+        currentDigitalMediaWrapper.attributes().getOdsHasEntityRelationship());
+    if (currentDigitalMediaWrapper.equals(digitalMediaWrapper)) {
+      digitalMediaWrapper.attributes().setOdsHasEntityRelationship(entityRelationships);
+      digitalMediaWrapper.attributes().setDctermsModified(currentModified);
+      currentDigitalMediaWrapper.attributes().setDctermsModified(currentModified);
+      return true;
+    } else {
+      digitalMediaWrapper.attributes().setOdsHasEntityRelationship(entityRelationships);
+      digitalMediaWrapper.attributes().setDctermsModified(formatter.format(Instant.now()));
+      currentDigitalMediaWrapper.attributes().setDctermsModified(currentModified);
+      return false;
+    }
+  }
+
+  private EntityRelationship deepcopyEntityRelationship(EntityRelationship entityRelationships) {
+    return new EntityRelationship()
+        .withId(entityRelationships.getId())
+        .withType(entityRelationships.getType())
+        .withDwcRelationshipEstablishedDate(null)
+        .withDwcRelationshipOfResource(entityRelationships.getDwcRelationshipOfResource())
+        .withDwcRelationshipOfResourceID(entityRelationships.getDwcRelationshipOfResourceID())
+        .withDwcRelatedResourceID(entityRelationships.getDwcRelatedResourceID())
+        .withOdsRelatedResourceURI(entityRelationships.getOdsRelatedResourceURI())
+        .withDwcRelationshipAccordingTo(entityRelationships.getDwcRelationshipAccordingTo())
+        .withDwcRelationshipAccordingTo(entityRelationships.getDwcRelationshipAccordingTo())
+        .withOdsEntityRelationshipOrder(entityRelationships.getOdsEntityRelationshipOrder())
+        .withDwcRelationshipRemarks(entityRelationships.getDwcRelationshipRemarks());
+  }
+
+  private void ignoreTimestampEntityRelationship(List<EntityRelationship> entityRelationship) {
+    entityRelationship.forEach(e -> e.setDwcRelationshipEstablishedDate(null));
+  }
+
   private Map<DigitalMediaKey, DigitalMediaRecord> getCurrentDigitalMedia(
       List<DigitalMediaWrapper> digitalMediaWrappers) {
     return repository.getDigitalMedia(
             digitalMediaWrappers.stream().map(DigitalMediaWrapper::digitalSpecimenID).toList(),
-            digitalMediaWrappers.stream().map(digitalMedia -> digitalMedia.attributes().getAcAccessURI())
+            digitalMediaWrappers.stream()
+                .map(digitalMedia -> digitalMedia.attributes().getAcAccessURI())
                 .toList())
         .stream().collect(
             toMap(digitalMediaRecord ->
@@ -190,10 +254,10 @@ public class ProcessingService {
     } catch (DataAccessException e) {
       log.error("Database exception: unable to post updates to db", e);
       rollbackHandleUpdate(new ArrayList<>(digitalMediaRecords));
-      for (var updatedRecord: digitalMediaRecords) {
+      for (var updatedRecord : digitalMediaRecords) {
         try {
           kafkaService.deadLetterEvent(mapUpdatedRecordToEvent(updatedRecord));
-        } catch (JsonProcessingException e2){
+        } catch (JsonProcessingException e2) {
           log.error("Fatal exception: unable to DLQ failed event", e);
         }
       }
@@ -237,18 +301,6 @@ public class ProcessingService {
             e);
       }
     }
-  }
-
-  private static DigitalMediaEvent mapUpdatedRecordToEvent(UpdatedDigitalMediaRecord media){
-    return new DigitalMediaEvent(media.automatedAnnotations(),
-        new DigitalMediaWrapper(
-            media.digitalMediaRecord().digitalMediaWrapper().type(),
-            media.digitalMediaRecord().digitalMediaWrapper()
-                .digitalSpecimenID(),
-            media.digitalMediaRecord().digitalMediaWrapper().attributes(),
-            media.digitalMediaRecord().digitalMediaWrapper()
-                .originalAttributes()
-        ));
   }
 
   private void dlqBatchCreate(List<DigitalMediaEvent> recordsToDlq) {
@@ -464,7 +516,7 @@ public class ProcessingService {
     } catch (DataAccessException e) {
       log.error("Database exception, unable to post new media objects to database", e);
       rollbackHandleCreation(new ArrayList<>(digitalMediaRecords.keySet()));
-      for (var event: newRecords){
+      for (var event : newRecords) {
         try {
           kafkaService.deadLetterEvent(event);
         } catch (JsonProcessingException e2) {

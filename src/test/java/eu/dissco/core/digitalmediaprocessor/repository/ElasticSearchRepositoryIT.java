@@ -1,13 +1,20 @@
 package eu.dissco.core.digitalmediaprocessor.repository;
 
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.CREATED;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.DIGITAL_SPECIMEN_ID_2;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.DIGITAL_SPECIMEN_ID_3;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.DOI_PREFIX;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.FORMAT;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE_2;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE_3;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAPPER;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_1;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_2;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_3;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.VERSION;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.generateAttributes;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
@@ -15,10 +22,10 @@ import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
-import eu.dissco.core.digitalmediaprocessor.TestUtils;
-import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
 import eu.dissco.core.digitalmediaprocessor.properties.ElasticSearchProperties;
+import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -96,18 +103,27 @@ class ElasticSearchRepositoryIT {
   void testIndexDigitalMedia() throws IOException {
     // Given
     esProperties.setIndexName(INDEX);
+
     // When
     var result = repository.indexDigitalMedia(List.of(
-        TestUtils.givenDigitalMediaRecord(),
-        TestUtils.givenDigitalMediaRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2)));
+        givenDigitalMediaRecord(),
+        givenDigitalMediaRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2)));
 
     // Then
 
-    var document = client.get(g -> g.index(INDEX).id(HANDLE),
-        DigitalMediaRecord.class);
+    var document = client.get(g -> g.index(INDEX).id(DOI_PREFIX + HANDLE),
+        DigitalMedia.class);
     assertThat(result.errors()).isFalse();
-    assertThat(document.source()).isEqualTo(TestUtils.givenDigitalMediaRecord());
+    assertThat(document.source()).isEqualTo(givenDigitalmedia());
     assertThat(result.items().get(0).result()).isEqualTo("created");
+  }
+
+  private DigitalMedia givenDigitalmedia() {
+    return generateAttributes(FORMAT, MEDIA_URL_1)
+        .withId(DOI_PREFIX + HANDLE)
+        .withOdsID(DOI_PREFIX + HANDLE)
+        .withOdsVersion(VERSION)
+        .withDctermsCreated(Date.from(CREATED));
   }
 
   @Test
@@ -115,16 +131,15 @@ class ElasticSearchRepositoryIT {
     // Given
     esProperties.setIndexName(INDEX);
     repository.indexDigitalMedia(List.of(
-        TestUtils.givenDigitalMediaRecord(),
-        TestUtils.givenDigitalMediaRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2),
-        TestUtils.givenDigitalMediaRecord(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3)));
+        givenDigitalMediaRecord(),
+        givenDigitalMediaRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2),
+        givenDigitalMediaRecord(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3)));
 
     // When
-    var result = repository.rollbackDigitalMedia(TestUtils.givenDigitalMediaRecord());
+    var result = repository.rollbackDigitalMedia(givenDigitalMediaRecord());
 
     // Then
-    var document = client.get(g -> g.index(INDEX).id(HANDLE),
-        DigitalMediaRecord.class);
+    var document = client.get(g -> g.index(INDEX).id(DOI_PREFIX + HANDLE), DigitalMedia.class);
     assertThat(document.source()).isNull();
     assertThat(document.found()).isFalse();
     assertThat(result.result()).isEqualTo(Result.Deleted);
@@ -135,18 +150,16 @@ class ElasticSearchRepositoryIT {
     // Given
     esProperties.setIndexName(INDEX);
     repository.indexDigitalMedia(List.of(
-        TestUtils.givenDigitalMediaRecord(),
-        TestUtils.givenDigitalMediaRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2),
-        TestUtils.givenDigitalMediaRecord(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3)));
+        givenDigitalMediaRecord(),
+        givenDigitalMediaRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2),
+        givenDigitalMediaRecord(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3)));
 
     // When
-    repository.rollbackVersion(TestUtils.givenDigitalMediaRecord("image/png"));
+    repository.rollbackVersion(givenDigitalMediaRecord("image/png"));
 
     // Then
-    var document = client.get(g -> g.index(INDEX).id(HANDLE),
-        DigitalMediaRecord.class);
-    assertThat(document.source().digitalMediaWrapper().attributes().getDctermsFormat()).isEqualTo(
-        "image/png");
+    var document = client.get(g -> g.index(INDEX).id(DOI_PREFIX + HANDLE), DigitalMedia.class);
+    assertThat(document.source().getDctermsFormat()).isEqualTo("image/png");
   }
 
 
