@@ -6,7 +6,7 @@ import java.util.Date;
 
 public class DigitalMediaUtils {
 
-  public static String DOI_PREFIX = "https://doi.org/";
+  public static final String DOI_PREFIX = "https://doi.org/";
 
   private DigitalMediaUtils() {
     // This is a utility class, so it should not be instantiated
