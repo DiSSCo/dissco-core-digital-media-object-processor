@@ -75,7 +75,7 @@ public class ProcessingService {
     if (environment.matchesProfiles(Profiles.WEB)) {
       checkIfDigitalSpecimenIdExists(events);
     }
-    log.info("Processing {} digital media objects", events.size());
+    log.info("Processing {} digital media", events.size());
     var uniqueBatch = removeDuplicatesInBatch(events);
     var processResult = processDigitalMedia(uniqueBatch);
     var results = new ArrayList<DigitalMediaRecord>();
@@ -95,14 +95,14 @@ public class ProcessingService {
       throws DigitalSpecimenNotFoundException {
     var digitalSpecimenIds = events.stream()
         .map(event -> event.digitalMediaWrapper().digitalSpecimenID()).collect(toSet());
-    var existingDigitalSpecimenIds = digitalSpecimenRepository.getExistingSpecimen(
+    var currentDigitalSpecimenIds = digitalSpecimenRepository.getExistingSpecimen(
         digitalSpecimenIds);
-    if (!digitalSpecimenIds.equals(existingDigitalSpecimenIds)) {
-      var nonExistingIds = new ArrayList<>(digitalSpecimenIds);
-      nonExistingIds.removeAll(existingDigitalSpecimenIds);
-      log.error("Digital specimen ids {} do not exist in database", nonExistingIds);
+    if (!digitalSpecimenIds.equals(currentDigitalSpecimenIds)) {
+      var nonCurrentIds = new ArrayList<>(digitalSpecimenIds);
+      nonCurrentIds.removeAll(currentDigitalSpecimenIds);
+      log.error("Digital specimen ids {} do not exist in database", nonCurrentIds);
       throw new DigitalSpecimenNotFoundException(
-          "Digital specimen ids: " + nonExistingIds + " do not exist in database");
+          "Digital specimen ids: " + nonCurrentIds + " do not exist in database");
     }
   }
 
@@ -139,39 +139,39 @@ public class ProcessingService {
   }
 
   private ProcessResult processDigitalMedia(Set<DigitalMediaEvent> events) {
-    var currentMediaObjects = getCurrentDigitalMedia(
+    var currentDigitalMedias = getCurrentDigitalMedia(
         events.stream().map(DigitalMediaEvent::digitalMediaWrapper).toList());
-    var equalMediaObjects = new ArrayList<DigitalMediaRecord>();
-    var changedMediaObjects = new ArrayList<UpdatedDigitalMediaTuple>();
-    var newMediaObjects = new ArrayList<DigitalMediaEvent>();
+    var equalDigitalMedia = new ArrayList<DigitalMediaRecord>();
+    var changedDigitalMedia = new ArrayList<UpdatedDigitalMediaTuple>();
+    var newDigitalMedia = new ArrayList<DigitalMediaEvent>();
 
-    for (var mediaObject : events) {
-      var digitalMediaWrapper = mediaObject.digitalMediaWrapper();
+    for (var digitalMedia : events) {
+      var digitalMediaWrapper = digitalMedia.digitalMediaWrapper();
       var digitalMediaKey = new DigitalMediaKey(
           digitalMediaWrapper.digitalSpecimenID(),
           digitalMediaWrapper.attributes().getAcAccessURI());
       log.debug("Processing digitalMediaWrapper: {}", digitalMediaWrapper);
-      if (!currentMediaObjects.containsKey(digitalMediaKey)) {
+      if (!currentDigitalMedias.containsKey(digitalMediaKey)) {
         log.debug("DigitalMedia with key: {} is completely new", digitalMediaKey);
-        newMediaObjects.add(mediaObject);
+        newDigitalMedia.add(digitalMedia);
       } else {
-        var currentDigitalMedia = currentMediaObjects.get(digitalMediaKey);
-        if (isEquals(currentDigitalMedia.digitalMediaWrapper(), digitalMediaWrapper)) {
+        var currentDigitalMedia = currentDigitalMedias.get(digitalMediaKey);
+        if (isEqual(currentDigitalMedia.digitalMediaWrapper(), digitalMediaWrapper)) {
           log.debug("Received digital media is equal to digital media: {}",
               currentDigitalMedia.id());
-          equalMediaObjects.add(currentDigitalMedia);
+          equalDigitalMedia.add(currentDigitalMedia);
         } else {
           log.debug("Digital Media Object with id: {} has received an update",
               currentDigitalMedia.id());
-          changedMediaObjects.add(
-              new UpdatedDigitalMediaTuple(currentDigitalMedia, mediaObject));
+          changedDigitalMedia.add(
+              new UpdatedDigitalMediaTuple(currentDigitalMedia, digitalMedia));
         }
       }
     }
-    return new ProcessResult(equalMediaObjects, changedMediaObjects, newMediaObjects);
+    return new ProcessResult(equalDigitalMedia, changedDigitalMedia, newDigitalMedia);
   }
 
-  private boolean isEquals(DigitalMediaWrapper currentDigitalMediaWrapper,
+  private boolean isEqual(DigitalMediaWrapper currentDigitalMediaWrapper,
       DigitalMediaWrapper digitalMediaWrapper) {
     if (currentDigitalMediaWrapper.attributes() == null) {
       return false;
@@ -514,7 +514,7 @@ public class ProcessingService {
     try {
       repository.createDigitalMediaRecord(digitalMediaRecords.keySet());
     } catch (DataAccessException e) {
-      log.error("Database exception, unable to post new media objects to database", e);
+      log.error("Database exception, unable to post new digital media to database", e);
       rollbackHandleCreation(new ArrayList<>(digitalMediaRecords.keySet()));
       for (var event : newRecords) {
         try {
@@ -526,7 +526,7 @@ public class ProcessingService {
       return Collections.emptySet();
     }
 
-    log.info("{} digitalMediaObjects has been successfully committed to database",
+    log.info("{} digital media has been successfully committed to database",
         newRecords.size());
     try {
       var bulkResponse = elasticRepository.indexDigitalMedia(digitalMediaRecords.keySet());

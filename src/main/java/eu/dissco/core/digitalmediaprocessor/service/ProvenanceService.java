@@ -36,8 +36,8 @@ public class ProvenanceService {
 
   public CreateUpdateTombstoneEvent generateCreateEvent(
       DigitalMediaRecord digitalMediaRecord) {
-    var digitalSpecimen = DigitalMediaUtils.flattenToDigitalMedia(digitalMediaRecord);
-    return generateCreateUpdateTombStoneEvent(digitalSpecimen, ProvActivity.Type.ODS_CREATE,
+    var digitalMedia = DigitalMediaUtils.flattenToDigitalMedia(digitalMediaRecord);
+    return generateCreateUpdateTombStoneEvent(digitalMedia, ProvActivity.Type.ODS_CREATE,
         null);
   }
 
@@ -68,7 +68,7 @@ public class ProvenanceService {
                     .withId(properties.getPid())
                     .withProvHadRole(ProvHadRole.ODS_GENERATOR)))
             .withProvUsed(entityID)
-            .withRdfsComment("Specimen newly created"))
+            .withRdfsComment("Digital Media newly created"))
         .withProvEntity(new ProvEntity()
             .withId(entityID)
             .withType(digitalMedia.getType())
@@ -96,11 +96,11 @@ public class ProvenanceService {
 
   public CreateUpdateTombstoneEvent generateUpdateEvent(DigitalMediaRecord digitalMediaRecord,
       DigitalMediaRecord currentDigitalMediaRecord) {
-    var digitalSpecimen = DigitalMediaUtils.flattenToDigitalMedia(digitalMediaRecord);
-    var currentDigitalSpecimen = DigitalMediaUtils.flattenToDigitalMedia(
+    var digitalMedia = DigitalMediaUtils.flattenToDigitalMedia(digitalMediaRecord);
+    var currentDigitalMedia = DigitalMediaUtils.flattenToDigitalMedia(
         currentDigitalMediaRecord);
-    var jsonPatch = createJsonPatch(currentDigitalSpecimen, digitalSpecimen);
-    return generateCreateUpdateTombStoneEvent(digitalSpecimen, ProvActivity.Type.ODS_UPDATE,
+    var jsonPatch = createJsonPatch(currentDigitalMedia, digitalMedia);
+    return generateCreateUpdateTombStoneEvent(digitalMedia, ProvActivity.Type.ODS_UPDATE,
         jsonPatch);
   }
 
@@ -114,9 +114,8 @@ public class ProvenanceService {
     return provValue;
   }
 
-  private JsonNode createJsonPatch(DigitalMedia currentDigitalMedia,
-      DigitalMedia digitalSpecimenMedia) {
+  private JsonNode createJsonPatch(DigitalMedia currentDigitalMedia, DigitalMedia digitalMedia) {
     return JsonDiff.asJson(mapper.valueToTree(currentDigitalMedia),
-        mapper.valueToTree(digitalSpecimenMedia));
+        mapper.valueToTree(digitalMedia));
   }
 }
