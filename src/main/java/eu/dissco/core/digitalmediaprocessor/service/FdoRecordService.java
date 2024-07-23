@@ -90,12 +90,8 @@ public class FdoRecordService {
     return attributes;
   }
 
-  public JsonNode buildRollbackCreationRequest(List<DigitalMediaRecord> digitalMedia) {
-    var handles = digitalMedia.stream().map(DigitalMediaRecord::id).toList();
-    var dataNode = handles.stream().map(handle -> mapper.createObjectNode().put("id", handle))
-        .toList();
-    ArrayNode dataArray = mapper.valueToTree(dataNode);
-    return mapper.createObjectNode().set("data", dataArray);
+  public List<String> buildRollbackCreationRequest(List<DigitalMediaRecord> digitalMedia) {
+    return digitalMedia.stream().map(DigitalMediaRecord::id).toList();
   }
 
   public List<JsonNode> buildPatchDeleteRequest(
