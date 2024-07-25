@@ -16,6 +16,7 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_3;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.TYPE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaEvent;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordNoOriginalData;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordPhysical;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordWithVersion;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaWrapper;
@@ -118,6 +119,21 @@ class ProcessingServiceTest {
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(
         List.of(givenDigitalMediaRecord()));
+
+    // When
+    var result = service.handleMessage(List.of(givenDigitalMediaEvent()));
+
+    // Then
+    then(repository).should().updateLastChecked(List.of(HANDLE));
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void testEqualDigitalMediaDifferentOriginalData() throws JsonProcessingException, DigitalSpecimenNotFoundException {
+    // Given
+    given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL_1))).willReturn(
+        List.of(givenDigitalMediaRecordNoOriginalData()));
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaEvent()));

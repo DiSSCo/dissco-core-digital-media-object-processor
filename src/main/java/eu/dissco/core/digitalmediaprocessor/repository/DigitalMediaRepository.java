@@ -91,10 +91,7 @@ public class DigitalMediaRepository {
         .set(DIGITAL_MEDIA_OBJECT.DATA,
             JSONB.jsonb(
                 mapper.valueToTree(digitalMediaRecord.digitalMediaWrapper().attributes())
-                    .toString()))
-        .set(DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA,
-            JSONB.jsonb(
-                digitalMediaRecord.digitalMediaWrapper().originalAttributes().toString()));
+                    .toString()));
   }
 
   public void updateLastChecked(List<String> currentDigitalMedia) {

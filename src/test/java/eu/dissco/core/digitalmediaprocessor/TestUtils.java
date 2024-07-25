@@ -159,6 +159,15 @@ public class TestUtils {
     );
   }
 
+  public static DigitalMediaRecord givenDigitalMediaRecordNoOriginalData() {
+    return new DigitalMediaRecord(
+        HANDLE,
+        VERSION,
+        CREATED,
+        givenDigitalMediaWrapperNoOriginalData()
+    );
+  }
+
   public static DigitalMediaWrapper givenDigitalMediaWrapper() throws JsonProcessingException {
     return givenDigitalMediaWrapper(DIGITAL_SPECIMEN_ID, FORMAT, MEDIA_URL_1,
         TYPE);
@@ -171,6 +180,15 @@ public class TestUtils {
         digitalSpecimenId,
         generateAttributes(format, mediaUrl),
         generateOriginalAttributes()
+    );
+  }
+
+  public static DigitalMediaWrapper givenDigitalMediaWrapperNoOriginalData() {
+    return new DigitalMediaWrapper(
+        TYPE,
+        DIGITAL_SPECIMEN_ID,
+        generateAttributes(FORMAT, MEDIA_URL_1),
+        MAPPER.createObjectNode()
     );
   }
 
