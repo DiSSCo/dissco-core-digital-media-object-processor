@@ -68,16 +68,19 @@ class DigitalMediaRepositoryIT extends BaseRepositoryIT {
   void testUpdateMediaOriginalDataChanged() throws JsonProcessingException {
     // Given
     var digitalMedia = givenDigitalMediaRecordNoOriginalData();
+    repository.createDigitalMediaRecord(List.of(digitalMedia));
+    var originalData = context.select(DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA)
+        .from(DIGITAL_MEDIA_OBJECT)
+        .where(DIGITAL_MEDIA_OBJECT.ID.eq(HANDLE)).fetchOne(Record1::value1);
 
     // When
-    repository.createDigitalMediaRecord(List.of(digitalMedia));
     repository.createDigitalMediaRecord(List.of(givenDigitalMediaRecord()));
 
     // Then
     var result = context.select(DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA)
         .from(DIGITAL_MEDIA_OBJECT)
         .where(DIGITAL_MEDIA_OBJECT.ID.eq(HANDLE)).fetchOne(Record1::value1);
-    assertThat(MAPPER.readTree(result.data())).isEqualTo(MAPPER.createObjectNode());
+    assertThat(result).isEqualTo(originalData);
   }
 
   @Test
