@@ -221,7 +221,7 @@ public class TestUtils {
     attributes.put(PRIMARY_MEDIA_ID.getAttribute(), MEDIA_URL_1);
     attributes.put(REFERENT_NAME.getAttribute(), TYPE + " for " + DIGITAL_SPECIMEN_ID);
     attributes.put(LINKED_DO_PID.getAttribute(), DIGITAL_SPECIMEN_ID);
-    attributes.put(MEDIA_FORMAT.getAttribute(), "image");
+    attributes.put(MEDIA_FORMAT.getAttribute(), FORMAT);
     attributes.put(ISSUED_FOR_AGENT.getAttribute(), "https://ror.org/0566bfb96");
     attributes.put(DCTERMS_TYPE.getAttribute(), DCTERMS_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());

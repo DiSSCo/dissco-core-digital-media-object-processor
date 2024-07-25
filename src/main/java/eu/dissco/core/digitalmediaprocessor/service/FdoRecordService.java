@@ -71,6 +71,8 @@ public class FdoRecordService {
       attributes.put(MEDIA_FORMAT.getAttribute(), MEDIA_FORMAT.getDefaultValue());
     }
     // Optional values
+    attributes.put(MEDIA_FORMAT.getAttribute(), mediaObject.attributes().getDctermsFormat() == null
+        ? MEDIA_FORMAT.getDefaultValue() : mediaObject.attributes().getDctermsFormat());
     attributes.put(DCTERMS_TYPE.getAttribute(), mediaObject.attributes().getDctermsType() == null ?
         DCTERMS_TYPE.getDefaultValue() : mediaObject.attributes().getDctermsType().value());
 
