@@ -2,7 +2,7 @@ package eu.dissco.core.digitalmediaprocessor;
 
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.IS_DERIVED_FROM_SPECIMEN;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_FORMAT;
@@ -10,7 +10,7 @@ import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.M
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MEDIA_ID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_TYPE;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MO_TYPE;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.DCTERMS_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTSHOLDER_PID_TYPE;
 
@@ -217,13 +217,13 @@ public class TestUtils {
   public static JsonNode givenPostAttributes() {
     var attributes = MAPPER.createObjectNode();
     attributes.put(MEDIA_HOST.getAttribute(), MEDIA_HOST_TESTVAL);
-    attributes.put(LICENSE.getAttribute(), LICENSE_TESTVAL);
+    attributes.put(LICENSE_NAME.getAttribute(), LICENSE_TESTVAL);
     attributes.put(PRIMARY_MEDIA_ID.getAttribute(), MEDIA_URL_1);
     attributes.put(REFERENT_NAME.getAttribute(), TYPE + " for " + DIGITAL_SPECIMEN_ID);
     attributes.put(LINKED_DO_PID.getAttribute(), DIGITAL_SPECIMEN_ID);
     attributes.put(MEDIA_FORMAT.getAttribute(), "image");
     attributes.put(ISSUED_FOR_AGENT.getAttribute(), "https://ror.org/0566bfb96");
-    attributes.put(PRIMARY_MO_TYPE.getAttribute(), PRIMARY_MO_TYPE.getDefaultValue());
+    attributes.put(DCTERMS_TYPE.getAttribute(), DCTERMS_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_NAME.getAttribute(), PRIMARY_MO_ID_NAME.getDefaultValue());
     attributes.put(RIGHTSHOLDER_PID_TYPE.getAttribute(), RIGHTSHOLDER_PID_TYPE.getDefaultValue());

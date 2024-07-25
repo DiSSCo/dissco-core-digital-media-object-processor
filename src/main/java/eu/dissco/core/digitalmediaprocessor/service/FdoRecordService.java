@@ -2,7 +2,7 @@ package eu.dissco.core.digitalmediaprocessor.service;
 
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.IS_DERIVED_FROM_SPECIMEN;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_FORMAT;
@@ -10,18 +10,18 @@ import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.M
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MEDIA_ID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_TYPE;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MO_TYPE;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.DCTERMS_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTSHOLDER_PID_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.TYPE;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaWrapper;
 import eu.dissco.core.digitalmediaprocessor.exceptions.PidCreationException;
 import eu.dissco.core.digitalmediaprocessor.properties.FdoProperties;
+import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +35,7 @@ public class FdoRecordService {
 
   private final ObjectMapper mapper;
   private final FdoProperties fdoProperties;
+  private static final String MISSING_ELEMENT_MSG = "Missing mandatory fdo element %s";
 
   public List<JsonNode> buildPostHandleRequest(List<DigitalMediaWrapper> mediaObjects)
       throws PidCreationException {
@@ -57,41 +58,47 @@ public class FdoRecordService {
   }
 
   private JsonNode generateAttributes(DigitalMediaWrapper mediaObject) throws PidCreationException {
+    validateMandatoryAttributes(mediaObject.attributes());
     var attributes = mapper.createObjectNode();
-    if (mediaObject.attributes().getOdsOrganisationID() != null
-        && mediaObject.attributes().getDctermsLicense() != null
-        && mediaObject.attributes().getAcAccessURI() != null) {
-      attributes.put(MEDIA_HOST.getAttribute(),
-          mediaObject.attributes().getOdsOrganisationID());
-      attributes.put(LICENSE.getAttribute(),
-          mediaObject.attributes().getDctermsLicense());
-      attributes.put(PRIMARY_MEDIA_ID.getAttribute(), mediaObject.attributes().getAcAccessURI());
-    } else {
-      log.error("Missing mandatory element for FDO profile: {}", mediaObject);
-      throw new PidCreationException("Missing mandatory element for FDO profile");
-    }
+    attributes.put(MEDIA_HOST.getAttribute(),
+        mediaObject.attributes().getOdsOrganisationID());
+    attributes.put(LICENSE_NAME.getAttribute(), mediaObject.attributes().getDctermsLicense());
+    attributes.put(PRIMARY_MEDIA_ID.getAttribute(), mediaObject.attributes().getAcAccessURI());
     attributes.put(REFERENT_NAME.getAttribute(),
         mediaObject.type() + " for " + mediaObject.digitalSpecimenID());
     attributes.put(LINKED_DO_PID.getAttribute(), mediaObject.digitalSpecimenID());
     if (mediaObject.type() != null) {
       attributes.put(MEDIA_FORMAT.getAttribute(), MEDIA_FORMAT.getDefaultValue());
     }
+    // Optional values
+    attributes.put(DCTERMS_TYPE.getAttribute(), mediaObject.attributes().getDctermsType() == null ?
+        DCTERMS_TYPE.getDefaultValue() : mediaObject.attributes().getDctermsType().value());
 
     // Default values
     attributes.put(ISSUED_FOR_AGENT.getAttribute(), fdoProperties.getIssuedForAgent());
-    attributes.put(PRIMARY_MO_TYPE.getAttribute(), PRIMARY_MO_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_NAME.getAttribute(), PRIMARY_MO_ID_NAME.getDefaultValue());
     attributes.put(RIGHTSHOLDER_PID_TYPE.getAttribute(), RIGHTSHOLDER_PID_TYPE.getDefaultValue());
     attributes.put(IS_DERIVED_FROM_SPECIMEN.getAttribute(),
         Boolean.valueOf(IS_DERIVED_FROM_SPECIMEN.getDefaultValue()));
     attributes.put(LINKED_DO_TYPE.getAttribute(), LINKED_DO_TYPE.getDefaultValue());
-
     return attributes;
   }
 
   public List<String> buildRollbackCreationRequest(List<DigitalMediaRecord> digitalMedia) {
     return digitalMedia.stream().map(DigitalMediaRecord::id).toList();
+  }
+
+  private void validateMandatoryAttributes(DigitalMedia mediaObject) throws PidCreationException {
+    if (mediaObject.getOdsOrganisationID() == null) {
+      log.error(String.format(MISSING_ELEMENT_MSG, "ods:organisationID"));
+      throw new PidCreationException(String.format(MISSING_ELEMENT_MSG, "ods:organisationID"));
+    }
+    if (mediaObject.getDctermsLicense() == null) {
+      log.error(String.format(MISSING_ELEMENT_MSG, "dcterms:license"));
+      throw new PidCreationException(String.format(MISSING_ELEMENT_MSG, "dcterms:license"));
+    }
+
   }
 
   public List<JsonNode> buildPatchDeleteRequest(

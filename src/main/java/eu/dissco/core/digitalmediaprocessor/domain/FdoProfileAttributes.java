@@ -12,11 +12,11 @@ public enum FdoProfileAttributes {
   LINKED_DO_PID("linkedDigitalObjectPid", null),
   MEDIA_HOST("mediaHost", null),
   IS_DERIVED_FROM_SPECIMEN("isDerivedFromSpecimen", "true"),
-  LINKED_DO_TYPE("linkedDigitalObjectType", "digital specimen"),
+  LINKED_DO_TYPE("linkedDigitalObjectType", "https://hdl.handle.net/21.T11148/894b1e6cad57e921764e"),
   PRIMARY_MO_ID_TYPE("primaryMediaObjectIdType", "Resolvable"),
   PRIMARY_MO_ID_NAME("primaryMediaObjectIdName", "ac:accessUri"),
-  PRIMARY_MO_TYPE("dcterms:type", null),
-  LICENSE("license", null),
+  DCTERMS_TYPE("dcterms:type", "Image"),
+  LICENSE_NAME("licenseName", ""),
   RIGHTSHOLDER_PID_TYPE("rightsholderPidType", "Resolvable"),
   MEDIA_FORMAT("dcterms:format", "image");
 
