@@ -1,6 +1,8 @@
 package eu.dissco.core.digitalmediaprocessor.web;
 
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.CREATED;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE_2;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPidMap;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostHandleRequest;
@@ -137,16 +139,9 @@ class HandleComponentTest {
   }
 
   @Test
-  void testRollbackHandleCreation() throws Exception {
+  void testRollbackHandleCreation() {
     // Given
-    var requestBody = MAPPER.readTree("""
-        {
-          "data": [
-            {"id": "20.5000.1025/AAA-111-AAA"},
-            {"id": "20.5000.1025/BBB-222-BBB"}
-          ]
-        }
-        """);
+    var requestBody = List.of(HANDLE, HANDLE_2);
     mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.OK.value())
         .addHeader("Content-Type", "application/json"));
 

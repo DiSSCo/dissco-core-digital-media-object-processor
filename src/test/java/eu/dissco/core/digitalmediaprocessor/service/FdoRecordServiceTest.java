@@ -12,10 +12,9 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaWr
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostAttributes;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostHandleRequest;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mockStatic;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import eu.dissco.core.digitalmediaprocessor.TestUtils;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaWrapper;
 import eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes;
@@ -41,16 +40,6 @@ class FdoRecordServiceTest {
   FdoRecordService fdoRecordService;
   private MockedStatic<Instant> mockedStatic;
   private MockedStatic<Clock> mockedClock;
-
-  private static JsonNode expectedRollbackCreationRequest() throws Exception {
-    return MAPPER.readTree("""
-        {
-          "data":[
-          {"id":"20.5000.1025/1BY-BHB-AVN"}
-          ]
-        }
-        """);
-  }
 
   @BeforeEach
   void setup() {
@@ -101,7 +90,7 @@ class FdoRecordServiceTest {
   @Test
   void testBuildRollbackCreationRequest() throws Exception {
     // Given
-    var expected = expectedRollbackCreationRequest();
+    var expected = List.of(HANDLE);
 
     // When
     var result = fdoRecordService.buildRollbackCreationRequest(
