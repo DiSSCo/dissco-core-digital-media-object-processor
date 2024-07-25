@@ -184,7 +184,12 @@ public class ProcessingService {
         entityRelationships.stream().map(this::deepcopyEntityRelationship).toList());
     ignoreTimestampEntityRelationship(
         currentDigitalMediaWrapper.attributes().getOdsHasEntityRelationship());
-    if (currentDigitalMediaWrapper.equals(digitalMediaWrapper)) {
+    checkOriginalData(currentDigitalMediaWrapper, digitalMediaWrapper);
+    if (currentDigitalMediaWrapper.attributes().equals(digitalMediaWrapper.attributes())
+        && currentDigitalMediaWrapper.digitalSpecimenID()
+        .equals(digitalMediaWrapper.digitalSpecimenID())
+        && currentDigitalMediaWrapper.type().equals(digitalMediaWrapper.type())
+    ) {
       digitalMediaWrapper.attributes().setOdsHasEntityRelationship(entityRelationships);
       digitalMediaWrapper.attributes().setDctermsModified(currentModified);
       currentDigitalMediaWrapper.attributes().setDctermsModified(currentModified);
@@ -195,6 +200,18 @@ public class ProcessingService {
       currentDigitalMediaWrapper.attributes().setDctermsModified(currentModified);
       return false;
     }
+  }
+
+  private void checkOriginalData(DigitalMediaWrapper currentDigitalMediaWrapper,
+      DigitalMediaWrapper digitalMediaWrapper) {
+    if (currentDigitalMediaWrapper.originalAttributes() != null
+        && currentDigitalMediaWrapper.originalAttributes()
+        .equals(digitalMediaWrapper.originalAttributes())) {
+      log.info(
+          "Media Object with ac:accessURI {} has changed original data. New Original data not captured.",
+          digitalMediaWrapper.attributes().getAcAccessURI());
+    }
+
   }
 
   private EntityRelationship deepcopyEntityRelationship(EntityRelationship entityRelationships) {

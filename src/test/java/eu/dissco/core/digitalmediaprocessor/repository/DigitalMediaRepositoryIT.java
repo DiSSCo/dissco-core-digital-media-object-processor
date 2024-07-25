@@ -11,11 +11,12 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_1;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_2;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_3;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.UPDATED_TIMESTAMP;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordNoOriginalData;
 import static eu.dissco.core.digitalmediaprocessor.database.jooq.Tables.DIGITAL_MEDIA_OBJECT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import eu.dissco.core.digitalmediaprocessor.TestUtils;
 import java.util.List;
 import org.jooq.Record1;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +35,7 @@ class DigitalMediaRepositoryIT extends BaseRepositoryIT {
   @Test
   void testCreateDigitalMediaRecord() throws JsonProcessingException {
     // Given
-    var digitalMedia = TestUtils.givenDigitalMediaRecord();
+    var digitalMedia = givenDigitalMediaRecord();
 
     // When
     var result = repository.createDigitalMediaRecord(List.of(digitalMedia));
@@ -50,9 +51,9 @@ class DigitalMediaRepositoryIT extends BaseRepositoryIT {
   @Test
   void testUpdateDigitalMediaRecord() throws JsonProcessingException {
     // Given
-    var digitalMedia = TestUtils.givenDigitalMediaRecord();
+    var digitalMedia = givenDigitalMediaRecord();
     repository.createDigitalMediaRecord(List.of(digitalMedia));
-    var updatedMedia = TestUtils.givenDigitalMediaRecord(HANDLE, "new_format");
+    var updatedMedia = givenDigitalMediaRecord(HANDLE, "new_format");
 
     // When
     repository.createDigitalMediaRecord(List.of(updatedMedia));
@@ -64,13 +65,32 @@ class DigitalMediaRepositoryIT extends BaseRepositoryIT {
   }
 
   @Test
+  void testUpdateMediaOriginalDataChanged() throws JsonProcessingException {
+    // Given
+    var digitalMedia = givenDigitalMediaRecordNoOriginalData();
+    repository.createDigitalMediaRecord(List.of(digitalMedia));
+    var originalData = context.select(DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA)
+        .from(DIGITAL_MEDIA_OBJECT)
+        .where(DIGITAL_MEDIA_OBJECT.ID.eq(HANDLE)).fetchOne(Record1::value1);
+
+    // When
+    repository.createDigitalMediaRecord(List.of(givenDigitalMediaRecord()));
+
+    // Then
+    var result = context.select(DIGITAL_MEDIA_OBJECT.ORIGINAL_DATA)
+        .from(DIGITAL_MEDIA_OBJECT)
+        .where(DIGITAL_MEDIA_OBJECT.ID.eq(HANDLE)).fetchOne(Record1::value1);
+    assertThat(result).isEqualTo(originalData);
+  }
+
+  @Test
   void testUpdateLastChecked() throws JsonProcessingException {
     // Given
-    var digitalMedia = TestUtils.givenDigitalMediaRecord();
+    var digitalMedia = givenDigitalMediaRecord();
     repository.createDigitalMediaRecord(List.of(
         digitalMedia,
-        TestUtils.givenDigitalMediaRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2),
-        TestUtils.givenDigitalMediaRecord(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3)));
+        givenDigitalMediaRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2),
+        givenDigitalMediaRecord(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3)));
 
     // When
     repository.updateLastChecked(List.of(HANDLE));
@@ -86,9 +106,9 @@ class DigitalMediaRepositoryIT extends BaseRepositoryIT {
   void testRollbackSpecimen() throws JsonProcessingException {
     // Given
     repository.createDigitalMediaRecord(List.of(
-        TestUtils.givenDigitalMediaRecord(HANDLE, DIGITAL_SPECIMEN_ID, MEDIA_URL_1),
-        TestUtils.givenDigitalMediaRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2),
-        TestUtils.givenDigitalMediaRecord(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3)));
+        givenDigitalMediaRecord(HANDLE, DIGITAL_SPECIMEN_ID, MEDIA_URL_1),
+        givenDigitalMediaRecord(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2),
+        givenDigitalMediaRecord(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3)));
 
     // When
     repository.rollBackDigitalMedia(HANDLE_2);

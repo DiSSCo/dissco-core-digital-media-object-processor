@@ -100,7 +100,6 @@ public class FdoRecordService {
       log.error(String.format(MISSING_ELEMENT_MSG, "dcterms:license"));
       throw new PidCreationException(String.format(MISSING_ELEMENT_MSG, "dcterms:license"));
     }
-
   }
 
   public List<JsonNode> buildPatchDeleteRequest(
