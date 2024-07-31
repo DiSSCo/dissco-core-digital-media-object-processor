@@ -70,13 +70,9 @@ public class FdoRecordService {
     if (mediaObject.type() != null) {
       attributes.put(MEDIA_FORMAT.getAttribute(), MEDIA_FORMAT.getDefaultValue());
     }
-    // Optional values
-    attributes.put(MEDIA_FORMAT.getAttribute(), mediaObject.attributes().getDctermsFormat() == null
-        ? MEDIA_FORMAT.getDefaultValue() : mediaObject.attributes().getDctermsFormat());
-    attributes.put(DCTERMS_TYPE.getAttribute(), mediaObject.attributes().getDctermsType() == null ?
-        DCTERMS_TYPE.getDefaultValue() : mediaObject.attributes().getDctermsType().value());
-
-    // Default values
+    // Default
+    attributes.put(MEDIA_FORMAT.getAttribute(), MEDIA_FORMAT.getDefaultValue());
+    attributes.put(DCTERMS_TYPE.getAttribute(), DCTERMS_TYPE.getDefaultValue());
     attributes.put(ISSUED_FOR_AGENT.getAttribute(), fdoProperties.getIssuedForAgent());
     attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());
     attributes.put(PRIMARY_MO_ID_NAME.getAttribute(), PRIMARY_MO_ID_NAME.getDefaultValue());
