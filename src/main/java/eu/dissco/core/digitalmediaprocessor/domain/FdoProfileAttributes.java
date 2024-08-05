@@ -16,7 +16,7 @@ public enum FdoProfileAttributes {
   PRIMARY_MO_ID_TYPE("primaryMediaObjectIdType", "Resolvable"),
   PRIMARY_MO_ID_NAME("primaryMediaObjectIdName", "ac:accessUri"),
   DCTERMS_TYPE("dcterms:type", "image"),
-  LICENSE_NAME("licenseName", null),
+  LICENSE_NAME("licenseName", ""),
   RIGHTSHOLDER_PID_TYPE("rightsholderPidType", "Resolvable"),
   MEDIA_FORMAT("dcterms:format", "image");
 

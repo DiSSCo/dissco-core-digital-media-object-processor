@@ -71,7 +71,7 @@ public class ProvenanceService {
             .withRdfsComment("Digital Media newly created"))
         .withProvEntity(new ProvEntity()
             .withId(entityID)
-            .withType(digitalMedia.getType())
+            .withType("ods:DigitalMedia")
             .withProvValue(mapEntityToProvValue(digitalMedia))
             .withProvWasGeneratedBy(activityID))
         .withOdsHasProvAgent(List.of(
