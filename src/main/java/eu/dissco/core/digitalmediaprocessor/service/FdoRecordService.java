@@ -71,10 +71,8 @@ public class FdoRecordService {
       attributes.put(MEDIA_FORMAT.getAttribute(), MEDIA_FORMAT.getDefaultValue());
     }
     // Optional values
-    attributes.put(MEDIA_FORMAT.getAttribute(), mediaObject.attributes().getDctermsFormat() == null
-        ? MEDIA_FORMAT.getDefaultValue() : mediaObject.attributes().getDctermsFormat());
-    attributes.put(DCTERMS_TYPE.getAttribute(), mediaObject.attributes().getDctermsType() == null ?
-        DCTERMS_TYPE.getDefaultValue() : mediaObject.attributes().getDctermsType().value());
+    attributes.put(MEDIA_FORMAT.getAttribute(), MEDIA_FORMAT.getDefaultValue());
+    attributes.put(DCTERMS_TYPE.getAttribute(), DCTERMS_TYPE.getDefaultValue());
 
     // Default values
     attributes.put(ISSUED_FOR_AGENT.getAttribute(), fdoProperties.getIssuedForAgent());
