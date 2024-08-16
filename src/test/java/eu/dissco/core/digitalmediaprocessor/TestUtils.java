@@ -226,7 +226,7 @@ public class TestUtils {
     var result = MAPPER.createObjectNode();
     var data = MAPPER.createObjectNode();
     var attributes = givenPostAttributes();
-    data.put("type", "https://hdl.handle.net/21.T11148/bbad8c4e101e8af01115");
+    data.put("type", "https://doi.org/21.T11148/bbad8c4e101e8af01115");
     data.set("attributes", attributes);
     result.set("data", data);
     return result;

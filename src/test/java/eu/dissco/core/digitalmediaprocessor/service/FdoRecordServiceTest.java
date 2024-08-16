@@ -62,7 +62,7 @@ class FdoRecordServiceTest {
     var expectedString = """
         {
           "data": {
-            "type": "https://hdl.handle.net/21.T11148/bbad8c4e101e8af01115",
+            "type": "https://doi.org/21.T11148/bbad8c4e101e8af01115",
             "id":\"""" + HANDLE + "\","
         + "\"attributes\":" + givenPostAttributes().toPrettyString() + "}}";
 
