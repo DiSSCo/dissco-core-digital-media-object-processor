@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaEvent;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
+import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaUpdatePidEvent;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -47,4 +49,9 @@ public class KafkaPublisherService {
       throws JsonProcessingException {
     kafkaTemplate.send("digital-media-object-dlq", mapper.writeValueAsString(event));
   }
+
+  public void publishMediaPid(List<DigitalMediaUpdatePidEvent> event) throws JsonProcessingException {
+    kafkaTemplate.send("media-update", mapper.writeValueAsString(event));
+  }
+
 }

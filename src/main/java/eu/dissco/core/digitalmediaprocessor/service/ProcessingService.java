@@ -11,6 +11,7 @@ import eu.dissco.core.digitalmediaprocessor.Profiles;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaEvent;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaKey;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
+import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaUpdatePidEvent;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaWrapper;
 import eu.dissco.core.digitalmediaprocessor.domain.ProcessResult;
 import eu.dissco.core.digitalmediaprocessor.domain.UpdatedDigitalMediaRecord;
@@ -553,6 +554,7 @@ public class ProcessingService {
         handlePartiallyFailedElasticInsert(digitalMediaRecords, bulkResponse);
       }
       log.info("Successfully created {} new digital media", digitalMediaRecords.size());
+      publishMediaId(digitalMediaRecords.keySet());
       return digitalMediaRecords.keySet();
     } catch (IOException | ElasticsearchException e) {
       log.error("Rolling back, failed to insert records in elastic", e);
@@ -560,6 +562,20 @@ public class ProcessingService {
       var mediaRecords = digitalMediaRecords.keySet().stream().toList();
       rollbackHandleCreation(mediaRecords);
       return Collections.emptySet();
+    }
+  }
+
+  private void publishMediaId(Set<DigitalMediaRecord> digitalMediaRecords) {
+    var events = digitalMediaRecords.stream()
+        .map(
+            digitalMediaRecord -> new DigitalMediaUpdatePidEvent(digitalMediaRecord.digitalMediaWrapper().digitalSpecimenID(), digitalMediaRecord.id(),
+                digitalMediaRecord.digitalMediaWrapper().attributes().getAcAccessURI()))
+        .toList();
+    log.info("Publishing new media IDs to digital specimen processor");
+    try {
+      kafkaService.publishMediaPid(events);
+    } catch (JsonProcessingException e){
+      log.error("Unable to publish media ids to specimen processor", e);
     }
   }
 

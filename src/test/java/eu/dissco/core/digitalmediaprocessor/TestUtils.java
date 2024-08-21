@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaEvent;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaKey;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
+import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaUpdatePidEvent;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaWrapper;
 import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia;
 import java.time.Instant;
@@ -250,6 +251,14 @@ public class TestUtils {
     attributes.put(LINKED_DO_TYPE.getAttribute(), LINKED_DO_TYPE.getDefaultValue());
 
     return attributes;
+  }
+
+  public static DigitalMediaUpdatePidEvent givenDigitalMediaUpdatePidEvent(){
+    return new DigitalMediaUpdatePidEvent(
+        DIGITAL_SPECIMEN_ID,
+        HANDLE,
+        MEDIA_URL_1
+    );
   }
 
 }

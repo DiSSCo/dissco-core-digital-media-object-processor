@@ -19,6 +19,7 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRe
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordNoOriginalData;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordPhysical;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordWithVersion;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaUpdatePidEvent;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaWrapper;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPidMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -252,6 +253,7 @@ class ProcessingServiceTest {
     then(repository).should().createDigitalMediaRecord(Set.of(expected.get(0)));
     then(publisherService).should().publishCreateEvent(expected.get(0));
     then(publisherService).should().publishAnnotationRequestEvent(MAS, expected.get(0));
+    then(publisherService).should().publishMediaPid(List.of(givenDigitalMediaUpdatePidEvent()));
     assertThat(result).isEqualTo(expected);
   }
 
