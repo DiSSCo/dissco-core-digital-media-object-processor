@@ -1,9 +1,9 @@
 package eu.dissco.core.digitalmediaprocessor.service;
 
-import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAS;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenJsonPatch;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenMediaEvent;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -62,8 +62,7 @@ class KafkaPublisherServiceTest {
     // Given
 
     // When
-    service.publishUpdateEvent(givenDigitalMediaRecord(),
-        givenDigitalMediaRecord(HANDLE, "image/tiff"));
+    service.publishUpdateEvent(givenDigitalMediaRecord(), givenJsonPatch());
 
     // Then
     then(kafkaTemplate).should().send(eq("createUpdateDeleteTopic"), anyString());
