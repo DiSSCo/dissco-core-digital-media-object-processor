@@ -9,11 +9,11 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.SOURCE_SYSTEM_ID;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.SOURCE_SYSTEM_NAME;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.VERSION;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenJsonPatch;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import eu.dissco.core.digitalmediaprocessor.component.SourceSystemNameComponent;
 import eu.dissco.core.digitalmediaprocessor.properties.ApplicationProperties;
 import eu.dissco.core.digitalmediaprocessor.schema.Agent;
 import eu.dissco.core.digitalmediaprocessor.schema.Agent.Type;
@@ -30,9 +30,6 @@ class ProvenanceServiceTest {
 
   @Mock
   private ApplicationProperties properties;
-
-  @Mock
-  private SourceSystemNameComponent sourceSystemNameComponent;
 
   private ProvenanceService service;
 
@@ -51,7 +48,7 @@ class ProvenanceServiceTest {
 
   @BeforeEach
   void setup() {
-    this.service = new ProvenanceService(MAPPER, properties, sourceSystemNameComponent);
+    this.service = new ProvenanceService(MAPPER, properties);
   }
 
   @Test
@@ -60,8 +57,6 @@ class ProvenanceServiceTest {
     given(properties.getName()).willReturn(APP_NAME);
     given(properties.getPid()).willReturn(APP_HANDLE);
     var digitalSpecimen = givenDigitalMediaRecord();
-    given(sourceSystemNameComponent.getSourceSystemName(SOURCE_SYSTEM_ID)).willReturn(
-        SOURCE_SYSTEM_NAME);
 
     // When
     var event = service.generateCreateEvent(digitalSpecimen);
@@ -79,12 +74,9 @@ class ProvenanceServiceTest {
     given(properties.getName()).willReturn(APP_NAME);
     given(properties.getPid()).willReturn(APP_HANDLE);
     var digitalSpecimen = givenDigitalMediaRecord();
-    var anotherDigitalSpecimen = givenDigitalMediaRecord("image/png");
-    given(sourceSystemNameComponent.getSourceSystemName(SOURCE_SYSTEM_ID)).willReturn(
-        SOURCE_SYSTEM_NAME);
 
     // When
-    var event = service.generateUpdateEvent(anotherDigitalSpecimen, digitalSpecimen);
+    var event = service.generateUpdateEvent(digitalSpecimen, givenJsonPatch());
 
     // Then
     assertThat(event.getOdsID()).isEqualTo(DOI_PREFIX + HANDLE + "/" + VERSION);
@@ -97,7 +89,7 @@ class ProvenanceServiceTest {
     return List.of(new OdsChangeValue()
         .withAdditionalProperty("op", "replace")
         .withAdditionalProperty("path", "/dcterms:format")
-        .withAdditionalProperty("value", "image/png")
+        .withAdditionalProperty("value", "image/jpeg")
     );
   }
 }

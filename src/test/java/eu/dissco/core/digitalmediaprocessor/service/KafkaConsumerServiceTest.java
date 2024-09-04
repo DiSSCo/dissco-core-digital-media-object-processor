@@ -99,6 +99,7 @@ class KafkaConsumerServiceTest {
               "dcterms:license": "http://creativecommons.org/licenses/by-nc/3.0/",
               "ods:organisationID":"https://ror.org/0x123",
               "ods:sourceSystemID": "https://hdl.handle.net/TEST/57Z-6PC-64W",
+              "ods:sourceSystemName": "A very nice source system",
               "dcterms:modified": "2022-09-16T08:52:27.391Z"
             },
             "ods:originalAttributes": {

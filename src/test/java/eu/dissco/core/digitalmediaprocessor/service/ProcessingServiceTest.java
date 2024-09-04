@@ -9,6 +9,7 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.FORMAT_2;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE_2;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE_3;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAS;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_1;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_2;
@@ -20,6 +21,7 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRe
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordPhysical;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordWithVersion;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaWrapper;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenJsonPatch;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPidMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
@@ -86,6 +88,8 @@ class ProcessingServiceTest {
   private HandleComponent handleComponent;
   @Mock
   private Environment environment;
+  @Mock
+  private AnnotationPublisherService annotationPublisherService;
 
   private MockedStatic<Instant> mockedInstant;
   private MockedStatic<Clock> mockedClock;
@@ -94,8 +98,9 @@ class ProcessingServiceTest {
 
   @BeforeEach
   void setup() {
-    service = new ProcessingService(repository, fdoRecordService, handleComponent,
-        elasticRepository, publisherService, digitalSpecimenRepository, environment);
+    service = new ProcessingService(MAPPER, repository, fdoRecordService, handleComponent,
+        elasticRepository, publisherService, digitalSpecimenRepository, environment,
+        annotationPublisherService);
     Clock clock = Clock.fixed(CREATED, ZoneOffset.UTC);
     Instant instant = Instant.now(clock);
     mockedInstant = mockStatic(Instant.class);
@@ -129,7 +134,8 @@ class ProcessingServiceTest {
   }
 
   @Test
-  void testEqualDigitalMediaDifferentOriginalData() throws JsonProcessingException, DigitalSpecimenNotFoundException {
+  void testEqualDigitalMediaDifferentOriginalData()
+      throws JsonProcessingException, DigitalSpecimenNotFoundException {
     // Given
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(
@@ -161,8 +167,8 @@ class ProcessingServiceTest {
     then(handleComponent).shouldHaveNoInteractions();
     then(repository).should().createDigitalMediaRecord(expected);
     then(publisherService).should()
-        .publishUpdateEvent(givenDigitalMediaRecordWithVersion(2),
-            givenDigitalMediaRecord(FORMAT_2));
+        .publishUpdateEvent(givenDigitalMediaRecordWithVersion(2), givenJsonPatch());
+    then(annotationPublisherService).should().publishAnnotationUpdatedMedia(anySet());
     assertThat(result).isEqualTo(expected);
   }
 
@@ -186,8 +192,8 @@ class ProcessingServiceTest {
     then(handleComponent).should().updateHandle(any());
     then(repository).should().createDigitalMediaRecord(expected);
     then(publisherService).should()
-        .publishUpdateEvent(givenDigitalMediaRecordWithVersion(2),
-            givenDigitalMediaRecord(FORMAT_2));
+        .publishUpdateEvent(givenDigitalMediaRecordWithVersion(2), givenJsonPatch());
+    then(annotationPublisherService).should().publishAnnotationUpdatedMedia(anySet());
     assertThat(result).isEqualTo(expected);
   }
 
@@ -208,6 +214,7 @@ class ProcessingServiceTest {
         .buildPatchDeleteRequest(List.of(givenDigitalMediaRecordWithVersion(2)));
     then(repository).shouldHaveNoMoreInteractions();
     then(publisherService).should().deadLetterEvent(givenDlqTransferEventUpdate());
+    then(annotationPublisherService).shouldHaveNoInteractions();
     assertThat(result).isEmpty();
   }
 
@@ -227,6 +234,7 @@ class ProcessingServiceTest {
 
     // Then
     then(repository).shouldHaveNoMoreInteractions();
+    then(annotationPublisherService).shouldHaveNoInteractions();
     assertThat(result).isEmpty();
   }
 
@@ -252,6 +260,7 @@ class ProcessingServiceTest {
     then(repository).should().createDigitalMediaRecord(Set.of(expected.get(0)));
     then(publisherService).should().publishCreateEvent(expected.get(0));
     then(publisherService).should().publishAnnotationRequestEvent(MAS, expected.get(0));
+    then(annotationPublisherService).should().publishAnnotationNewMedia(Set.of(expected.get(0)));
     assertThat(result).isEqualTo(expected);
   }
 
@@ -280,6 +289,7 @@ class ProcessingServiceTest {
     then(publisherService).should().publishAnnotationRequestEvent(MAS, expected.get(0));
     then(publisherService).should()
         .republishDigitalMedia(givenDigitalMediaEvent());
+    then(annotationPublisherService).should().publishAnnotationNewMedia(Set.of(expected.get(0)));
     assertThat(result).isEqualTo(expected);
   }
 
@@ -306,6 +316,7 @@ class ProcessingServiceTest {
     then(repository).should().createDigitalMediaRecord(Set.of(givenDigitalMediaRecord()));
     then(repository).should().rollBackDigitalMedia(HANDLE);
     then(publisherService).should().deadLetterEvent(givenDigitalMediaEvent());
+    then(annotationPublisherService).shouldHaveNoInteractions();
     assertThat(result).isEmpty();
   }
 
@@ -330,6 +341,7 @@ class ProcessingServiceTest {
     then(repository).should().createDigitalMediaRecord(Set.of(givenDigitalMediaRecord()));
     then(repository).should().rollBackDigitalMedia(HANDLE);
     then(publisherService).should().deadLetterEvent(givenDigitalMediaEvent());
+    then(annotationPublisherService).shouldHaveNoInteractions();
     assertThat(result).isEmpty();
   }
 
@@ -362,9 +374,12 @@ class ProcessingServiceTest {
     then(repository).should().createDigitalMediaRecord(anySet());
     then(repository).should().rollBackDigitalMedia(HANDLE_2);
     then(publisherService).should().deadLetterEvent(secondEvent);
+    then(annotationPublisherService).should().publishAnnotationNewMedia(Set.of(
+        givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
+        givenDigitalMediaRecord()));
     assertThat(result).isEqualTo(List.of(
-        givenDigitalMediaRecord(),
-        givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE)
+        givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
+        givenDigitalMediaRecord()
     ));
   }
 
@@ -406,6 +421,8 @@ class ProcessingServiceTest {
     then(elasticRepository).should().rollbackDigitalMedia(thirdRecord);
     then(publisherService).should().deadLetterEvent(secondEvent);
     then(publisherService).should().deadLetterEvent(thirdEvent);
+    then(annotationPublisherService).should()
+        .publishAnnotationNewMedia(Set.of(givenDigitalMediaRecord()));
     assertThat(result).isEqualTo(List.of(givenDigitalMediaRecord()));
   }
 
@@ -432,9 +449,13 @@ class ProcessingServiceTest {
         givenDigitalMediaRecordPhysical(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2, TYPE)));
     then(handleComponent).should().rollbackHandleCreation(any());
     then(publisherService).should().deadLetterEvent(secondEvent);
+    then(annotationPublisherService).should().publishAnnotationNewMedia(Set.of(
+        givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
+        givenDigitalMediaRecord()
+    ));
     assertThat(result).isEqualTo(List.of(
-        givenDigitalMediaRecord(),
-        givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE)
+        givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
+        givenDigitalMediaRecord()
     ));
   }
 
@@ -458,12 +479,16 @@ class ProcessingServiceTest {
     // Then
     then(repository).should().createDigitalMediaRecord(anySet());
     then(repository).should().rollBackDigitalMedia(HANDLE_2);
+    then(annotationPublisherService).should().publishAnnotationNewMedia(Set.of(
+        givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
+        givenDigitalMediaRecord()
+    ));
     then(fdoRecordService).should().buildRollbackCreationRequest(List.of(
         givenDigitalMediaRecordPhysical(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2, TYPE)));
     assertThat(result).isEqualTo(
         List.of(
-            givenDigitalMediaRecord(),
-            givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE)
+            givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
+            givenDigitalMediaRecord()
         ));
   }
 
@@ -494,6 +519,7 @@ class ProcessingServiceTest {
     then(repository).should().rollBackDigitalMedia(HANDLE);
     then(elasticRepository).should().rollbackDigitalMedia(expected.get(0));
     then(publisherService).should().deadLetterEvent(givenDigitalMediaEvent());
+    then(annotationPublisherService).should().publishAnnotationNewMedia(Set.of());
     assertThat(result).isEmpty();
   }
 
@@ -522,6 +548,7 @@ class ProcessingServiceTest {
     then(fdoRecordService).shouldHaveNoMoreInteractions();
     then(repository).should(times(2)).createDigitalMediaRecord(anyList());
     then(publisherService).should().deadLetterEvent(secondEvent);
+    then(annotationPublisherService).should().publishAnnotationUpdatedMedia(anySet());
     assertThat(result).hasSize(2);
   }
 
@@ -555,6 +582,7 @@ class ProcessingServiceTest {
     then(handleComponent).should().rollbackHandleUpdate(any());
     then(repository).should(times(2)).createDigitalMediaRecord(anyList());
     then(publisherService).should().deadLetterEvent(secondEvent);
+    then(annotationPublisherService).should().publishAnnotationUpdatedMedia(anySet());
     assertThat(result).hasSize(2);
   }
 
@@ -569,9 +597,6 @@ class ProcessingServiceTest {
             "Another Type");
     var thirdRecord = givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3,
         MEDIA_URL_3, "Another Type");
-    var thirdRecordIncremented = new DigitalMediaRecord(thirdRecord.id(),
-        thirdRecord.version() + 1, thirdRecord.created(),
-        givenDigitalMediaWrapper(DIGITAL_SPECIMEN_ID_3, FORMAT, MEDIA_URL_3, TYPE));
 
     given(repository.getDigitalMedia(anyList(), anyList())).willReturn(List.of(
         givenDigitalMediaRecordPhysical(HANDLE, DIGITAL_SPECIMEN_ID, MEDIA_URL_1,
@@ -584,8 +609,6 @@ class ProcessingServiceTest {
     given(elasticRepository.indexDigitalMedia(anyList())).willReturn(bulkResponse);
     doNothing().doThrow(JsonProcessingException.class).when(publisherService)
         .publishUpdateEvent(any(), any());
-    doThrow(JsonProcessingException.class).when(publisherService)
-        .publishUpdateEvent(thirdRecordIncremented, thirdRecord);
 
     // When
     var result = service.handleMessage(
@@ -599,12 +622,12 @@ class ProcessingServiceTest {
     then(publisherService).should().deadLetterEvent(secondEvent);
     then(publisherService).should().deadLetterEvent(thirdEvent);
     then(elasticRepository).should().rollbackVersion(thirdRecord);
+    then(annotationPublisherService).should().publishAnnotationUpdatedMedia(anySet());
     assertThat(result).isEqualTo(List.of(givenDigitalMediaRecordWithVersion(2)));
   }
 
   @Test
-  void testUpdateDigitalMediaPartialElasticFailedHandleRollbackFailed()
-      throws Exception {
+  void testUpdateDigitalMediaPartialElasticFailedHandleRollbackFailed() throws Exception {
     // Given
     var secondEvent = givenDigitalMediaEvent(DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2);
     var thirdEvent = givenDigitalMediaEvent(DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3);
@@ -629,6 +652,7 @@ class ProcessingServiceTest {
     then(handleComponent).should().rollbackHandleUpdate(any());
     then(repository).should(times(2)).createDigitalMediaRecord(anyList());
     then(publisherService).should().deadLetterEvent(secondEvent);
+    then(annotationPublisherService).should().publishAnnotationUpdatedMedia(anySet());
     assertThat(result).hasSize(2);
   }
 
@@ -642,8 +666,7 @@ class ProcessingServiceTest {
     given(bulkResponse.errors()).willReturn(false);
     given(elasticRepository.indexDigitalMedia(expected)).willReturn(bulkResponse);
     doThrow(JsonProcessingException.class).when(publisherService)
-        .publishUpdateEvent(givenDigitalMediaRecordWithVersion(2),
-            givenDigitalMediaRecord(FORMAT_2));
+        .publishUpdateEvent(givenDigitalMediaRecordWithVersion(2), givenJsonPatch());
     given(fdoRecordService.handleNeedsUpdate(any(), any())).willReturn(true);
 
     // When
@@ -656,6 +679,7 @@ class ProcessingServiceTest {
     then(repository).should(times(2)).createDigitalMediaRecord(anyList());
     then(elasticRepository).should().rollbackVersion(givenDigitalMediaRecord(FORMAT_2));
     then(publisherService).should().deadLetterEvent(givenDigitalMediaEvent());
+    then(annotationPublisherService).should().publishAnnotationUpdatedMedia(Set.of());
     assertThat(result).isEmpty();
   }
 
@@ -677,6 +701,7 @@ class ProcessingServiceTest {
         givenDigitalMediaRecord(FORMAT_2)));
     then(repository).should(times(2)).createDigitalMediaRecord(anyList());
     then(publisherService).should().deadLetterEvent(givenDigitalMediaEvent());
+    then(annotationPublisherService).shouldHaveNoInteractions();
     assertThat(result).isEmpty();
   }
 
@@ -695,6 +720,7 @@ class ProcessingServiceTest {
     then(repository).shouldHaveNoMoreInteractions();
     then(elasticRepository).shouldHaveNoInteractions();
     then(publisherService).should().deadLetterEvent(givenDigitalMediaEvent());
+    then(annotationPublisherService).shouldHaveNoInteractions();
     assertThat(result).isEmpty();
   }
 
@@ -713,6 +739,7 @@ class ProcessingServiceTest {
     // Then
     then(repository).shouldHaveNoMoreInteractions();
     then(elasticRepository).shouldHaveNoInteractions();
+    then(annotationPublisherService).shouldHaveNoInteractions();
     assertThat(result).isEmpty();
   }
 
@@ -783,6 +810,7 @@ class ProcessingServiceTest {
     // Then
     assertThat(result).isEmpty();
     then(handleComponent).should().rollbackHandleCreation(any());
+    then(annotationPublisherService).shouldHaveNoInteractions();
     then(publisherService).should().deadLetterEvent(any());
   }
 
@@ -800,6 +828,7 @@ class ProcessingServiceTest {
     // Then
     assertThat(result).isEmpty();
     then(handleComponent).should().rollbackHandleUpdate(any());
+    then(annotationPublisherService).shouldHaveNoInteractions();
     then(publisherService).should().deadLetterEvent(any());
   }
 
@@ -819,7 +848,8 @@ class ProcessingServiceTest {
     var mediaRecord = new UpdatedDigitalMediaRecord(
         givenDigitalMediaRecord(),
         List.of(MAS),
-        givenDigitalMediaRecord(FORMAT_2)
+        givenDigitalMediaRecord(FORMAT_2),
+        givenJsonPatch()
     );
     return new DigitalMediaEvent(mediaRecord.automatedAnnotations(),
         new DigitalMediaWrapper(

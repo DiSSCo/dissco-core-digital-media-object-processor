@@ -1,7 +1,9 @@
 package eu.dissco.core.digitalmediaprocessor.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.dissco.core.digitalmediaprocessor.domain.AutoAcceptedAnnotation;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaEvent;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
 import lombok.RequiredArgsConstructor;
@@ -27,10 +29,9 @@ public class KafkaPublisherService {
     kafkaTemplate.send(enrichment, mapper.writeValueAsString(digitalMediaRecord));
   }
 
-  public void publishUpdateEvent(DigitalMediaRecord digitalMediaRecord,
-      DigitalMediaRecord currentDigitalMediaRecord) throws JsonProcessingException {
-    var event = provenanceService.generateUpdateEvent(digitalMediaRecord,
-        currentDigitalMediaRecord);
+  public void publishUpdateEvent(DigitalMediaRecord digitalMediaRecord, JsonNode jsonPatch)
+      throws JsonProcessingException {
+    var event = provenanceService.generateUpdateEvent(digitalMediaRecord, jsonPatch);
     kafkaTemplate.send("createUpdateDeleteTopic", mapper.writeValueAsString(event));
   }
 
@@ -46,5 +47,10 @@ public class KafkaPublisherService {
   public void deadLetterEvent(DigitalMediaEvent event)
       throws JsonProcessingException {
     kafkaTemplate.send("digital-media-object-dlq", mapper.writeValueAsString(event));
+  }
+
+  public void publishAcceptedAnnotation(AutoAcceptedAnnotation annotation)
+      throws JsonProcessingException {
+    kafkaTemplate.send("auto-accepted-annotation", mapper.writeValueAsString(annotation));
   }
 }

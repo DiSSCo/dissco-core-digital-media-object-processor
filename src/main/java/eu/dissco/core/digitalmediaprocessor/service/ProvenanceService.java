@@ -3,8 +3,6 @@ package eu.dissco.core.digitalmediaprocessor.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.fge.jsonpatch.diff.JsonDiff;
-import eu.dissco.core.digitalmediaprocessor.component.SourceSystemNameComponent;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
 import eu.dissco.core.digitalmediaprocessor.properties.ApplicationProperties;
 import eu.dissco.core.digitalmediaprocessor.schema.Agent;
@@ -32,7 +30,6 @@ public class ProvenanceService {
 
   private final ObjectMapper mapper;
   private final ApplicationProperties properties;
-  private final SourceSystemNameComponent sourceSystemNameComponent;
 
   public CreateUpdateTombstoneEvent generateCreateEvent(
       DigitalMediaRecord digitalMediaRecord) {
@@ -47,6 +44,7 @@ public class ProvenanceService {
     var entityID = digitalMedia.getOdsID() + "/" + digitalMedia.getOdsVersion();
     var activityID = UUID.randomUUID().toString();
     var sourceSystemID = digitalMedia.getOdsSourceSystemID();
+    var sourceSystemName = digitalMedia.getOdsSourceSystemName();
     return new CreateUpdateTombstoneEvent()
         .withId(entityID)
         .withType("ods:CreateUpdateTombstoneEvent")
@@ -78,7 +76,7 @@ public class ProvenanceService {
             new Agent()
                 .withType(Type.AS_APPLICATION)
                 .withId(sourceSystemID)
-                .withSchemaName(sourceSystemNameComponent.getSourceSystemName(sourceSystemID)),
+                .withSchemaName(sourceSystemName),
             new Agent()
                 .withType(Type.AS_APPLICATION)
                 .withId(properties.getPid())
@@ -95,11 +93,8 @@ public class ProvenanceService {
   }
 
   public CreateUpdateTombstoneEvent generateUpdateEvent(DigitalMediaRecord digitalMediaRecord,
-      DigitalMediaRecord currentDigitalMediaRecord) {
+      JsonNode jsonPatch) {
     var digitalMedia = DigitalMediaUtils.flattenToDigitalMedia(digitalMediaRecord);
-    var currentDigitalMedia = DigitalMediaUtils.flattenToDigitalMedia(
-        currentDigitalMediaRecord);
-    var jsonPatch = createJsonPatch(currentDigitalMedia, digitalMedia);
     return generateCreateUpdateTombStoneEvent(digitalMedia, ProvActivity.Type.ODS_UPDATE,
         jsonPatch);
   }
@@ -112,10 +107,5 @@ public class ProvenanceService {
       provValue.setAdditionalProperty(entry.getKey(), entry.getValue());
     }
     return provValue;
-  }
-
-  private JsonNode createJsonPatch(DigitalMedia currentDigitalMedia, DigitalMedia digitalMedia) {
-    return JsonDiff.asJson(mapper.valueToTree(currentDigitalMedia),
-        mapper.valueToTree(digitalMedia));
   }
 }

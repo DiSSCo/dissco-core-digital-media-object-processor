@@ -1,5 +1,6 @@
 package eu.dissco.core.digitalmediaprocessor;
 
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.DCTERMS_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.IS_DERIVED_FROM_SPECIMEN;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_NAME;
@@ -10,19 +11,28 @@ import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.M
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MEDIA_ID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_TYPE;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.DCTERMS_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTSHOLDER_PID_TYPE;
+import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.AS_APPLICATION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.dissco.core.digitalmediaprocessor.domain.AutoAcceptedAnnotation;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaEvent;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaKey;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaWrapper;
+import eu.dissco.core.digitalmediaprocessor.schema.Agent;
+import eu.dissco.core.digitalmediaprocessor.schema.AnnotationBody;
+import eu.dissco.core.digitalmediaprocessor.schema.AnnotationProcessingRequest;
+import eu.dissco.core.digitalmediaprocessor.schema.AnnotationProcessingRequest.OaMotivation;
+import eu.dissco.core.digitalmediaprocessor.schema.AnnotationTarget;
 import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia;
+import eu.dissco.core.digitalmediaprocessor.schema.OaHasSelector;
+import eu.dissco.core.digitalmediaprocessor.utils.DigitalMediaUtils;
 import java.time.Instant;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -199,7 +209,8 @@ public class TestUtils {
         .withDctermsLicense(LICENSE_TESTVAL)
         .withOdsOrganisationID(MEDIA_HOST_TESTVAL)
         .withDctermsModified("2022-09-16T08:52:27.391Z")
-        .withOdsSourceSystemID(SOURCE_SYSTEM_ID);
+        .withOdsSourceSystemID(SOURCE_SYSTEM_ID)
+        .withOdsSourceSystemName(SOURCE_SYSTEM_NAME);
   }
 
   private static JsonNode generateOriginalAttributes() throws JsonProcessingException {
@@ -250,6 +261,46 @@ public class TestUtils {
     attributes.put(LINKED_DO_TYPE.getAttribute(), LINKED_DO_TYPE.getDefaultValue());
 
     return attributes;
+  }
+
+  public static AutoAcceptedAnnotation givenAutoAcceptedAnnotation(
+      AnnotationProcessingRequest annotation) {
+    return new AutoAcceptedAnnotation(new Agent()
+        .withType(AS_APPLICATION)
+        .withId(APP_HANDLE)
+        .withSchemaName(APP_NAME), annotation);
+  }
+
+  public static AnnotationProcessingRequest givenNewAcceptedAnnotation()
+      throws JsonProcessingException {
+    return new AnnotationProcessingRequest()
+        .withOaMotivation(OaMotivation.ODS_ADDING)
+        .withOaMotivatedBy("New information received from Source System with id: "
+            + SOURCE_SYSTEM_ID)
+        .withOaHasBody(new AnnotationBody()
+            .withType("oa:TextualBody")
+            .withOaValue(List.of(MAPPER.writeValueAsString(
+                DigitalMediaUtils.flattenToDigitalMedia(givenDigitalMediaRecord()))))
+            .withDctermsReferences(SOURCE_SYSTEM_ID))
+        .withDctermsCreated(Date.from(CREATED))
+        .withDctermsCreator(new Agent()
+            .withType(AS_APPLICATION)
+            .withId(SOURCE_SYSTEM_ID)
+            .withSchemaName(SOURCE_SYSTEM_NAME))
+        .withOaHasTarget(new AnnotationTarget()
+            .withId(HANDLE)
+            .withOdsID(HANDLE)
+            .withType(TYPE)
+            .withOdsType("ods:DigitalMedia")
+            .withOaHasSelector(new OaHasSelector()
+                .withAdditionalProperty("@type", "ods:ClassSelector")
+                .withAdditionalProperty("ods:class", "$")));
+
+  }
+
+  public static JsonNode givenJsonPatch() throws JsonProcessingException {
+    return MAPPER.readTree(
+        "[{\"op\":\"replace\",\"path\":\"/dcterms:format\",\"value\":\"image/jpeg\"}]");
   }
 
 }

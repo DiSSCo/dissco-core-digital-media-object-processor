@@ -7,6 +7,9 @@ import static java.util.stream.Collectors.toSet;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.fge.jsonpatch.diff.JsonDiff;
 import eu.dissco.core.digitalmediaprocessor.Profiles;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaEvent;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaKey;
@@ -20,6 +23,7 @@ import eu.dissco.core.digitalmediaprocessor.exceptions.PidCreationException;
 import eu.dissco.core.digitalmediaprocessor.repository.DigitalMediaRepository;
 import eu.dissco.core.digitalmediaprocessor.repository.DigitalSpecimenRepository;
 import eu.dissco.core.digitalmediaprocessor.repository.ElasticSearchRepository;
+import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia;
 import eu.dissco.core.digitalmediaprocessor.schema.EntityRelationship;
 import eu.dissco.core.digitalmediaprocessor.web.HandleComponent;
 import java.io.IOException;
@@ -50,6 +54,7 @@ public class ProcessingService {
   private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_STRING)
       .withZone(ZoneOffset.UTC);
 
+  private final ObjectMapper mapper;
   private final DigitalMediaRepository repository;
   private final FdoRecordService fdoRecordService;
   private final HandleComponent handleComponent;
@@ -57,6 +62,7 @@ public class ProcessingService {
   private final KafkaPublisherService kafkaService;
   private final DigitalSpecimenRepository digitalSpecimenRepository;
   private final Environment environment;
+  private final AnnotationPublisherService annotationPublisherService;
 
   private static DigitalMediaEvent mapUpdatedRecordToEvent(UpdatedDigitalMediaRecord media) {
     return new DigitalMediaEvent(media.automatedAnnotations(),
@@ -294,6 +300,7 @@ public class ProcessingService {
           .map(UpdatedDigitalMediaRecord::digitalMediaRecord).collect(
               toSet());
       log.info("Successfully updated {} digital media object", successfullyProcessedRecords.size());
+      annotationPublisherService.publishAnnotationUpdatedMedia(digitalMediaRecords);
       return successfullyProcessedRecords;
     } catch (IOException | ElasticsearchException e) {
       log.error("Rolling back, failed to insert records in elastic", e);
@@ -425,7 +432,7 @@ public class ProcessingService {
   private boolean publishUpdateEvent(UpdatedDigitalMediaRecord digitalMediaRecord) {
     try {
       kafkaService.publishUpdateEvent(digitalMediaRecord.digitalMediaRecord(),
-          digitalMediaRecord.currentDigitalMediaRecord());
+          digitalMediaRecord.jsonPatch());
       return true;
     } catch (JsonProcessingException e) {
       log.error("Rolling back, failed to publish update event", e);
@@ -482,7 +489,9 @@ public class ProcessingService {
             Instant.now(),
             tuple.digitalMediaEvent().digitalMediaWrapper()),
         tuple.digitalMediaEvent().enrichmentList(),
-        tuple.currentDigitalMediaRecord()
+        tuple.currentDigitalMediaRecord(),
+        createJsonPatch(tuple.currentDigitalMediaRecord().digitalMediaWrapper().attributes(),
+            tuple.digitalMediaEvent().digitalMediaWrapper().attributes())
     )).collect(toSet());
   }
 
@@ -553,6 +562,7 @@ public class ProcessingService {
         handlePartiallyFailedElasticInsert(digitalMediaRecords, bulkResponse);
       }
       log.info("Successfully created {} new digital media", digitalMediaRecords.size());
+      annotationPublisherService.publishAnnotationNewMedia(digitalMediaRecords.keySet());
       return digitalMediaRecords.keySet();
     } catch (IOException | ElasticsearchException e) {
       log.error("Rolling back, failed to insert records in elastic", e);
@@ -677,6 +687,10 @@ public class ProcessingService {
         Instant.now(),
         event.digitalMediaWrapper()
     );
+  }
 
+  private JsonNode createJsonPatch(DigitalMedia currentDigitalMedia, DigitalMedia digitalMedia) {
+    return JsonDiff.asJson(
+        mapper.valueToTree(currentDigitalMedia), mapper.valueToTree(digitalMedia));
   }
 }
