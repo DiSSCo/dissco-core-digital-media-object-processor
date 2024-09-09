@@ -378,8 +378,8 @@ class ProcessingServiceTest {
         givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
         givenDigitalMediaRecord()));
     assertThat(result).isEqualTo(List.of(
-        givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
-        givenDigitalMediaRecord()
+        givenDigitalMediaRecord(),
+        givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE)
     ));
   }
 
@@ -454,8 +454,8 @@ class ProcessingServiceTest {
         givenDigitalMediaRecord()
     ));
     assertThat(result).isEqualTo(List.of(
-        givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
-        givenDigitalMediaRecord()
+        givenDigitalMediaRecord(),
+        givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE)
     ));
   }
 
@@ -487,8 +487,8 @@ class ProcessingServiceTest {
         givenDigitalMediaRecordPhysical(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2, TYPE)));
     assertThat(result).isEqualTo(
         List.of(
-            givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
-            givenDigitalMediaRecord()
+            givenDigitalMediaRecord(),
+            givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE)
         ));
   }
 

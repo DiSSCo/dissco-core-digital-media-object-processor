@@ -24,11 +24,13 @@ import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaKey;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaWrapper;
 import eu.dissco.core.digitalmediaprocessor.schema.Agent;
+import eu.dissco.core.digitalmediaprocessor.schema.Agent.Type;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationBody;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationProcessingRequest;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationProcessingRequest.OaMotivation;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationTarget;
 import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia;
+import eu.dissco.core.digitalmediaprocessor.schema.EntityRelationship;
 import eu.dissco.core.digitalmediaprocessor.schema.OaHasSelector;
 import eu.dissco.core.digitalmediaprocessor.utils.DigitalMediaUtils;
 import java.time.Instant;
@@ -210,7 +212,18 @@ public class TestUtils {
         .withOdsOrganisationID(MEDIA_HOST_TESTVAL)
         .withDctermsModified("2022-09-16T08:52:27.391Z")
         .withOdsSourceSystemID(SOURCE_SYSTEM_ID)
-        .withOdsSourceSystemName(SOURCE_SYSTEM_NAME);
+        .withOdsSourceSystemName(SOURCE_SYSTEM_NAME)
+        .withOdsHasEntityRelationship(List.of(
+            new EntityRelationship().withType("hasDigitalSpecimen")
+                .withType("ods:EntityRelationship")
+                .withDwcRelationshipEstablishedDate(Date.from(CREATED))
+                .withDwcRelationshipOfResource("hasDigitalSpecimen")
+                .withDwcRelationshipAccordingTo("The name of the specimen processor")
+                .withOdsRelationshipAccordingToAgent(new Agent()
+                    .withType(Type.AS_APPLICATION)
+                    .withId("The id of the specimen processor")
+                    .withSchemaName("The name of the specimen processor"))
+                .withDwcRelatedResourceID(DOI_PREFIX + DIGITAL_SPECIMEN_ID)));
   }
 
   private static JsonNode generateOriginalAttributes() throws JsonProcessingException {
