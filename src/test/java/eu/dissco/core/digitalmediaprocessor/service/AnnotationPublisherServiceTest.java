@@ -3,7 +3,9 @@ package eu.dissco.core.digitalmediaprocessor.service;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.APP_HANDLE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.APP_NAME;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.CREATED;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.DOI_PREFIX;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.LICENSE_TESTVAL;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.SOURCE_SYSTEM_ID;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.SOURCE_SYSTEM_NAME;
@@ -87,21 +89,21 @@ class AnnotationPublisherServiceTest {
                         "value": "image/jpeg"
                       }]
                     """),
-            OaMotivation.OA_EDITING,
-            new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
-                .withAdditionalProperty("ods:field",
-                    "$.dcterms:format"),
-            new AnnotationBody().withOaValue(List.of("image/jpeg"))
-                .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID)
-        ),
+            List.of(givenAcceptedAnnotation(OaMotivation.OA_EDITING,
+                new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
+                    .withAdditionalProperty("ods:field",
+                        "$.dcterms:format"),
+                new AnnotationBody().withOaValue(List.of("image/jpeg"))
+                    .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID))
+            )),
         Arguments.of(classObject,
-            OaMotivation.ODS_ADDING,
-            new OaHasSelector().withAdditionalProperty("@type", "ods:ClassSelector")
-                .withAdditionalProperty("ods:class", "$.ods:hasAssertion"),
-            new AnnotationBody().withOaValue(
-                    List.of(MAPPER.writeValueAsString(classObject.get(0).get("value"))))
-                .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID)
-        ),
+            List.of(givenAcceptedAnnotation(OaMotivation.ODS_ADDING,
+                new OaHasSelector().withAdditionalProperty("@type", "ods:ClassSelector")
+                    .withAdditionalProperty("ods:class", "$.ods:hasAssertion"),
+                new AnnotationBody().withOaValue(
+                        List.of(MAPPER.writeValueAsString(classObject.get(0).get("value"))))
+                    .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID))
+            )),
         Arguments.of(MAPPER.readTree(
                 """
                       [{
@@ -109,13 +111,74 @@ class AnnotationPublisherServiceTest {
                         "path": "/dcterms:description"
                       }]
                     """),
-            OaMotivation.ODS_DELETING,
-            new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
-                .withAdditionalProperty("ods:field", "$.dcterms:description"),
-            null
+            List.of(givenAcceptedAnnotation(OaMotivation.ODS_DELETING,
+                new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
+                    .withAdditionalProperty("ods:field", "$.dcterms:description"),
+                null))
+        ), Arguments.of(
+            MAPPER.readTree(
+                """
+                      [{
+                        "op": "copy",
+                        "path": "/dcterms:rights",
+                        "from": "/dcterms:license"
+                      }]
+                    """),
+            List.of(givenAcceptedAnnotation(OaMotivation.ODS_ADDING,
+                new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
+                    .withAdditionalProperty("ods:field", "$.dcterms:rights"),
+                new AnnotationBody().withOaValue(List.of(LICENSE_TESTVAL))
+                    .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID)))
+        ),
+        Arguments.of(
+            MAPPER.readTree(
+                """
+                      [{
+                        "op": "move",
+                        "path": "/dcterms:rights",
+                        "from": "/dcterms:license"
+                      }]
+                    """),
+            List.of(givenAcceptedAnnotation(OaMotivation.ODS_ADDING,
+                    new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
+                        .withAdditionalProperty("ods:field", "$.dcterms:rights"),
+                    new AnnotationBody().withOaValue(List.of(LICENSE_TESTVAL))
+                        .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID)),
+                givenAcceptedAnnotation(OaMotivation.ODS_DELETING, new OaHasSelector()
+                    .withAdditionalProperty("@type", "ods:FieldSelector")
+                    .withAdditionalProperty("ods:field", "$.dcterms:license"), null))
         ));
   }
 
+  private static AnnotationProcessingRequest givenAcceptedAnnotation(OaMotivation motivation,
+      OaHasSelector selector, AnnotationBody body) {
+    var annotation = new AnnotationProcessingRequest()
+        .withOaMotivation(motivation)
+        .withOaHasBody(body)
+        .withOaHasTarget(new AnnotationTarget()
+            .withOdsType("ods:DigitalMedia")
+            .withType(TYPE)
+            .withId(DOI_PREFIX + HANDLE)
+            .withOdsID(DOI_PREFIX + HANDLE)
+            .withOaHasSelector(selector))
+        .withDctermsCreated(Date.from(CREATED))
+        .withDctermsCreator(
+            new Agent().withType(AS_APPLICATION).withId(SOURCE_SYSTEM_ID)
+                .withSchemaName(SOURCE_SYSTEM_NAME));
+    if (motivation == OaMotivation.OA_EDITING) {
+      annotation.withOaMotivatedBy("Received update information from Source System with id: "
+          + SOURCE_SYSTEM_ID);
+    }
+    if (motivation == OaMotivation.ODS_ADDING) {
+      annotation.withOaMotivatedBy("Received new information from Source System with id: "
+          + SOURCE_SYSTEM_ID);
+    }
+    if (motivation == OaMotivation.ODS_DELETING) {
+      annotation.withOaMotivatedBy("Received delete information from Source System with id: "
+          + SOURCE_SYSTEM_ID);
+    }
+    return annotation;
+  }
 
   @BeforeEach
   void setup() {
@@ -136,9 +199,8 @@ class AnnotationPublisherServiceTest {
     mockedClock.close();
   }
 
-
   @Test
-  void testPublishAnnotationNewSpecimen() throws JsonProcessingException {
+  void testPublishAnnotationNewMedia() throws JsonProcessingException {
     // Given
     given(applicationProperties.getPid()).willReturn(APP_HANDLE);
     given(applicationProperties.getName()).willReturn(APP_NAME);
@@ -153,13 +215,11 @@ class AnnotationPublisherServiceTest {
 
   @ParameterizedTest
   @MethodSource("provideUpdateAnnotations")
-  void testPublishAnnotationUpdatedSpecimen(JsonNode jsonPatch, OaMotivation motivation,
-      OaHasSelector selector,
-      AnnotationBody body) throws JsonProcessingException {
+  void testPublishAnnotationUpdatedMedia(JsonNode jsonPatch,
+      List<AnnotationProcessingRequest> expectedAnnotations) throws JsonProcessingException {
     // Given
     given(applicationProperties.getPid()).willReturn(APP_HANDLE);
     given(applicationProperties.getName()).willReturn(APP_NAME);
-    var expectedAnnotation = givenAcceptedAnnotation(motivation, selector, body);
 
     // When
     service.publishAnnotationUpdatedMedia(
@@ -167,38 +227,30 @@ class AnnotationPublisherServiceTest {
             List.of(), null, jsonPatch)));
 
     // Then
-    then(kafkaPublisherService).should()
-        .publishAcceptedAnnotation(givenAutoAcceptedAnnotation(expectedAnnotation));
+    for (var expectedAnnotation : expectedAnnotations) {
+      then(kafkaPublisherService).should()
+          .publishAcceptedAnnotation(givenAutoAcceptedAnnotation(expectedAnnotation));
+    }
   }
 
+  @Test
+  void testInvalidCopy() throws JsonProcessingException {
+    // Given
+    var jsonPatch = MAPPER.readTree(
+        """
+              [{
+                "op": "copy",
+                "path": "/ods:sourceSystemName",
+                "from": "/ods:someUnknownTerm"
+              }]
+            """);
 
-  private AnnotationProcessingRequest givenAcceptedAnnotation(OaMotivation motivation,
-      OaHasSelector selector, AnnotationBody body) {
-    var annotation = new AnnotationProcessingRequest()
-        .withOaMotivation(motivation)
-        .withOaHasBody(body)
-        .withOaHasTarget(new AnnotationTarget()
-            .withOdsType("ods:DigitalMedia")
-            .withType(TYPE)
-            .withId(HANDLE)
-            .withOdsID(HANDLE)
-            .withOaHasSelector(selector))
-        .withDctermsCreated(Date.from(Instant.now()))
-        .withDctermsCreator(
-            new Agent().withType(AS_APPLICATION).withId(SOURCE_SYSTEM_ID)
-                .withSchemaName(SOURCE_SYSTEM_NAME));
-    if (motivation == OaMotivation.OA_EDITING) {
-      annotation.withOaMotivatedBy("Received update information from Source System with id: "
-          + SOURCE_SYSTEM_ID);
-    }
-    if (motivation == OaMotivation.ODS_ADDING) {
-      annotation.withOaMotivatedBy("Received new information from Source System with id: "
-          + SOURCE_SYSTEM_ID);
-    }
-    if (motivation == OaMotivation.ODS_DELETING) {
-      annotation.withOaMotivatedBy("Received delete information from Source System with id: "
-          + SOURCE_SYSTEM_ID);
-    }
-    return annotation;
+    // When
+    service.publishAnnotationUpdatedMedia(
+        Set.of(new UpdatedDigitalMediaRecord(givenDigitalMediaRecord(),
+            List.of(), null, jsonPatch)));
+
+    // Then
+    then(kafkaPublisherService).shouldHaveNoInteractions();
   }
 }

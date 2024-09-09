@@ -9,6 +9,7 @@ import co.elastic.clients.elasticsearch.core.BulkResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.fge.jsonpatch.diff.JsonDiff;
 import eu.dissco.core.digitalmediaprocessor.Profiles;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaEvent;
@@ -37,6 +38,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -177,6 +179,15 @@ public class ProcessingService {
     return new ProcessResult(equalDigitalMedia, changedDigitalMedia, newDigitalMedia);
   }
 
+  /*
+  We need to remove the Modified and EntityRelationshipDate from the comparison.
+  We take over the ERDate from the current entity relationship if the ER is equal.
+
+  To establish equality, we only compare type and attributes, not original data or
+  physical specimen id. We ignore original data because original data is not updated
+  if it does change, and we ignore physical specimen id because that's how the specimens
+  were identified to be the same in the first place.
+  */
   private boolean isEqual(DigitalMediaWrapper currentDigitalMediaWrapper,
       DigitalMediaWrapper digitalMediaWrapper) {
     if (currentDigitalMediaWrapper.attributes() == null) {
@@ -186,9 +197,7 @@ public class ProcessingService {
     currentDigitalMediaWrapper.attributes().setDctermsModified(null);
     digitalMediaWrapper.attributes().setDctermsModified(null);
     var entityRelationships = digitalMediaWrapper.attributes().getOdsHasEntityRelationship();
-    digitalMediaWrapper.attributes().setOdsHasEntityRelationship(
-        entityRelationships.stream().map(this::deepcopyEntityRelationship).toList());
-    ignoreTimestampEntityRelationship(
+    setTimestampsEntityRelationships(entityRelationships,
         currentDigitalMediaWrapper.attributes().getOdsHasEntityRelationship());
     checkOriginalData(currentDigitalMediaWrapper, digitalMediaWrapper);
     if (currentDigitalMediaWrapper.attributes().equals(digitalMediaWrapper.attributes())
@@ -196,12 +205,10 @@ public class ProcessingService {
         .equals(digitalMediaWrapper.digitalSpecimenID())
         && currentDigitalMediaWrapper.type().equals(digitalMediaWrapper.type())
     ) {
-      digitalMediaWrapper.attributes().setOdsHasEntityRelationship(entityRelationships);
       digitalMediaWrapper.attributes().setDctermsModified(currentModified);
       currentDigitalMediaWrapper.attributes().setDctermsModified(currentModified);
       return true;
     } else {
-      digitalMediaWrapper.attributes().setOdsHasEntityRelationship(entityRelationships);
       digitalMediaWrapper.attributes().setDctermsModified(formatter.format(Instant.now()));
       currentDigitalMediaWrapper.attributes().setDctermsModified(currentModified);
       return false;
@@ -217,26 +224,42 @@ public class ProcessingService {
           "Media Object with ac:accessURI {} has changed original data. New Original data not captured.",
           digitalMediaWrapper.attributes().getAcAccessURI());
     }
-
   }
 
-  private EntityRelationship deepcopyEntityRelationship(EntityRelationship entityRelationships) {
-    return new EntityRelationship()
-        .withId(entityRelationships.getId())
-        .withType(entityRelationships.getType())
-        .withDwcRelationshipEstablishedDate(null)
-        .withDwcRelationshipOfResource(entityRelationships.getDwcRelationshipOfResource())
-        .withDwcRelationshipOfResourceID(entityRelationships.getDwcRelationshipOfResourceID())
-        .withDwcRelatedResourceID(entityRelationships.getDwcRelatedResourceID())
-        .withOdsRelatedResourceURI(entityRelationships.getOdsRelatedResourceURI())
-        .withDwcRelationshipAccordingTo(entityRelationships.getDwcRelationshipAccordingTo())
-        .withDwcRelationshipAccordingTo(entityRelationships.getDwcRelationshipAccordingTo())
-        .withOdsEntityRelationshipOrder(entityRelationships.getOdsEntityRelationshipOrder())
-        .withDwcRelationshipRemarks(entityRelationships.getDwcRelationshipRemarks());
-  }
-
-  private void ignoreTimestampEntityRelationship(List<EntityRelationship> entityRelationship) {
-    entityRelationship.forEach(e -> e.setDwcRelationshipEstablishedDate(null));
+  /*
+  When all fields are equal except the timestamp we assume tha relationships are equal and the
+  timestamp can be taken over from the current entity relationship.
+  This will reduce the amount of updates and will only update the ER timestamp when there was an
+  actual change
+  */
+  private void setTimestampsEntityRelationships(List<EntityRelationship> entityRelationships,
+      List<EntityRelationship> currentEntityRelationships) {
+    for (var entityRelationship : entityRelationships) {
+      for (var currentEntityrelationship : currentEntityRelationships) {
+        if (Objects.equals(entityRelationship.getId(), currentEntityrelationship.getId()) &&
+            Objects.equals(entityRelationship.getType(), currentEntityrelationship.getType()) &&
+            Objects.equals(entityRelationship.getDwcRelationshipOfResource(),
+                currentEntityrelationship.getDwcRelationshipOfResource()) &&
+            Objects.equals(entityRelationship.getDwcRelationshipOfResourceID(),
+                currentEntityrelationship.getDwcRelationshipOfResourceID()) &&
+            Objects.equals(entityRelationship.getDwcRelatedResourceID(),
+                currentEntityrelationship.getDwcRelatedResourceID()) &&
+            Objects.equals(entityRelationship.getOdsRelatedResourceURI(),
+                currentEntityrelationship.getOdsRelatedResourceURI()) &&
+            Objects.equals(entityRelationship.getDwcRelationshipAccordingTo(),
+                currentEntityrelationship.getDwcRelationshipAccordingTo()) &&
+            Objects.equals(entityRelationship.getOdsRelationshipAccordingToAgent(),
+                currentEntityrelationship.getOdsRelationshipAccordingToAgent()) &&
+            Objects.equals(entityRelationship.getOdsEntityRelationshipOrder(),
+                currentEntityrelationship.getOdsEntityRelationshipOrder()) &&
+            Objects.equals(entityRelationship.getDwcRelationshipRemarks(),
+                currentEntityrelationship.getDwcRelationshipRemarks())
+        ) {
+          entityRelationship.setDwcRelationshipEstablishedDate(
+              currentEntityrelationship.getDwcRelationshipEstablishedDate());
+        }
+      }
+    }
   }
 
   private Map<DigitalMediaKey, DigitalMediaRecord> getCurrentDigitalMedia(
@@ -426,7 +449,6 @@ public class ProcessingService {
       filterUpdatesAndRollbackHandles(new ArrayList<>(failedRecords));
       digitalMediaRecords.removeAll(failedRecords);
     }
-
   }
 
   private boolean publishUpdateEvent(UpdatedDigitalMediaRecord digitalMediaRecord) {
@@ -690,7 +712,10 @@ public class ProcessingService {
   }
 
   private JsonNode createJsonPatch(DigitalMedia currentDigitalMedia, DigitalMedia digitalMedia) {
-    return JsonDiff.asJson(
-        mapper.valueToTree(currentDigitalMedia), mapper.valueToTree(digitalMedia));
+    var jsonCurrentMedia = (ObjectNode) mapper.valueToTree(currentDigitalMedia);
+    var jsonMedia = (ObjectNode) mapper.valueToTree(digitalMedia);
+    jsonCurrentMedia.set("dcterms:modified", null);
+    jsonMedia.set("dcterms:modified", null);
+    return JsonDiff.asJson(jsonCurrentMedia, jsonMedia);
   }
 }
