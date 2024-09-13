@@ -92,14 +92,14 @@ class AnnotationPublisherServiceTest {
             List.of(givenAcceptedAnnotation(OaMotivation.OA_EDITING,
                 new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
                     .withAdditionalProperty("ods:field",
-                        "$[dcterms:format]"),
+                        "$['dcterms:format']"),
                 new AnnotationBody().withOaValue(List.of("image/jpeg"))
                     .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID))
             )),
         Arguments.of(classObject,
             List.of(givenAcceptedAnnotation(OaMotivation.ODS_ADDING,
                 new OaHasSelector().withAdditionalProperty("@type", "ods:ClassSelector")
-                    .withAdditionalProperty("ods:class", "$[ods:hasAssertion]"),
+                    .withAdditionalProperty("ods:class", "$['ods:hasAssertion']"),
                 new AnnotationBody().withOaValue(
                         List.of(MAPPER.writeValueAsString(classObject.get(0).get("value"))))
                     .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID))
@@ -113,7 +113,7 @@ class AnnotationPublisherServiceTest {
                     """),
             List.of(givenAcceptedAnnotation(OaMotivation.ODS_DELETING,
                 new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
-                    .withAdditionalProperty("ods:field", "$[dcterms:description]"),
+                    .withAdditionalProperty("ods:field", "$['dcterms:description']"),
                 null))
         ), Arguments.of(
             MAPPER.readTree(
@@ -126,7 +126,7 @@ class AnnotationPublisherServiceTest {
                     """),
             List.of(givenAcceptedAnnotation(OaMotivation.ODS_ADDING,
                 new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
-                    .withAdditionalProperty("ods:field", "$[dcterms:rights]"),
+                    .withAdditionalProperty("ods:field", "$['dcterms:rights']"),
                 new AnnotationBody().withOaValue(List.of(LICENSE_TESTVAL))
                     .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID)))
         ),
@@ -141,12 +141,12 @@ class AnnotationPublisherServiceTest {
                     """),
             List.of(givenAcceptedAnnotation(OaMotivation.ODS_ADDING,
                     new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
-                        .withAdditionalProperty("ods:field", "$[dcterms:rights]"),
+                        .withAdditionalProperty("ods:field", "$['dcterms:rights']"),
                     new AnnotationBody().withOaValue(List.of(LICENSE_TESTVAL))
                         .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID)),
                 givenAcceptedAnnotation(OaMotivation.ODS_DELETING, new OaHasSelector()
                     .withAdditionalProperty("@type", "ods:FieldSelector")
-                    .withAdditionalProperty("ods:field", "$[dcterms:license]"), null))
+                    .withAdditionalProperty("ods:field", "$['dcterms:license']"), null))
         ));
   }
 

@@ -265,7 +265,7 @@ public class AnnotationPublisherService {
     for (int i = 1; i < parts.length; i++) {
       String part = parts[i];
       if (isNumeric(part) || !part.equals("-")) {
-        jsonPath.append("[").append(part).append("]");
+        jsonPath.append("['").append(part).append("']");
       }
     }
     return jsonPath.toString();
