@@ -264,7 +264,9 @@ public class AnnotationPublisherService {
     // Start from 1 to ignore the first root element
     for (int i = 1; i < parts.length; i++) {
       String part = parts[i];
-      if (isNumeric(part) || !part.equals("-")) {
+      if (isNumeric(part)) {
+        jsonPath.append("[").append(part).append("]");
+      } else if (!part.equals("-")) {
         jsonPath.append("['").append(part).append("']");
       }
     }
