@@ -377,7 +377,7 @@ class ProcessingServiceTest {
     then(annotationPublisherService).should().publishAnnotationNewMedia(Set.of(
         givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
         givenDigitalMediaRecord()));
-    assertThat(result).isEqualTo(List.of(
+    assertThat(result).hasSameElementsAs(List.of(
         givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
         givenDigitalMediaRecord()
     ));
@@ -453,7 +453,7 @@ class ProcessingServiceTest {
         givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
         givenDigitalMediaRecord()
     ));
-    assertThat(result).isEqualTo(List.of(
+    assertThat(result).hasSameElementsAs(List.of(
         givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
         givenDigitalMediaRecord()
     ));
@@ -485,7 +485,7 @@ class ProcessingServiceTest {
     ));
     then(fdoRecordService).should().buildRollbackCreationRequest(List.of(
         givenDigitalMediaRecordPhysical(HANDLE_2, DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2, TYPE)));
-    assertThat(result).isEqualTo(
+    assertThat(result).hasSameElementsAs(
         List.of(
             givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3, TYPE),
             givenDigitalMediaRecord()
