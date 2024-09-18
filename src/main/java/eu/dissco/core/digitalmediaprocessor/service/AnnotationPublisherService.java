@@ -267,7 +267,7 @@ public class AnnotationPublisherService {
       if (isNumeric(part)) {
         jsonPath.append("[").append(part).append("]");
       } else if (!part.equals("-")) {
-        jsonPath.append(".").append(part);
+        jsonPath.append("['").append(part).append("']");
       }
     }
     return jsonPath.toString();
