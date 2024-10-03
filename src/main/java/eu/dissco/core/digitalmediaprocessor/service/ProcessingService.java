@@ -152,7 +152,6 @@ public class ProcessingService {
     var equalDigitalMedia = new ArrayList<DigitalMediaRecord>();
     var changedDigitalMedia = new ArrayList<UpdatedDigitalMediaTuple>();
     var newDigitalMedia = new ArrayList<DigitalMediaEvent>();
-
     for (var digitalMedia : events) {
       var digitalMediaWrapper = digitalMedia.digitalMediaWrapper();
       var digitalMediaKey = new DigitalMediaKey(
@@ -264,6 +263,15 @@ public class ProcessingService {
 
   private Map<DigitalMediaKey, DigitalMediaRecord> getCurrentDigitalMedia(
       List<DigitalMediaWrapper> digitalMediaWrappers) {
+    var digitalMediaWrappersWithNoIds = new ArrayList<DigitalMediaWrapper>();
+    var digitalMediaWrappersWithIds = new ArrayList<DigitalMediaWrapper>();
+    digitalMediaWrappers.forEach(digitalMediaWrapper -> {
+      if (digitalMediaWrapper.attributes().getId() != null){
+        digitalMediaWrappersWithIds.add(digitalMediaWrapper);
+      } else {
+        digitalMediaWrappersWithNoIds.add(digitalMediaWrapper);
+      }
+    });
     return repository.getDigitalMedia(
             digitalMediaWrappers.stream().map(DigitalMediaWrapper::digitalSpecimenID).toList(),
             digitalMediaWrappers.stream()
@@ -544,8 +552,17 @@ public class ProcessingService {
         .toList();
     Map<DigitalMediaKey, String> pidMap;
     try {
-      var requestBody = fdoRecordService.buildPostHandleRequest(newRecordList);
-      pidMap = handleComponent.postHandle(requestBody);
+      // The specimen processor sends media events with ids
+      // If a request comes form a different source, we may need to mint PIDs here
+      var requestBody = fdoRecordService.buildPostHandleRequest(newRecordList
+          .stream()
+          .filter(media -> media.attributes().getId() == null).toList());
+      if (!requestBody.isEmpty()) {
+        log.info("Minting {} new handles", requestBody.size());
+        pidMap = handleComponent.postHandle(requestBody);
+      } else {
+        pidMap = Map.of();
+      }
     } catch (PidCreationException e) {
       log.error("Unable to create pids for given request", e);
       dlqBatchCreate(newRecords);
@@ -554,7 +571,6 @@ public class ProcessingService {
     var digitalMediaRecords = newRecords.stream()
         .collect(toMap(event -> mapToDigitalMediaRecord(event, pidMap),
             DigitalMediaEvent::enrichmentList));
-
     digitalMediaRecords.remove(null);
     if (digitalMediaRecords.isEmpty()) {
       return Collections.emptySet();
@@ -694,14 +710,19 @@ public class ProcessingService {
 
   private DigitalMediaRecord mapToDigitalMediaRecord(DigitalMediaEvent event,
       Map<DigitalMediaKey, String> pidMap) {
-    var targetKey = new DigitalMediaKey(event.digitalMediaWrapper().digitalSpecimenID(),
-        event.digitalMediaWrapper().attributes().getAcAccessURI());
-    var handle = pidMap.get(targetKey);
-    if (handle == null) {
-      log.error("Failed to process record with ds id: {} and mediaUrl: {}",
-          event.digitalMediaWrapper().digitalSpecimenID(),
+    String handle;
+    if (event.digitalMediaWrapper().attributes().getId() != null) {
+      handle = event.digitalMediaWrapper().attributes().getId();
+    } else {
+      var targetKey = new DigitalMediaKey(event.digitalMediaWrapper().digitalSpecimenID(),
           event.digitalMediaWrapper().attributes().getAcAccessURI());
-      return null;
+      handle = pidMap.get(targetKey);
+      if (handle == null) {
+        log.error("Failed to process record with ds id: {} and mediaUrl: {}",
+            event.digitalMediaWrapper().digitalSpecimenID(),
+            event.digitalMediaWrapper().attributes().getAcAccessURI());
+        return null;
+      }
     }
     return new DigitalMediaRecord(
         handle,
@@ -710,6 +731,7 @@ public class ProcessingService {
         event.digitalMediaWrapper()
     );
   }
+
 
   private JsonNode createJsonPatch(DigitalMedia currentDigitalMedia, DigitalMedia digitalMedia) {
     var jsonCurrentMedia = (ObjectNode) mapper.valueToTree(currentDigitalMedia);
