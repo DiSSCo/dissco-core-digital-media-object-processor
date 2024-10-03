@@ -551,6 +551,7 @@ public class ProcessingService {
     var newRecordList = newRecords.stream().map(DigitalMediaEvent::digitalMediaWrapper)
         .toList();
     Map<DigitalMediaKey, String> pidMap;
+    List<String> activateTheseHandles = Collections.emptyList();
     try {
       // The specimen processor sends media events with ids
       // If a request comes form a different source, we may need to mint PIDs here
@@ -561,6 +562,9 @@ public class ProcessingService {
         log.info("Minting {} new handles", requestBody.size());
         pidMap = handleComponent.postHandle(requestBody);
       } else {
+        activateTheseHandles = newRecordList.stream().map(media -> media.attributes().getId())
+            .filter(Objects::nonNull)
+            .toList();
         pidMap = Map.of();
       }
     } catch (PidCreationException e) {
@@ -587,6 +591,7 @@ public class ProcessingService {
           log.error("Fatal Exception: unable to post event to DLQ", e);
         }
       }
+      handleComponent.activateHandles(activateTheseHandles);
       return Collections.emptySet();
     }
 

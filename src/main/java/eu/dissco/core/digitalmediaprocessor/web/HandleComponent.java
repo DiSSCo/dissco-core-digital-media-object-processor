@@ -45,6 +45,20 @@ public class HandleComponent {
     return parseResponse(responseJson);
   }
 
+  public void activateHandles(List<String> handles) {
+    if (handles.isEmpty()) {
+      return;
+    }
+    log.info("Activating {} handles", handles.size());
+    var requestBody = BodyInserters.fromValue(handles);
+    try {
+      sendRequest(HttpMethod.POST, requestBody, "activate");
+    } catch (PidCreationException e){
+      log.error("Unable to activate handles. Manually activate the following handles {}", handles, e);
+    }
+
+  }
+
   public void updateHandle(List<JsonNode> request) throws PidCreationException {
     log.info("Updating {} Digital Media Object Handles", request.size());
     var requestBody = BodyInserters.fromValue(request);
@@ -90,7 +104,7 @@ public class HandleComponent {
                     "External Service failed to process after max retries")));
   }
 
-  private JsonNode validateResponse (Mono<JsonNode> response) throws PidCreationException {
+  private JsonNode validateResponse(Mono<JsonNode> response) throws PidCreationException {
     try {
       return response.toFuture().get();
     } catch (InterruptedException e) {
@@ -117,7 +131,8 @@ public class HandleComponent {
         var handle = node.get("id");
         var primarySpecimenObjectId = node.get("attributes")
             .get(FdoProfileAttributes.LINKED_DO_PID.getAttribute()).asText();
-        var mediaUrl = node.get("attributes").get(FdoProfileAttributes.PRIMARY_MEDIA_ID.getAttribute()).asText();
+        var mediaUrl = node.get("attributes")
+            .get(FdoProfileAttributes.PRIMARY_MEDIA_ID.getAttribute()).asText();
         DigitalMediaKey key = new DigitalMediaKey(primarySpecimenObjectId, mediaUrl);
         if (handle == null || primarySpecimenObjectId == null || mediaUrl == null) {
           log.error(UNEXPECTED_LOG, handleResponse.toPrettyString());
