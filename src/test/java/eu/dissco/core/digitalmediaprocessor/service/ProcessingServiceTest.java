@@ -16,13 +16,16 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_2;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_3;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.TYPE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaEvent;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaEventWithMediaId;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordNoOriginalData;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordPhysical;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordWithId;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordWithVersion;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaWrapper;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenJsonPatch;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPidMap;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostHandleRequest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -249,6 +252,8 @@ class ProcessingServiceTest {
     given(bulkResponse.errors()).willReturn(false);
     given(elasticRepository.indexDigitalMedia(
         Set.of(givenDigitalMediaRecord()))).willReturn(bulkResponse);
+    given(fdoRecordService.buildPostHandleRequest(List.of(givenDigitalMediaWrapper()))).willReturn(
+        List.of(givenPostHandleRequest()));
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaEvent()));
@@ -265,6 +270,28 @@ class ProcessingServiceTest {
   }
 
   @Test
+  void testNewDigitalMediaWithMediaId()throws Exception {
+    // Given
+    var expected = List.of(givenDigitalMediaRecordWithId());
+    given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL_1))).willReturn(List.of());
+    given(bulkResponse.errors()).willReturn(false);
+    given(elasticRepository.indexDigitalMedia(
+        Set.of(givenDigitalMediaRecordWithId()))).willReturn(bulkResponse);
+
+    // When
+    var result = service.handleMessage(List.of(givenDigitalMediaEventWithMediaId()));
+
+    // Then
+    then(handleComponent).should().activatePids(List.of(HANDLE));
+    then(repository).should().createDigitalMediaRecord(Set.of(expected.get(0)));
+    then(publisherService).should().publishCreateEvent(expected.get(0));
+    then(publisherService).should().publishAnnotationRequestEvent(MAS, expected.get(0));
+    then(annotationPublisherService).should().publishAnnotationNewMedia(Set.of(expected.get(0)));
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
   void testDuplicateNewDigitalMedia()
       throws Exception {
     // Given
@@ -273,6 +300,8 @@ class ProcessingServiceTest {
         List.of(MEDIA_URL_1))).willReturn(List.of());
     given(handleComponent.postHandle(anyList())).willReturn(givenPidMap(1));
     given(bulkResponse.errors()).willReturn(false);
+    given(fdoRecordService.buildPostHandleRequest(anyList())).willReturn(
+        List.of(givenPostHandleRequest()));
     given(elasticRepository.indexDigitalMedia(
         Set.of(givenDigitalMediaRecord()))).willReturn(bulkResponse);
 
@@ -299,6 +328,8 @@ class ProcessingServiceTest {
     // Given
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(List.of());
+    given(fdoRecordService.buildPostHandleRequest(anyList())).willReturn(
+        List.of(givenPostHandleRequest()));
     given(handleComponent.postHandle(anyList())).willReturn(givenPidMap(1));
     given(elasticRepository.indexDigitalMedia(
         Set.of(givenDigitalMediaRecord()))).willThrow(IOException.class);
@@ -330,6 +361,8 @@ class ProcessingServiceTest {
     given(elasticRepository.indexDigitalMedia(
         Set.of(givenDigitalMediaRecord()))).willThrow(IOException.class);
     doThrow(PidCreationException.class).when(handleComponent).rollbackHandleCreation(any());
+    given(fdoRecordService.buildPostHandleRequest(List.of(givenDigitalMediaWrapper()))).willReturn(
+        List.of(givenPostHandleRequest()));
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaEvent()));
@@ -352,6 +385,8 @@ class ProcessingServiceTest {
     var secondEvent = givenDigitalMediaEvent(DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2);
     var thirdEvent = givenDigitalMediaEvent(DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3);
     given(repository.getDigitalMedia(anyList(), anyList())).willReturn(List.of());
+    given(fdoRecordService.buildPostHandleRequest(anyList())).willReturn(
+        List.of(givenPostHandleRequest()));
     given(handleComponent.postHandle(anyList())).willReturn(givenPidMap(3));
     givenBulkResponse();
     given(elasticRepository.indexDigitalMedia(anySet())).willReturn(bulkResponse);
@@ -401,6 +436,8 @@ class ProcessingServiceTest {
     doNothing().doThrow(JsonProcessingException.class).when(publisherService)
         .publishCreateEvent(givenDigitalMediaRecord());
     doThrow(JsonProcessingException.class).when(publisherService).publishCreateEvent(thirdRecord);
+    given(fdoRecordService.buildPostHandleRequest(anyList())).willReturn(
+        List.of(givenPostHandleRequest()));
 
     // When
     var result = service.handleMessage(
@@ -436,6 +473,8 @@ class ProcessingServiceTest {
     given(handleComponent.postHandle(anyList())).willReturn(givenPidMap(3));
     givenBulkResponse();
     given(elasticRepository.indexDigitalMedia(anySet())).willReturn(bulkResponse);
+    given(fdoRecordService.buildPostHandleRequest(anyList())).willReturn(
+        List.of(givenPostHandleRequest()));
     doThrow(PidCreationException.class).when(handleComponent).rollbackHandleCreation(any());
 
     // When
@@ -468,6 +507,8 @@ class ProcessingServiceTest {
     given(repository.getDigitalMedia(anyList(), anyList())).willReturn(List.of());
     given(handleComponent.postHandle(anyList())).willReturn(givenPidMap(3));
     givenBulkResponse();
+    given(fdoRecordService.buildPostHandleRequest(anyList())).willReturn(
+        List.of(givenPostHandleRequest()));
     given(elasticRepository.indexDigitalMedia(anySet())).willReturn(bulkResponse);
     doThrow(PidCreationException.class).when(handleComponent).rollbackHandleCreation(any());
     doThrow(JsonProcessingException.class).when(publisherService).deadLetterEvent(secondEvent);
@@ -505,6 +546,10 @@ class ProcessingServiceTest {
         Set.of(givenDigitalMediaRecord()))).willReturn(bulkResponse);
     doThrow(JsonProcessingException.class).when(publisherService).publishCreateEvent(any(
         DigitalMediaRecord.class));
+    given(fdoRecordService.buildPostHandleRequest(List.of(givenDigitalMediaWrapper()))).willReturn(
+        List.of(givenPostHandleRequest()));
+    given(fdoRecordService.buildPostHandleRequest(List.of(givenDigitalMediaWrapper()))).willReturn(
+        List.of(givenPostHandleRequest()));
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaEvent()));
@@ -711,6 +756,8 @@ class ProcessingServiceTest {
     // Given
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(List.of());
+    given(fdoRecordService.buildPostHandleRequest(anyList())).willReturn(
+        List.of(givenPostHandleRequest()));
     given(handleComponent.postHandle(anyList())).willThrow(PidCreationException.class);
 
     // When
@@ -729,6 +776,8 @@ class ProcessingServiceTest {
     // Given
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(List.of());
+    given(fdoRecordService.buildPostHandleRequest(anyList())).willReturn(
+        List.of(givenPostHandleRequest()));
     given(handleComponent.postHandle(anyList())).willThrow(PidCreationException.class);
     doThrow(JsonProcessingException.class).when(publisherService)
         .deadLetterEvent(givenDigitalMediaEvent());
@@ -779,6 +828,8 @@ class ProcessingServiceTest {
         givenDigitalMediaEvent(DIGITAL_SPECIMEN_ID_2, MEDIA_URL_2),
         givenDigitalMediaEvent(DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3));
     given(digitalSpecimenRepository.getExistingSpecimen(existingIds)).willReturn(existingIds);
+    given(fdoRecordService.buildPostHandleRequest(anyList())).willReturn(
+        List.of(givenPostHandleRequest()));
     given(environment.matchesProfiles(Profiles.WEB)).willReturn(true);
     given(handleComponent.postHandle(anyList())).willReturn(givenPidMap(3));
     given(bulkResponse.errors()).willReturn(false);
@@ -802,6 +853,8 @@ class ProcessingServiceTest {
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(List.of());
     given(handleComponent.postHandle(anyList())).willReturn(givenPidMap(1));
+    given(fdoRecordService.buildPostHandleRequest(List.of(givenDigitalMediaWrapper()))).willReturn(
+        List.of(givenPostHandleRequest()));
     doThrow(DataAccessException.class).when(repository).createDigitalMediaRecord(any());
 
     // When

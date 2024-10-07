@@ -72,6 +72,13 @@ public class TestUtils {
     );
   }
 
+  public static DigitalMediaEvent givenDigitalMediaEventWithMediaId() throws JsonProcessingException {
+    return new DigitalMediaEvent(
+        List.of("OCR"),
+        givenDigitalMediaWrapperWithMediaId()
+    );
+  }
+
   public static DigitalMediaEvent givenDigitalMediaEvent()
       throws JsonProcessingException {
     return givenDigitalMediaEvent(DIGITAL_SPECIMEN_ID, MEDIA_URL_1);
@@ -85,6 +92,7 @@ public class TestUtils {
         givenDigitalMediaWrapper(digitalSpecimenId, mediaUrl)
     );
   }
+
 
   public static HashMap<DigitalMediaKey, String> givenPidMap(int size) {
     HashMap<DigitalMediaKey, String> pidMap = new HashMap<>();
@@ -118,6 +126,18 @@ public class TestUtils {
     );
   }
 
+  private static DigitalMediaWrapper givenDigitalMediaWrapperWithMediaId()
+      throws JsonProcessingException {
+    return new DigitalMediaWrapper(
+        TYPE,
+        DIGITAL_SPECIMEN_ID,
+        generateAttributes(FORMAT, TestUtils.MEDIA_URL_1)
+            .withId(HANDLE)
+            .withOdsID(HANDLE),
+        generateOriginalAttributes()
+    );
+  }
+
   public static DigitalMediaRecord givenDigitalMediaRecordWithVersion(int version)
       throws JsonProcessingException {
     return new DigitalMediaRecord(
@@ -131,6 +151,16 @@ public class TestUtils {
   public static DigitalMediaRecord givenDigitalMediaRecord()
       throws JsonProcessingException {
     return givenDigitalMediaRecord(HANDLE, DIGITAL_SPECIMEN_ID, MEDIA_URL_1, FORMAT);
+  }
+
+  public static DigitalMediaRecord givenDigitalMediaRecordWithId()
+      throws JsonProcessingException {
+    return new DigitalMediaRecord(
+        HANDLE,
+        VERSION,
+        CREATED,
+        givenDigitalMediaWrapperWithMediaId()
+    );
   }
 
   public static DigitalMediaRecord givenDigitalMediaRecordPhysical(
