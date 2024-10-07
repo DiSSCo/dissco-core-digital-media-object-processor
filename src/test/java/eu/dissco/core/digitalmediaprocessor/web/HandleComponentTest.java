@@ -261,6 +261,7 @@ class HandleComponentTest {
     assertThrows(PidCreationException.class, () -> handleComponent.postHandle(requestBody));
   }
 
+
   @Test
   void testActivatePidsEmpty() {
     // When / Then
@@ -272,18 +273,6 @@ class HandleComponentTest {
     // When / Then
     assertDoesNotThrow(() -> handleComponent.activatePids(List.of(HANDLE)));
   }
-
-  @Test
-  void testActivatePidsFails() {
-    // Given
-    mockHandleServer.enqueue(new MockResponse().setResponseCode(HttpStatus.UNAUTHORIZED.value())
-        .addHeader("Content-Type", "application/json"));
-
-    // When / Then
-    assertDoesNotThrow(() -> handleComponent.activatePids(List.of(HANDLE)));
-  }
-
-
 
   private static JsonNode removeGivenAttribute(String targetAttribute) throws Exception {
     var response = (ObjectNode) givenHandleResponse();

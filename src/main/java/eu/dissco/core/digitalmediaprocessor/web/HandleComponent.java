@@ -58,7 +58,6 @@ public class HandleComponent {
     } catch (PidCreationException e){
       log.error("Unable to activate handles. Manually activate the following handles {}", handles, e);
     }
-
   }
 
   public void updateHandle(List<JsonNode> request) throws PidCreationException {
