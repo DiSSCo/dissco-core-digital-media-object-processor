@@ -591,10 +591,8 @@ public class ProcessingService {
           log.error("Fatal Exception: unable to post event to DLQ", e);
         }
       }
-      handleComponent.activateHandles(activateTheseHandles);
       return Collections.emptySet();
     }
-
     log.info("{} digital media has been successfully committed to database",
         newRecords.size());
     try {
@@ -606,6 +604,7 @@ public class ProcessingService {
       }
       log.info("Successfully created {} new digital media", digitalMediaRecords.size());
       annotationPublisherService.publishAnnotationNewMedia(digitalMediaRecords.keySet());
+      handleComponent.activatePids(activateTheseHandles);
       return digitalMediaRecords.keySet();
     } catch (IOException | ElasticsearchException e) {
       log.error("Rolling back, failed to insert records in elastic", e);

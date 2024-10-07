@@ -1,8 +1,9 @@
 package eu.dissco.core.digitalmediaprocessor.web;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaKey;
-import eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes;
 import eu.dissco.core.digitalmediaprocessor.exceptions.PidCreationException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -32,6 +33,7 @@ public class HandleComponent {
   @Qualifier("handleClient")
   private final WebClient handleClient;
   private final TokenAuthenticator tokenAuthenticator;
+  private final ObjectMapper mapper;
 
   private static final String UNEXPECTED_MSG = "Unexpected response from handle API";
   private static final String UNEXPECTED_LOG = "Unexpected response from Handle API. Missing id and/or primarySpecimenObjectId. Response: {}";
@@ -45,7 +47,7 @@ public class HandleComponent {
     return parseResponse(responseJson);
   }
 
-  public void activateHandles(List<String> handles) {
+  public void activatePids(List<String> handles) {
     if (handles.isEmpty()) {
       return;
     }
@@ -129,20 +131,12 @@ public class HandleComponent {
       }
       for (var node : dataNode) {
         var handle = node.get("id");
-        var primarySpecimenObjectId = node.get("attributes")
-            .get(FdoProfileAttributes.LINKED_DO_PID.getAttribute()).asText();
-        var mediaUrl = node.get("attributes")
-            .get(FdoProfileAttributes.PRIMARY_MEDIA_ID.getAttribute()).asText();
-        DigitalMediaKey key = new DigitalMediaKey(primarySpecimenObjectId, mediaUrl);
-        if (handle == null || primarySpecimenObjectId == null || mediaUrl == null) {
-          log.error(UNEXPECTED_LOG, handleResponse.toPrettyString());
-          throw new PidCreationException(UNEXPECTED_MSG);
-        }
+        var key = mapper.treeToValue(node.get("attributes").get("digitalMediaKey"), DigitalMediaKey.class);
         handleNames.put(key, handle.asText());
       }
       return handleNames;
-    } catch (NullPointerException e) {
-      log.error(UNEXPECTED_LOG, handleResponse.toPrettyString());
+    } catch (NullPointerException | JsonProcessingException e) {
+      log.error(UNEXPECTED_LOG, handleResponse.toPrettyString(), e);
       throw new PidCreationException(UNEXPECTED_MSG);
     }
   }

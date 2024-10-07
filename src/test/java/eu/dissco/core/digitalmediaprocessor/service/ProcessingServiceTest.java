@@ -16,9 +16,11 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_2;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_3;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.TYPE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaEvent;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaEventWithMediaId;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordNoOriginalData;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordPhysical;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordWithId;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordWithVersion;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaWrapper;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenJsonPatch;
@@ -260,6 +262,28 @@ class ProcessingServiceTest {
     then(fdoRecordService).should()
         .buildPostHandleRequest(List.of(TestUtils.givenDigitalMediaWrapper()));
     then(handleComponent).should().postHandle(any());
+    then(repository).should().createDigitalMediaRecord(Set.of(expected.get(0)));
+    then(publisherService).should().publishCreateEvent(expected.get(0));
+    then(publisherService).should().publishAnnotationRequestEvent(MAS, expected.get(0));
+    then(annotationPublisherService).should().publishAnnotationNewMedia(Set.of(expected.get(0)));
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  void testNewDigitalMediaWithMediaId()throws Exception {
+    // Given
+    var expected = List.of(givenDigitalMediaRecordWithId());
+    given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
+        List.of(MEDIA_URL_1))).willReturn(List.of());
+    given(bulkResponse.errors()).willReturn(false);
+    given(elasticRepository.indexDigitalMedia(
+        Set.of(givenDigitalMediaRecordWithId()))).willReturn(bulkResponse);
+
+    // When
+    var result = service.handleMessage(List.of(givenDigitalMediaEventWithMediaId()));
+
+    // Then
+    then(handleComponent).should().activatePids(List.of(HANDLE));
     then(repository).should().createDigitalMediaRecord(Set.of(expected.get(0)));
     then(publisherService).should().publishCreateEvent(expected.get(0));
     then(publisherService).should().publishAnnotationRequestEvent(MAS, expected.get(0));
