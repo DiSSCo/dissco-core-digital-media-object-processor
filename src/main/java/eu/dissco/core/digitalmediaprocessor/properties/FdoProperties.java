@@ -11,9 +11,9 @@ import org.springframework.validation.annotation.Validated;
 public class FdoProperties {
 
   @NotBlank
-  private String type = "https://doi.org/21.T11148/bbad8c4e101e8af01115";
+  private String mediaType = "https://doi.org/21.T11148/bbad8c4e101e8af01115";
 
   @NotBlank
-  private String issuedForAgent = "https://ror.org/0566bfb96";
+  private String specimenType = "https://doi.org/21.T11148/894b1e6cad57e921764e";
 
 }
