@@ -8,17 +8,20 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_1;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.TYPE;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.generateAttributes;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaWrapper;
-import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostAttributes;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostHandleAttributes;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostHandleRequest;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_ID;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_NAME;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_ID;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mockStatic;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import eu.dissco.core.digitalmediaprocessor.TestUtils;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaWrapper;
-import eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes;
-import eu.dissco.core.digitalmediaprocessor.exceptions.PidCreationException;
 import eu.dissco.core.digitalmediaprocessor.properties.FdoProperties;
 import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia;
 import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia.DctermsType;
@@ -26,10 +29,14 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -64,7 +71,7 @@ class FdoRecordServiceTest {
           "data": {
             "type": "https://doi.org/21.T11148/bbad8c4e101e8af01115",
             "id":\"""" + HANDLE + "\","
-        + "\"attributes\":" + givenPostAttributes().toPrettyString() + "}}";
+        + "\"attributes\":" + givenPostHandleAttributes().toPrettyString() + "}}";
 
     var expected = MAPPER.readTree(expectedString);
     // When
@@ -78,13 +85,49 @@ class FdoRecordServiceTest {
   @Test
   void testBuildPostHandleRequest() throws Exception {
     // Given
-    var expectedResponse = List.of(givenPostHandleRequest());
+    var expected = List.of(givenPostHandleRequest());
 
     // When
-    var result = fdoRecordService.buildPostHandleRequest(List.of(TestUtils.givenDigitalMediaWrapper()));
+    var result = fdoRecordService.buildPostHandleRequest(List.of(givenDigitalMediaWrapper()));
 
     // Then
-    assertThat(result).isEqualTo(expectedResponse);
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @ParameterizedTest
+  @MethodSource("genLicenseAndRightsHolder")
+  void testLicenseAndRightsHolder(String licenseField, String rightsHolderField,
+      String fieldValue) {
+    // Given
+    var expectedAttributes = ((ObjectNode) givenPostHandleAttributes());
+    expectedAttributes.remove(LICENSE_ID.getAttribute());
+    expectedAttributes
+        .put(licenseField, fieldValue)
+        .put(rightsHolderField, fieldValue);
+    var expected = List.of(MAPPER.createObjectNode()
+        .set("data", MAPPER.createObjectNode()
+            .put("type", "https://doi.org/21.T11148/bbad8c4e101e8af01115")
+            .set("attributes", expectedAttributes)));
+    var media = new DigitalMediaWrapper(
+        TYPE, DIGITAL_SPECIMEN_ID,
+        generateAttributes(FORMAT, MEDIA_URL_1)
+            .withDctermsLicense(fieldValue)
+            .withDctermsRightsHolder(fieldValue),
+        MAPPER.createObjectNode()
+    );
+
+    // When
+    var result = fdoRecordService.buildPostHandleRequest(List.of(media));
+
+    // Then
+    assertThat(result).isEqualTo(expected);
+  }
+
+  static Stream<Arguments> genLicenseAndRightsHolder() {
+    return Stream.of(
+        Arguments.of(LICENSE_ID.getAttribute(), RIGHTS_HOLDER_ID.getAttribute(),
+            "https://spdx.org/licenses/Apache-2.0.html"),
+        Arguments.of(LICENSE_NAME.getAttribute(), RIGHTS_HOLDER_NAME.getAttribute(), "Apache 2.0"));
   }
 
   @Test
@@ -116,7 +159,8 @@ class FdoRecordServiceTest {
     var mediaObject = new DigitalMediaWrapper(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
 
     // Then
-    assertThat(fdoRecordService.handleNeedsUpdate(TestUtils.givenDigitalMediaWrapper(), mediaObject)).isTrue();
+    assertThat(fdoRecordService.handleNeedsUpdate(TestUtils.givenDigitalMediaWrapper(),
+        mediaObject)).isTrue();
   }
 
   @Test
@@ -124,19 +168,6 @@ class FdoRecordServiceTest {
     // Then
     assertThat(fdoRecordService.handleNeedsUpdate(TestUtils.givenDigitalMediaWrapper(),
         givenDigitalMediaWrapper(DIGITAL_SPECIMEN_ID_2, FORMAT, MEDIA_URL_1, TYPE))).isTrue();
-  }
-
-  @Test
-  void testMissingMandatoryElements() {
-    // Given
-    var attributes = new DigitalMedia()
-        .withAcAccessURI("http://data.rbge.org.uk/living/19942272")
-        .withDctermsLicense("Different License");
-    var digitalMediaWrapper = new DigitalMediaWrapper(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
-
-    // Then
-    assertThrows(PidCreationException.class,
-        () -> fdoRecordService.buildPostHandleRequest(List.of(digitalMediaWrapper)));
   }
 
   @Test
@@ -151,7 +182,8 @@ class FdoRecordServiceTest {
     var mediaObject = new DigitalMediaWrapper(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
 
     // Then
-    assertThat(fdoRecordService.handleNeedsUpdate(mediaObject, TestUtils.givenDigitalMediaWrapper())).isTrue();
+    assertThat(fdoRecordService.handleNeedsUpdate(mediaObject,
+        TestUtils.givenDigitalMediaWrapper())).isTrue();
   }
 
   @Test
@@ -183,26 +215,7 @@ class FdoRecordServiceTest {
         "differentType");
 
     // Then
-    assertThat(fdoRecordService.handleNeedsUpdate(TestUtils.givenDigitalMediaWrapper(), mediaObject)).isTrue();
-  }
-
-  @Test
-  void testDcTermsType() throws Exception {
-    // Given
-    var attributes = new DigitalMedia()
-        .withAcAccessURI("http://data.rbge.org.uk/living/19942272")
-        .withDctermsLicense("http://creativecommons.org/licenses/by-nc/3.0/")
-        .withOdsOrganisationID("https://ror.org/0x123")
-        .withDctermsType(DctermsType.IMAGE);
-
-    var mediaObject = new DigitalMediaWrapper(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
-
-    // When
-    var result = fdoRecordService.buildPostHandleRequest(List.of(mediaObject)).get(0);
-
-    // Then
-    assertThat(
-        result.get("data").get("attributes").get(FdoProfileAttributes.MEDIA_FORMAT.getAttribute())
-            .asText()).isEqualTo(FdoProfileAttributes.MEDIA_FORMAT.getDefaultValue());
+    assertThat(fdoRecordService.handleNeedsUpdate(TestUtils.givenDigitalMediaWrapper(),
+        mediaObject)).isTrue();
   }
 }
