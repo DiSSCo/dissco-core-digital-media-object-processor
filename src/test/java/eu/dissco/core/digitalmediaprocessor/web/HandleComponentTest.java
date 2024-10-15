@@ -61,7 +61,7 @@ class HandleComponentTest {
   void setup() {
     WebClient webClient = WebClient.create(
         String.format("http://%s:%s", mockHandleServer.getHostName(), mockHandleServer.getPort()));
-    handleComponent = new HandleComponent(webClient, tokenAuthenticator);
+    handleComponent = new HandleComponent(webClient, tokenAuthenticator, MAPPER);
 
     Clock clock = Clock.fixed(CREATED, ZoneOffset.UTC);
     mockedStatic = mockStatic(Instant.class);
@@ -261,20 +261,35 @@ class HandleComponentTest {
     assertThrows(PidCreationException.class, () -> handleComponent.postHandle(requestBody));
   }
 
-  private JsonNode removeGivenAttribute(String targetAttribute) throws Exception {
+
+  @Test
+  void testActivatePidsEmpty() {
+    // When / Then
+    assertDoesNotThrow(() -> handleComponent.activatePids(List.of()));
+  }
+
+  @Test
+  void testActivatePids() {
+    // When / Then
+    assertDoesNotThrow(() -> handleComponent.activatePids(List.of(HANDLE)));
+  }
+
+  private static JsonNode removeGivenAttribute(String targetAttribute) throws Exception {
     var response = (ObjectNode) givenHandleResponse();
     return ((ObjectNode) response.get("data").get(0).get("attributes")).remove(targetAttribute);
   }
 
-  private JsonNode givenHandleResponse() throws Exception {
+  private static JsonNode givenHandleResponse() throws Exception {
     return MAPPER.readTree("""
         {
         "data": [{
             "type": "mediaObject",
             "id":"20.5000.1025/1BY-BHB-AVN",
             "attributes": {
-              "primaryMediaId":"http://data.rbge.org.uk/living/19942272",
-              "linkedDigitalObjectPid":"20.5000.1025/460-A7R-QMJ"
+              "digitalMediaKey":{
+                "mediaUrl":"http://data.rbge.org.uk/living/19942272",
+                "digitalSpecimenId":"20.5000.1025/460-A7R-QMJ"
+                }
               }
            }]
         }
