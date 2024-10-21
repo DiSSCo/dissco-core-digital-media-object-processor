@@ -1,18 +1,15 @@
 package eu.dissco.core.digitalmediaprocessor;
 
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.DCTERMS_TYPE;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.ISSUED_FOR_AGENT;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.IS_DERIVED_FROM_SPECIMEN;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_NAME;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_ID;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_HOST_NAME;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID_TYPE;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_TYPE;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_FORMAT;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_HOST;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MEDIA_ID;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_NAME;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.PRIMARY_MO_ID_TYPE;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTSHOLDER_PID_TYPE;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID_NAME;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MIME_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.AS_APPLICATION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -277,33 +274,24 @@ public class TestUtils {
   }
 
   public static JsonNode givenPostHandleRequest() {
-    var result = MAPPER.createObjectNode();
-    var data = MAPPER.createObjectNode();
-    var attributes = givenPostAttributes();
-    data.put("type", "https://doi.org/21.T11148/bbad8c4e101e8af01115");
-    data.set("attributes", attributes);
-    result.set("data", data);
-    return result;
+    return MAPPER.createObjectNode()
+        .set("data", MAPPER.createObjectNode()
+            .put("type", "https://doi.org/21.T11148/bbad8c4e101e8af01115")
+            .set("attributes", givenPostHandleAttributes()));
   }
 
-  public static JsonNode givenPostAttributes() {
-    var attributes = MAPPER.createObjectNode();
-    attributes.put(MEDIA_HOST.getAttribute(), MEDIA_HOST_TESTVAL);
-    attributes.put(LICENSE_NAME.getAttribute(), LICENSE_TESTVAL);
-    attributes.put(PRIMARY_MEDIA_ID.getAttribute(), MEDIA_URL_1);
-    attributes.put(REFERENT_NAME.getAttribute(), TYPE + " for " + DIGITAL_SPECIMEN_ID);
-    attributes.put(LINKED_DO_PID.getAttribute(), DIGITAL_SPECIMEN_ID);
-    attributes.put(MEDIA_FORMAT.getAttribute(), MEDIA_FORMAT.getDefaultValue());
-    attributes.put(ISSUED_FOR_AGENT.getAttribute(), "https://ror.org/0566bfb96");
-    attributes.put(DCTERMS_TYPE.getAttribute(), DCTERMS_TYPE.getDefaultValue());
-    attributes.put(PRIMARY_MO_ID_TYPE.getAttribute(), PRIMARY_MO_ID_TYPE.getDefaultValue());
-    attributes.put(PRIMARY_MO_ID_NAME.getAttribute(), PRIMARY_MO_ID_NAME.getDefaultValue());
-    attributes.put(RIGHTSHOLDER_PID_TYPE.getAttribute(), RIGHTSHOLDER_PID_TYPE.getDefaultValue());
-    attributes.put(IS_DERIVED_FROM_SPECIMEN.getAttribute(),
-        Boolean.valueOf(IS_DERIVED_FROM_SPECIMEN.getDefaultValue()));
-    attributes.put(LINKED_DO_TYPE.getAttribute(), LINKED_DO_TYPE.getDefaultValue());
-
-    return attributes;
+  public static JsonNode givenPostHandleAttributes() {
+    return MAPPER.createObjectNode()
+        .put(MEDIA_HOST.getAttribute(), MEDIA_HOST_TESTVAL)
+        .put(MEDIA_HOST_NAME.getAttribute(), (String) null)
+        .put(LINKED_DO_PID.getAttribute(), DIGITAL_SPECIMEN_ID)
+        .put(LINKED_DO_TYPE.getAttribute(), "https://doi.org/21.T11148/894b1e6cad57e921764e")
+        .put(MEDIA_ID.getAttribute(), MEDIA_URL_1)
+        .put(MEDIA_ID_TYPE.getAttribute(), "Resolvable")
+        .put(MEDIA_ID_NAME.getAttribute(), "ac:accessURI")
+        .put(MEDIA_TYPE.getAttribute(), TYPE)
+        .put(MIME_TYPE.getAttribute(), FORMAT)
+        .put(LICENSE_ID.getAttribute(), LICENSE_TESTVAL);
   }
 
   public static AutoAcceptedAnnotation givenAutoAcceptedAnnotation(
