@@ -217,7 +217,7 @@ public class ProcessingService {
   private void checkOriginalData(DigitalMediaWrapper currentDigitalMediaWrapper,
       DigitalMediaWrapper digitalMediaWrapper) {
     if (currentDigitalMediaWrapper.originalAttributes() != null
-        && currentDigitalMediaWrapper.originalAttributes()
+        && !currentDigitalMediaWrapper.originalAttributes()
         .equals(digitalMediaWrapper.originalAttributes())) {
       log.info(
           "Media Object with ac:accessURI {} has changed original data. New Original data not captured.",
