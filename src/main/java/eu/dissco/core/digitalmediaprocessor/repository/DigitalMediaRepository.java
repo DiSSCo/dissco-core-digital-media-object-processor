@@ -71,6 +71,7 @@ public class DigitalMediaRepository {
         .set(DIGITAL_MEDIA_OBJECT.MEDIA_URL,
             digitalMediaRecord.digitalMediaWrapper().attributes().getAcAccessURI())
         .set(DIGITAL_MEDIA_OBJECT.CREATED, digitalMediaRecord.created())
+        .set(DIGITAL_MEDIA_OBJECT.MODIFIED, Instant.now())
         .set(DIGITAL_MEDIA_OBJECT.LAST_CHECKED, Instant.now())
         .set(DIGITAL_MEDIA_OBJECT.DATA,
             JSONB.jsonb(
@@ -87,6 +88,7 @@ public class DigitalMediaRepository {
         .set(DIGITAL_MEDIA_OBJECT.MEDIA_URL,
             digitalMediaRecord.digitalMediaWrapper().attributes().getAcAccessURI())
         .set(DIGITAL_MEDIA_OBJECT.CREATED, digitalMediaRecord.created())
+        .set(DIGITAL_MEDIA_OBJECT.MODIFIED, Instant.now())
         .set(DIGITAL_MEDIA_OBJECT.LAST_CHECKED, Instant.now())
         .set(DIGITAL_MEDIA_OBJECT.DATA,
             JSONB.jsonb(
