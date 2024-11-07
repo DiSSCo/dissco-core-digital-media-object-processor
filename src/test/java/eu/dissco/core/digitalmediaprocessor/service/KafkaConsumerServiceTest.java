@@ -100,24 +100,40 @@ class KafkaConsumerServiceTest {
               "ods:sourceSystemName" : "A very nice source system",
               "ods:organisationID" : "https://ror.org/0x123",
               "dcterms:format" : "image/jpeg",
-              "dcterms:license" : "http://creativecommons.org/licenses/by-nc/3.0/",
-              "ods:hasAssertion" : [ ],
-              "ods:hasCitation" : [ ],
-              "ods:hasIdentifier" : [ ],
-              "ods:hasEntityRelationship" : [ {
+              "dcterms:rights" : "http://creativecommons.org/licenses/by-nc/3.0/",
+              "ac:tag" : [ ],
+              "ods:hasAssertions" : [ ],
+              "ods:hasCitations" : [ ],
+              "ods:hasIdentifiers" : [ ],
+              "ods:hasEntityRelationships" : [ {
                 "@type" : "ods:EntityRelationship",
                 "dwc:relationshipOfResource" : "hasDigitalSpecimen",
                 "dwc:relatedResourceID" : "https://doi.org/20.5000.1025/460-A7R-QMJ",
                 "dwc:relationshipEstablishedDate" : 1663318347391,
-                "ods:RelationshipAccordingToAgent" : {
-                  "@id" : "The id of the specimen processor",
-                  "@type" : "as:Application",
-                  "schema:name" : "The name of the specimen processor",
-                  "ods:hasIdentifier" : [ ]
-                },
-                "dwc:relationshipAccordingTo" : "The name of the specimen processor"
+                "ods:hasAgents" : [ {
+                  "@id" : "https://hdl.handle.net/TEST/123-123-123",
+                  "@type" : "schema:SoftwareApplication",
+                  "schema:identifier" : "https://hdl.handle.net/TEST/123-123-123",
+                  "schema:name" : "dissco-digital-specimen-processor",
+                  "ods:hasRoles" : [ {
+                    "@type" : "schema:Role",
+                    "schema:roleName" : "processing-service"
+                  } ],
+                  "ods:hasIdentifiers" : [ {
+                    "@id" : "https://hdl.handle.net/TEST/123-123-123",
+                    "@type" : "ods:Identifier",
+                    "dcterms:title" : "DOI",
+                    "dcterms:type" : "DOI",
+                    "dcterms:identifier" : "https://hdl.handle.net/TEST/123-123-123",
+                    "dcterms:format" : [ ],
+                    "dcterms:subject" : [ ],
+                    "ods:isPartOfLabel" : false,
+                    "ods:gupriLevel" : "GloballyUniqueStablePersistentResolvableFDOCompliant",
+                    "ods:identifierStatus" : "Preferred"
+                  } ]
+                } ]
               } ],
-              "ods:hasAgent" : [ ]
+              "ods:hasAgents" : [ ]
             },
             "ods:originalAttributes" : {
               "dwca:ID" : "045db6cb-5f06-4c19-b0f6-9620bdff3ae4",

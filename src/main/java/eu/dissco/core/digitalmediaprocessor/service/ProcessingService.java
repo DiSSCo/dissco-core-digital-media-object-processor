@@ -195,9 +195,9 @@ public class ProcessingService {
     var currentModified = currentDigitalMediaWrapper.attributes().getDctermsModified();
     currentDigitalMediaWrapper.attributes().setDctermsModified(null);
     digitalMediaWrapper.attributes().setDctermsModified(null);
-    var entityRelationships = digitalMediaWrapper.attributes().getOdsHasEntityRelationship();
+    var entityRelationships = digitalMediaWrapper.attributes().getOdsHasEntityRelationships();
     setTimestampsEntityRelationships(entityRelationships,
-        currentDigitalMediaWrapper.attributes().getOdsHasEntityRelationship());
+        currentDigitalMediaWrapper.attributes().getOdsHasEntityRelationships());
     checkOriginalData(currentDigitalMediaWrapper, digitalMediaWrapper);
     if (currentDigitalMediaWrapper.attributes().equals(digitalMediaWrapper.attributes())
         && currentDigitalMediaWrapper.digitalSpecimenID()
@@ -245,12 +245,8 @@ public class ProcessingService {
                 currentEntityrelationship.getDwcRelatedResourceID()) &&
             Objects.equals(entityRelationship.getOdsRelatedResourceURI(),
                 currentEntityrelationship.getOdsRelatedResourceURI()) &&
-            Objects.equals(entityRelationship.getDwcRelationshipAccordingTo(),
-                currentEntityrelationship.getDwcRelationshipAccordingTo()) &&
-            Objects.equals(entityRelationship.getOdsRelationshipAccordingToAgent(),
-                currentEntityrelationship.getOdsRelationshipAccordingToAgent()) &&
-            Objects.equals(entityRelationship.getOdsEntityRelationshipOrder(),
-                currentEntityrelationship.getOdsEntityRelationshipOrder()) &&
+            Objects.equals(entityRelationship.getOdsHasAgents(),
+                currentEntityrelationship.getOdsHasAgents()) &&
             Objects.equals(entityRelationship.getDwcRelationshipRemarks(),
                 currentEntityrelationship.getDwcRelationshipRemarks())
         ) {
@@ -266,7 +262,7 @@ public class ProcessingService {
     var digitalMediaWrappersWithNoIds = new ArrayList<DigitalMediaWrapper>();
     var digitalMediaWrappersWithIds = new ArrayList<DigitalMediaWrapper>();
     digitalMediaWrappers.forEach(digitalMediaWrapper -> {
-      if (digitalMediaWrapper.attributes().getId() != null){
+      if (digitalMediaWrapper.attributes().getId() != null) {
         digitalMediaWrappersWithIds.add(digitalMediaWrapper);
       } else {
         digitalMediaWrappersWithNoIds.add(digitalMediaWrapper);

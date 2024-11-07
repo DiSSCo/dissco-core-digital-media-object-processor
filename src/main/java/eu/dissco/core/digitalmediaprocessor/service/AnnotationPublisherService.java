@@ -1,5 +1,11 @@
 package eu.dissco.core.digitalmediaprocessor.service;
 
+import static eu.dissco.core.digitalmediaprocessor.domain.AgenRoleType.PROCESSING_SERVICE;
+import static eu.dissco.core.digitalmediaprocessor.domain.AgenRoleType.SOURCE_SYSTEM;
+import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.SCHEMA_SOFTWARE_APPLICATION;
+import static eu.dissco.core.digitalmediaprocessor.schema.Identifier.DctermsType.DOI;
+import static eu.dissco.core.digitalmediaprocessor.schema.Identifier.DctermsType.HANDLE;
+import static eu.dissco.core.digitalmediaprocessor.utils.AgentUtils.createMachineAgent;
 import static eu.dissco.core.digitalmediaprocessor.utils.DigitalMediaUtils.DOI_PREFIX;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -9,8 +15,6 @@ import eu.dissco.core.digitalmediaprocessor.domain.AutoAcceptedAnnotation;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
 import eu.dissco.core.digitalmediaprocessor.domain.UpdatedDigitalMediaRecord;
 import eu.dissco.core.digitalmediaprocessor.properties.ApplicationProperties;
-import eu.dissco.core.digitalmediaprocessor.schema.Agent;
-import eu.dissco.core.digitalmediaprocessor.schema.Agent.Type;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationBody;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationProcessingRequest;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationProcessingRequest.OaMotivation;
@@ -55,9 +59,8 @@ public class AnnotationPublisherService {
         var annotationProcessingRequest = mapNewMediaToAnnotation(digitalMediaRecord);
         kafkaPublisherService.publishAcceptedAnnotation(
             new AutoAcceptedAnnotation(
-                new Agent().withId(applicationProperties.getPid())
-                    .withSchemaName(applicationProperties.getName())
-                    .withType(Type.AS_APPLICATION),
+                createMachineAgent(applicationProperties.getName(), applicationProperties.getPid(),
+                    PROCESSING_SERVICE, DOI, SCHEMA_SOFTWARE_APPLICATION),
                 annotationProcessingRequest));
       } catch (JsonProcessingException e) {
         log.error("Unable to send auto-accepted annotation for new media: {}",
@@ -81,8 +84,8 @@ public class AnnotationPublisherService {
         .withOaHasTarget(buildTarget(digitalMediaRecord, buildNewMediaSelector()))
         .withDctermsCreated(Date.from(Instant.now()))
         .withDctermsCreator(
-            new Agent().withType(Type.AS_APPLICATION).withId(sourceSystemID)
-                .withSchemaName(sourceSystemName));
+            createMachineAgent(sourceSystemName, sourceSystemID, SOURCE_SYSTEM, HANDLE,
+                SCHEMA_SOFTWARE_APPLICATION));
   }
 
   private AnnotationBody buildBody(String value, String sourceSystemID) {
@@ -97,9 +100,9 @@ public class AnnotationPublisherService {
     var targetId = DOI_PREFIX + digitalMediaRecord.id();
     return new AnnotationTarget()
         .withId(targetId)
-        .withOdsID(targetId)
+        .withDctermsIdentifier(targetId)
         .withType(digitalMediaRecord.digitalMediaWrapper().type())
-        .withOdsType("ods:DigitalMedia")
+        .withOdsFdoType("ods:DigitalMedia")
         .withOaHasSelector(selector);
   }
 
@@ -112,9 +115,8 @@ public class AnnotationPublisherService {
             updatedDigitalMediaRecord.jsonPatch());
         for (var annotationProcessingRequest : annotations) {
           kafkaPublisherService.publishAcceptedAnnotation(new AutoAcceptedAnnotation(
-              new Agent().withId(applicationProperties.getPid())
-                  .withSchemaName(applicationProperties.getName())
-                  .withType(Type.AS_APPLICATION),
+              createMachineAgent(applicationProperties.getName(), applicationProperties.getPid(),
+                  PROCESSING_SERVICE, DOI, SCHEMA_SOFTWARE_APPLICATION),
               annotationProcessingRequest));
         }
       } catch (JsonProcessingException e) {
@@ -138,8 +140,8 @@ public class AnnotationPublisherService {
               buildMediaSelector(action.get("path").asText())))
           .withDctermsCreated(Date.from(Instant.now()))
           .withDctermsCreator(
-              new Agent().withType(Type.AS_APPLICATION).withId(sourceSystemID)
-                  .withSchemaName(sourceSystemName));
+              createMachineAgent(sourceSystemName, sourceSystemID, SOURCE_SYSTEM, HANDLE,
+                  SCHEMA_SOFTWARE_APPLICATION));
       if (action.get(OP).asText().equals("replace")) {
         annotations.add(addReplaceOperation(action, annotationProcessingRequest, sourceSystemID));
       } else if (action.get(OP).asText().equals("add")) {
@@ -179,8 +181,8 @@ public class AnnotationPublisherService {
             buildMediaSelector(action.get(FROM).asText())))
         .withDctermsCreated(Date.from(Instant.now()))
         .withDctermsCreator(
-            new Agent().withType(Type.AS_APPLICATION).withId(sourceSystemID)
-                .withSchemaName(sourceSystemName))
+            createMachineAgent(sourceSystemName, sourceSystemID, SOURCE_SYSTEM, HANDLE,
+                SCHEMA_SOFTWARE_APPLICATION))
         .withOaMotivation(OaMotivation.ODS_DELETING)
         .withOaMotivatedBy(
             "Received delete information from Source System with id: " + sourceSystemID);

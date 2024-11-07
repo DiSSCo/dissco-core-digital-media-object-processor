@@ -15,7 +15,7 @@ public class DigitalMediaUtils {
   public static DigitalMedia flattenToDigitalMedia(DigitalMediaRecord digitalMediaRecord) {
     var digitalMedia = digitalMediaRecord.digitalMediaWrapper().attributes();
     digitalMedia.setId(DOI_PREFIX + digitalMediaRecord.id());
-    digitalMedia.setOdsID(DOI_PREFIX + digitalMediaRecord.id());
+    digitalMedia.setDctermsIdentifier(DOI_PREFIX + digitalMediaRecord.id());
     digitalMedia.setOdsVersion(digitalMediaRecord.version());
     digitalMedia.setDctermsCreated(Date.from(digitalMediaRecord.created()));
     return digitalMedia;

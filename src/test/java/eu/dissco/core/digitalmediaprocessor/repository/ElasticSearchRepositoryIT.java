@@ -121,7 +121,7 @@ class ElasticSearchRepositoryIT {
   private DigitalMedia givenDigitalmedia() {
     return generateAttributes(FORMAT, MEDIA_URL_1)
         .withId(DOI_PREFIX + HANDLE)
-        .withOdsID(DOI_PREFIX + HANDLE)
+        .withDctermsIdentifier(DOI_PREFIX + HANDLE)
         .withOdsVersion(VERSION)
         .withDctermsCreated(Date.from(CREATED));
   }

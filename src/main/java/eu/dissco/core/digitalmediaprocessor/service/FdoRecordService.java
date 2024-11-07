@@ -1,15 +1,16 @@
 package eu.dissco.core.digitalmediaprocessor.service;
 
+import static eu.dissco.core.digitalmediaprocessor.domain.AgenRoleType.RIGHTS_OWNER;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_ID;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_HOST_NAME;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID_TYPE;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_HOST;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_HOST_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID_NAME;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID_TYPE;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MIME_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_ID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_NAME;
@@ -21,9 +22,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaWrapper;
 import eu.dissco.core.digitalmediaprocessor.properties.FdoProperties;
+import eu.dissco.core.digitalmediaprocessor.schema.Agent;
 import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -66,19 +69,33 @@ public class FdoRecordService {
   }
 
   private static void setLicense(ObjectNode attributes, DigitalMedia media) {
-    if (media.getDctermsLicense() != null && media.getDctermsLicense().matches(URL_PATTERN)) {
-      attributes.put(LICENSE_ID.getAttribute(), media.getDctermsLicense());
-    } else if (media.getDctermsLicense() != null) {
-      attributes.put(LICENSE_NAME.getAttribute(), media.getDctermsLicense());
+    if (media.getDctermsRights() != null && media.getDctermsRights().matches(URL_PATTERN)) {
+      attributes.put(LICENSE_ID.getAttribute(), media.getDctermsRights());
+    } else if (media.getDctermsRights() != null) {
+      attributes.put(LICENSE_NAME.getAttribute(), media.getDctermsRights());
     }
   }
 
   private static void setRightsHolder(ObjectNode attributes, DigitalMedia media) {
-    if (media.getDctermsRightsHolder() != null && media.getDctermsRightsHolder()
-        .matches(URL_PATTERN)) {
-      attributes.put(RIGHTS_HOLDER_ID.getAttribute(), media.getDctermsRightsHolder());
-    } else if (media.getDctermsRightsHolder() != null) {
-      attributes.put(RIGHTS_HOLDER_NAME.getAttribute(), media.getDctermsRightsHolder());
+    var rightsHolderId = collectRightsHolder(media, false);
+    var rightsHolderName = collectRightsHolder(media, true);
+    if (rightsHolderId != null) {
+      attributes.put(RIGHTS_HOLDER_ID.getAttribute(), rightsHolderId);
+    }
+    if (rightsHolderName != null) {
+      attributes.put(RIGHTS_HOLDER_NAME.getAttribute(), rightsHolderName);
+    }
+  }
+
+  private static String collectRightsHolder(DigitalMedia media, boolean name) {
+    var rightsHolderStream = media.getOdsHasAgents().stream()
+        .filter(agent -> agent.getOdsHasRoles().stream()
+            .anyMatch(role -> role.getSchemaRoleName().equals(RIGHTS_OWNER.getName())));
+    if (name) {
+      return rightsHolderStream.map(Agent::getSchemaName).filter(Objects::nonNull).reduce((a, b) -> a + " | " + b)
+          .orElse(null);
+    } else {
+      return rightsHolderStream.map(Agent::getId).filter(Objects::nonNull).reduce((a, b) -> a + " | " + b).orElse(null);
     }
   }
 
@@ -107,9 +124,9 @@ public class FdoRecordService {
     return (!currentMediaObject.digitalSpecimenID().equals(mediaObject.digitalSpecimenID())
         || !currentMediaObject.attributes().getAcAccessURI()
         .equals(mediaObject.attributes().getAcAccessURI())
-        || (currentMediaObject.attributes().getDctermsLicense() != null
-        && !currentMediaObject.attributes().getDctermsLicense()
-        .equals(mediaObject.attributes().getDctermsLicense()))
+        || (currentMediaObject.attributes().getDctermsRights() != null
+        && !currentMediaObject.attributes().getDctermsRights()
+        .equals(mediaObject.attributes().getDctermsRights()))
         || (currentMediaObject.type() != null && !currentMediaObject.type()
         .equals(mediaObject.type()))
         || (currentMediaObject.attributes().getDctermsType() != null
