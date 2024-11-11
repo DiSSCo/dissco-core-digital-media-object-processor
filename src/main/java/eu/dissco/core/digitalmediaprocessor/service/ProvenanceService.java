@@ -1,6 +1,6 @@
 package eu.dissco.core.digitalmediaprocessor.service;
 
-import static eu.dissco.core.digitalmediaprocessor.domain.AgenRoleType.SOURCE_SYSTEM;
+import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.SOURCE_SYSTEM;
 import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.PROV_SOFTWARE_AGENT;
 import static eu.dissco.core.digitalmediaprocessor.schema.Identifier.DctermsType.HANDLE;
 import static eu.dissco.core.digitalmediaprocessor.utils.AgentUtils.createMachineAgent;
@@ -8,7 +8,7 @@ import static eu.dissco.core.digitalmediaprocessor.utils.AgentUtils.createMachin
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.dissco.core.digitalmediaprocessor.domain.AgenRoleType;
+import eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
 import eu.dissco.core.digitalmediaprocessor.properties.ApplicationProperties;
 import eu.dissco.core.digitalmediaprocessor.schema.CreateUpdateTombstoneEvent;
@@ -81,7 +81,7 @@ public class ProvenanceService {
             createMachineAgent(sourceSystemName, sourceSystemID, SOURCE_SYSTEM, HANDLE,
                 PROV_SOFTWARE_AGENT),
             createMachineAgent(properties.getName(), properties.getPid(),
-                AgenRoleType.PROCESSING_SERVICE, DctermsType.DOI, PROV_SOFTWARE_AGENT)));
+                AgentRoleType.PROCESSING_SERVICE, DctermsType.DOI, PROV_SOFTWARE_AGENT)));
   }
 
   private List<OdsChangeValue> mapJsonPatch(JsonNode jsonPatch) {

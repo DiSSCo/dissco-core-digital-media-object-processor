@@ -5,7 +5,7 @@ import static eu.dissco.core.digitalmediaprocessor.schema.Identifier.DctermsType
 import static eu.dissco.core.digitalmediaprocessor.schema.Identifier.OdsGupriLevel.GLOBALLY_UNIQUE_STABLE_PERSISTENT_RESOLVABLE_FDO_COMPLIANT;
 import static eu.dissco.core.digitalmediaprocessor.schema.Identifier.OdsIdentifierStatus.PREFERRED;
 
-import eu.dissco.core.digitalmediaprocessor.domain.AgenRoleType;
+import eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType;
 import eu.dissco.core.digitalmediaprocessor.schema.Agent;
 import eu.dissco.core.digitalmediaprocessor.schema.Agent.Type;
 import eu.dissco.core.digitalmediaprocessor.schema.Identifier;
@@ -18,7 +18,7 @@ public class AgentUtils {
   private AgentUtils() {
   }
 
-  public static Agent createMachineAgent(String name, String pid, AgenRoleType role,
+  public static Agent createMachineAgent(String name, String pid, AgentRoleType role,
       DctermsType idType, Type agentType) {
     var agent = new Agent()
         .withType(agentType)

@@ -13,7 +13,7 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.generateAttributes;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaWrapper;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostHandleAttributes;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostHandleRequest;
-import static eu.dissco.core.digitalmediaprocessor.domain.AgenRoleType.RIGHTS_OWNER;
+import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.RIGHTS_OWNER;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_ID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_ID;

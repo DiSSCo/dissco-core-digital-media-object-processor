@@ -12,7 +12,7 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.TYPE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenAutoAcceptedAnnotation;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenNewAcceptedAnnotation;
-import static eu.dissco.core.digitalmediaprocessor.domain.AgenRoleType.SOURCE_SYSTEM;
+import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.SOURCE_SYSTEM;
 import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.SCHEMA_SOFTWARE_APPLICATION;
 import static eu.dissco.core.digitalmediaprocessor.schema.Identifier.DctermsType.HANDLE;
 import static org.mockito.ArgumentMatchers.any;

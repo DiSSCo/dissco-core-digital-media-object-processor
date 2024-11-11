@@ -259,15 +259,6 @@ public class ProcessingService {
 
   private Map<DigitalMediaKey, DigitalMediaRecord> getCurrentDigitalMedia(
       List<DigitalMediaWrapper> digitalMediaWrappers) {
-    var digitalMediaWrappersWithNoIds = new ArrayList<DigitalMediaWrapper>();
-    var digitalMediaWrappersWithIds = new ArrayList<DigitalMediaWrapper>();
-    digitalMediaWrappers.forEach(digitalMediaWrapper -> {
-      if (digitalMediaWrapper.attributes().getId() != null) {
-        digitalMediaWrappersWithIds.add(digitalMediaWrapper);
-      } else {
-        digitalMediaWrappersWithNoIds.add(digitalMediaWrapper);
-      }
-    });
     return repository.getDigitalMedia(
             digitalMediaWrappers.stream().map(DigitalMediaWrapper::digitalSpecimenID).toList(),
             digitalMediaWrappers.stream()

@@ -1,6 +1,6 @@
 package eu.dissco.core.digitalmediaprocessor.service;
 
-import static eu.dissco.core.digitalmediaprocessor.domain.AgenRoleType.RIGHTS_OWNER;
+import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.RIGHTS_OWNER;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_ID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;

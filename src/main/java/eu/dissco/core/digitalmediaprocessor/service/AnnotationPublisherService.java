@@ -1,7 +1,7 @@
 package eu.dissco.core.digitalmediaprocessor.service;
 
-import static eu.dissco.core.digitalmediaprocessor.domain.AgenRoleType.PROCESSING_SERVICE;
-import static eu.dissco.core.digitalmediaprocessor.domain.AgenRoleType.SOURCE_SYSTEM;
+import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.PROCESSING_SERVICE;
+import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.SOURCE_SYSTEM;
 import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.SCHEMA_SOFTWARE_APPLICATION;
 import static eu.dissco.core.digitalmediaprocessor.schema.Identifier.DctermsType.DOI;
 import static eu.dissco.core.digitalmediaprocessor.schema.Identifier.DctermsType.HANDLE;
