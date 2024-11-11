@@ -5,6 +5,7 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.DIGITAL_SPECIMEN_ID
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.DIGITAL_SPECIMEN_ID_2;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.FORMAT;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.LICENSE_TESTVAL;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_1;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.TYPE;
@@ -12,10 +13,13 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.generateAttributes;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaWrapper;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostHandleAttributes;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostHandleRequest;
+import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.RIGHTS_OWNER;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_ID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_ID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_NAME;
+import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.SCHEMA_ORGANIZATION;
+import static eu.dissco.core.digitalmediaprocessor.utils.AgentUtils.createMachineAgent;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mockStatic;
 
@@ -23,6 +27,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import eu.dissco.core.digitalmediaprocessor.TestUtils;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaWrapper;
 import eu.dissco.core.digitalmediaprocessor.properties.FdoProperties;
+import eu.dissco.core.digitalmediaprocessor.schema.Agent;
 import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia;
 import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia.DctermsType;
 import java.time.Clock;
@@ -47,6 +52,35 @@ class FdoRecordServiceTest {
   FdoRecordService fdoRecordService;
   private MockedStatic<Instant> mockedStatic;
   private MockedStatic<Clock> mockedClock;
+
+  static Stream<Arguments> genLicense() {
+    return Stream.of(
+        Arguments.of(LICENSE_ID.getAttribute(), LICENSE_TESTVAL),
+        Arguments.of(LICENSE_NAME.getAttribute(), "Apache 2.0"));
+  }
+
+  static Stream<Arguments> genRightsHolder() {
+    return Stream.of(
+        Arguments.of(List.of(
+                createMachineAgent("Naturalis Biodiversity Center", "https://ror.org/0566bfb96",
+                    RIGHTS_OWNER, null,
+                    SCHEMA_ORGANIZATION)), "Naturalis Biodiversity Center",
+            "https://ror.org/0566bfb96"),
+        Arguments.of(List.of(
+            createMachineAgent("Naturalis Biodiversity Center", null, RIGHTS_OWNER, null,
+                SCHEMA_ORGANIZATION)), "Naturalis Biodiversity Center", null),
+        Arguments.of(List.of(
+            createMachineAgent(null, "https://ror.org/0566bfb96", RIGHTS_OWNER, null,
+                SCHEMA_ORGANIZATION)), null, "https://ror.org/0566bfb96"),
+        Arguments.of(List.of(
+                createMachineAgent("Naturalis Biodiversity Center", "https://ror.org/0566bfb96",
+                    RIGHTS_OWNER, null,
+                    SCHEMA_ORGANIZATION),
+                createMachineAgent("Natural History Museum Rotterdam", "https://ror.org/01s8f2180",
+                    RIGHTS_OWNER, null, SCHEMA_ORGANIZATION)),
+            "Naturalis Biodiversity Center | Natural History Museum Rotterdam",
+            "https://ror.org/0566bfb96 | https://ror.org/01s8f2180"));
+  }
 
   @BeforeEach
   void setup() {
@@ -95,26 +129,23 @@ class FdoRecordServiceTest {
   }
 
   @ParameterizedTest
-  @MethodSource("genLicenseAndRightsHolder")
-  void testLicenseAndRightsHolder(String licenseField, String rightsHolderField,
-      String fieldValue) {
+  @MethodSource("genLicense")
+  void testGenRequestLicenseAndRightsHolder(String licenseField, String fieldValue) {
     // Given
+    var media = new DigitalMediaWrapper(
+        TYPE, DIGITAL_SPECIMEN_ID,
+        generateAttributes(FORMAT, MEDIA_URL_1)
+            .withDctermsRights(fieldValue),
+        MAPPER.createObjectNode()
+    );
     var expectedAttributes = ((ObjectNode) givenPostHandleAttributes());
     expectedAttributes.remove(LICENSE_ID.getAttribute());
     expectedAttributes
-        .put(licenseField, fieldValue)
-        .put(rightsHolderField, fieldValue);
+        .put(licenseField, fieldValue);
     var expected = List.of(MAPPER.createObjectNode()
         .set("data", MAPPER.createObjectNode()
             .put("type", "https://doi.org/21.T11148/bbad8c4e101e8af01115")
             .set("attributes", expectedAttributes)));
-    var media = new DigitalMediaWrapper(
-        TYPE, DIGITAL_SPECIMEN_ID,
-        generateAttributes(FORMAT, MEDIA_URL_1)
-            .withDctermsLicense(fieldValue)
-            .withDctermsRightsHolder(fieldValue),
-        MAPPER.createObjectNode()
-    );
 
     // When
     var result = fdoRecordService.buildPostHandleRequest(List.of(media));
@@ -123,11 +154,34 @@ class FdoRecordServiceTest {
     assertThat(result).isEqualTo(expected);
   }
 
-  static Stream<Arguments> genLicenseAndRightsHolder() {
-    return Stream.of(
-        Arguments.of(LICENSE_ID.getAttribute(), RIGHTS_HOLDER_ID.getAttribute(),
-            "https://spdx.org/licenses/Apache-2.0.html"),
-        Arguments.of(LICENSE_NAME.getAttribute(), RIGHTS_HOLDER_NAME.getAttribute(), "Apache 2.0"));
+  @ParameterizedTest
+  @MethodSource("genRightsHolder")
+  void testGenRequestLicenseAndRightsHolder(List<Agent> rightHolders, String expectedName,
+      String expectedId) {
+    // Given
+    var media = new DigitalMediaWrapper(
+        TYPE, DIGITAL_SPECIMEN_ID,
+        generateAttributes(FORMAT, MEDIA_URL_1)
+            .withOdsHasAgents(rightHolders),
+        MAPPER.createObjectNode()
+    );
+    var attributes = (ObjectNode) givenPostHandleAttributes();
+    if (expectedName != null) {
+      attributes.put(RIGHTS_HOLDER_NAME.getAttribute(), expectedName);
+    }
+    if (expectedId != null) {
+      attributes.put(RIGHTS_HOLDER_ID.getAttribute(), expectedId);
+    }
+    var expected = List.of(MAPPER.createObjectNode()
+        .set("data", MAPPER.createObjectNode()
+            .put("type", "https://doi.org/21.T11148/bbad8c4e101e8af01115")
+            .set("attributes", attributes)));
+
+    // When
+    var result = fdoRecordService.buildPostHandleRequest(List.of(media));
+
+    // Then
+    assertThat(result).isEqualTo(expected);
   }
 
   @Test
@@ -153,8 +207,7 @@ class FdoRecordServiceTest {
   @Test
   void testHandleDoesNeedUpdateLicense() throws Exception {
     var attributes = new DigitalMedia()
-        .withDctermsLicense("http://data.rbge.org.uk/living/19942272")
-        .withDctermsLicense("Different License")
+        .withDctermsRights("http://data.rbge.org.uk/living/19942272")
         .withOdsOrganisationID("https://ror.org/0x123");
     var mediaObject = new DigitalMediaWrapper(TYPE, DIGITAL_SPECIMEN_ID, attributes, null);
 
@@ -175,7 +228,7 @@ class FdoRecordServiceTest {
     // Given
     var attributes = new DigitalMedia()
         .withAcAccessURI("different uri")
-        .withDctermsLicense("http://creativecommons.org/licenses/by-nc/3.0/")
+        .withDctermsRights("http://creativecommons.org/licenses/by-nc/3.0/")
         .withOdsOrganisationID("https://ror.org/0x123");
 
     // When
@@ -191,13 +244,13 @@ class FdoRecordServiceTest {
     // Given
     var attributesCurrent = new DigitalMedia()
         .withAcAccessURI("http://data.rbge.org.uk/living/19942272")
-        .withDctermsLicense("http://creativecommons.org/licenses/by-nc/3.0/")
+        .withDctermsRights("http://creativecommons.org/licenses/by-nc/3.0/")
         .withOdsOrganisationID("https://ror.org/0x123")
         .withDctermsType(DctermsType.IMAGE);
 
     var attributesNew = new DigitalMedia()
         .withAcAccessURI("http://data.rbge.org.uk/living/19942272")
-        .withDctermsLicense("http://creativecommons.org/licenses/by-nc/3.0/")
+        .withDctermsRights("http://creativecommons.org/licenses/by-nc/3.0/")
         .withOdsOrganisationID("https://ror.org/0x123")
         .withDctermsType(DctermsType.MOVING_IMAGE);
 

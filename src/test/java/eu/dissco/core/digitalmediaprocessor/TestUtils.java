@@ -1,16 +1,20 @@
 package eu.dissco.core.digitalmediaprocessor;
 
+import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.PROCESSING_SERVICE;
+import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.SOURCE_SYSTEM;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_ID;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_HOST_NAME;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID_TYPE;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_HOST;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_HOST_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID_NAME;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID_TYPE;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MIME_TYPE;
-import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.AS_APPLICATION;
+import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.SCHEMA_SOFTWARE_APPLICATION;
+import static eu.dissco.core.digitalmediaprocessor.schema.Identifier.DctermsType.DOI;
+import static eu.dissco.core.digitalmediaprocessor.utils.AgentUtils.createMachineAgent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,14 +24,13 @@ import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaEvent;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaKey;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaWrapper;
-import eu.dissco.core.digitalmediaprocessor.schema.Agent;
-import eu.dissco.core.digitalmediaprocessor.schema.Agent.Type;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationBody;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationProcessingRequest;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationProcessingRequest.OaMotivation;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationTarget;
 import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia;
 import eu.dissco.core.digitalmediaprocessor.schema.EntityRelationship;
+import eu.dissco.core.digitalmediaprocessor.schema.Identifier.DctermsType;
 import eu.dissco.core.digitalmediaprocessor.schema.OaHasSelector;
 import eu.dissco.core.digitalmediaprocessor.utils.DigitalMediaUtils;
 import java.time.Instant;
@@ -69,7 +72,8 @@ public class TestUtils {
     );
   }
 
-  public static DigitalMediaEvent givenDigitalMediaEventWithMediaId() throws JsonProcessingException {
+  public static DigitalMediaEvent givenDigitalMediaEventWithMediaId()
+      throws JsonProcessingException {
     return new DigitalMediaEvent(
         List.of("OCR"),
         givenDigitalMediaWrapperWithMediaId()
@@ -130,7 +134,7 @@ public class TestUtils {
         DIGITAL_SPECIMEN_ID,
         generateAttributes(FORMAT, TestUtils.MEDIA_URL_1)
             .withId(HANDLE)
-            .withOdsID(HANDLE),
+            .withDctermsIdentifier(HANDLE),
         generateOriginalAttributes()
     );
   }
@@ -212,8 +216,8 @@ public class TestUtils {
         TYPE);
   }
 
-  public static DigitalMediaWrapper givenDigitalMediaWrapper(String digitalSpecimenId, String format,
-      String mediaUrl, String type) throws JsonProcessingException {
+  public static DigitalMediaWrapper givenDigitalMediaWrapper(String digitalSpecimenId,
+      String format, String mediaUrl, String type) throws JsonProcessingException {
     return new DigitalMediaWrapper(
         type,
         digitalSpecimenId,
@@ -235,21 +239,19 @@ public class TestUtils {
     return new DigitalMedia()
         .withAcAccessURI(mediaUrl)
         .withDctermsFormat(format)
-        .withDctermsLicense(LICENSE_TESTVAL)
+        .withDctermsRights(LICENSE_TESTVAL)
         .withOdsOrganisationID(MEDIA_HOST_TESTVAL)
         .withDctermsModified("2022-09-16T08:52:27.391Z")
         .withOdsSourceSystemID(SOURCE_SYSTEM_ID)
         .withOdsSourceSystemName(SOURCE_SYSTEM_NAME)
-        .withOdsHasEntityRelationship(List.of(
+        .withOdsHasEntityRelationships(List.of(
             new EntityRelationship().withType("hasDigitalSpecimen")
                 .withType("ods:EntityRelationship")
                 .withDwcRelationshipEstablishedDate(Date.from(CREATED))
                 .withDwcRelationshipOfResource("hasDigitalSpecimen")
-                .withDwcRelationshipAccordingTo("The name of the specimen processor")
-                .withOdsRelationshipAccordingToAgent(new Agent()
-                    .withType(Type.AS_APPLICATION)
-                    .withId("The id of the specimen processor")
-                    .withSchemaName("The name of the specimen processor"))
+                .withOdsHasAgents(
+                    List.of(createMachineAgent(APP_NAME, APP_HANDLE, PROCESSING_SERVICE,
+                        DOI, SCHEMA_SOFTWARE_APPLICATION)))
                 .withDwcRelatedResourceID(DOI_PREFIX + DIGITAL_SPECIMEN_ID)));
   }
 
@@ -296,10 +298,9 @@ public class TestUtils {
 
   public static AutoAcceptedAnnotation givenAutoAcceptedAnnotation(
       AnnotationProcessingRequest annotation) {
-    return new AutoAcceptedAnnotation(new Agent()
-        .withType(AS_APPLICATION)
-        .withId(APP_HANDLE)
-        .withSchemaName(APP_NAME), annotation);
+    return new AutoAcceptedAnnotation(
+        createMachineAgent(APP_NAME, APP_HANDLE, PROCESSING_SERVICE, DOI,
+            SCHEMA_SOFTWARE_APPLICATION), annotation);
   }
 
   public static AnnotationProcessingRequest givenNewAcceptedAnnotation()
@@ -314,15 +315,13 @@ public class TestUtils {
                 DigitalMediaUtils.flattenToDigitalMedia(givenDigitalMediaRecord()))))
             .withDctermsReferences(SOURCE_SYSTEM_ID))
         .withDctermsCreated(Date.from(CREATED))
-        .withDctermsCreator(new Agent()
-            .withType(AS_APPLICATION)
-            .withId(SOURCE_SYSTEM_ID)
-            .withSchemaName(SOURCE_SYSTEM_NAME))
+        .withDctermsCreator(createMachineAgent(SOURCE_SYSTEM_NAME, SOURCE_SYSTEM_ID, SOURCE_SYSTEM,
+            DctermsType.HANDLE, SCHEMA_SOFTWARE_APPLICATION))
         .withOaHasTarget(new AnnotationTarget()
             .withId(DOI_PREFIX + HANDLE)
-            .withOdsID(DOI_PREFIX + HANDLE)
+            .withDctermsIdentifier(DOI_PREFIX + HANDLE)
             .withType(TYPE)
-            .withOdsType("ods:DigitalMedia")
+            .withOdsFdoType("ods:DigitalMedia")
             .withOaHasSelector(new OaHasSelector()
                 .withAdditionalProperty("@type", "ods:ClassSelector")
                 .withAdditionalProperty("ods:class", "$")));

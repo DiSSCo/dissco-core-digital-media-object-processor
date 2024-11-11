@@ -4,7 +4,6 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.APP_HANDLE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.APP_NAME;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.CREATED;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.DOI_PREFIX;
-import static eu.dissco.core.digitalmediaprocessor.TestUtils.HANDLE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.LICENSE_TESTVAL;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.SOURCE_SYSTEM_ID;
@@ -13,7 +12,9 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.TYPE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenAutoAcceptedAnnotation;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenNewAcceptedAnnotation;
-import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.AS_APPLICATION;
+import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.SOURCE_SYSTEM;
+import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.SCHEMA_SOFTWARE_APPLICATION;
+import static eu.dissco.core.digitalmediaprocessor.schema.Identifier.DctermsType.HANDLE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -21,14 +22,15 @@ import static org.mockito.Mockito.mockStatic;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import eu.dissco.core.digitalmediaprocessor.TestUtils;
 import eu.dissco.core.digitalmediaprocessor.domain.UpdatedDigitalMediaRecord;
 import eu.dissco.core.digitalmediaprocessor.properties.ApplicationProperties;
-import eu.dissco.core.digitalmediaprocessor.schema.Agent;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationBody;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationProcessingRequest;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationProcessingRequest.OaMotivation;
 import eu.dissco.core.digitalmediaprocessor.schema.AnnotationTarget;
 import eu.dissco.core.digitalmediaprocessor.schema.OaHasSelector;
+import eu.dissco.core.digitalmediaprocessor.utils.AgentUtils;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -115,18 +117,19 @@ class AnnotationPublisherServiceTest {
                 new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
                     .withAdditionalProperty("ods:field", "$['dcterms:description']"),
                 null))
-        ), Arguments.of(
+        ),
+        Arguments.of(
             MAPPER.readTree(
                 """
                       [{
                         "op": "copy",
-                        "path": "/dcterms:rights",
-                        "from": "/dcterms:license"
+                        "path": "/xmpRights:WebStatement",
+                        "from": "/dcterms:rights"
                       }]
                     """),
             List.of(givenAcceptedAnnotation(OaMotivation.ODS_ADDING,
                 new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
-                    .withAdditionalProperty("ods:field", "$['dcterms:rights']"),
+                    .withAdditionalProperty("ods:field", "$['xmpRights:WebStatement']"),
                 new AnnotationBody().withOaValue(List.of(LICENSE_TESTVAL))
                     .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID)))
         ),
@@ -135,18 +138,18 @@ class AnnotationPublisherServiceTest {
                 """
                       [{
                         "op": "move",
-                        "path": "/dcterms:rights",
-                        "from": "/dcterms:license"
+                        "path": "/xmpRights:WebStatement",
+                        "from": "/dcterms:rights"
                       }]
                     """),
             List.of(givenAcceptedAnnotation(OaMotivation.ODS_ADDING,
                     new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
-                        .withAdditionalProperty("ods:field", "$['dcterms:rights']"),
+                        .withAdditionalProperty("ods:field", "$['xmpRights:WebStatement']"),
                     new AnnotationBody().withOaValue(List.of(LICENSE_TESTVAL))
                         .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID)),
                 givenAcceptedAnnotation(OaMotivation.ODS_DELETING, new OaHasSelector()
                     .withAdditionalProperty("@type", "ods:FieldSelector")
-                    .withAdditionalProperty("ods:field", "$['dcterms:license']"), null))
+                    .withAdditionalProperty("ods:field", "$['dcterms:rights']"), null))
         ));
   }
 
@@ -156,15 +159,15 @@ class AnnotationPublisherServiceTest {
         .withOaMotivation(motivation)
         .withOaHasBody(body)
         .withOaHasTarget(new AnnotationTarget()
-            .withOdsType("ods:DigitalMedia")
+            .withOdsFdoType("ods:DigitalMedia")
             .withType(TYPE)
-            .withId(DOI_PREFIX + HANDLE)
-            .withOdsID(DOI_PREFIX + HANDLE)
+            .withId(DOI_PREFIX + TestUtils.HANDLE)
+            .withDctermsIdentifier(DOI_PREFIX + TestUtils.HANDLE)
             .withOaHasSelector(selector))
         .withDctermsCreated(Date.from(CREATED))
         .withDctermsCreator(
-            new Agent().withType(AS_APPLICATION).withId(SOURCE_SYSTEM_ID)
-                .withSchemaName(SOURCE_SYSTEM_NAME));
+            AgentUtils.createMachineAgent(SOURCE_SYSTEM_NAME, SOURCE_SYSTEM_ID, SOURCE_SYSTEM,
+                HANDLE, SCHEMA_SOFTWARE_APPLICATION));
     if (motivation == OaMotivation.OA_EDITING) {
       annotation.withOaMotivatedBy("Received update information from Source System with id: "
           + SOURCE_SYSTEM_ID);

@@ -1,14 +1,19 @@
 package eu.dissco.core.digitalmediaprocessor.service;
 
+import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.SOURCE_SYSTEM;
+import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.PROV_SOFTWARE_AGENT;
+import static eu.dissco.core.digitalmediaprocessor.schema.Identifier.DctermsType.HANDLE;
+import static eu.dissco.core.digitalmediaprocessor.utils.AgentUtils.createMachineAgent;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
 import eu.dissco.core.digitalmediaprocessor.properties.ApplicationProperties;
-import eu.dissco.core.digitalmediaprocessor.schema.Agent;
-import eu.dissco.core.digitalmediaprocessor.schema.Agent.Type;
 import eu.dissco.core.digitalmediaprocessor.schema.CreateUpdateTombstoneEvent;
 import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia;
+import eu.dissco.core.digitalmediaprocessor.schema.Identifier.DctermsType;
 import eu.dissco.core.digitalmediaprocessor.schema.OdsChangeValue;
 import eu.dissco.core.digitalmediaprocessor.schema.ProvActivity;
 import eu.dissco.core.digitalmediaprocessor.schema.ProvEntity;
@@ -41,15 +46,15 @@ public class ProvenanceService {
   private CreateUpdateTombstoneEvent generateCreateUpdateTombStoneEvent(
       DigitalMedia digitalMedia, ProvActivity.Type activityType,
       JsonNode jsonPatch) {
-    var entityID = digitalMedia.getOdsID() + "/" + digitalMedia.getOdsVersion();
+    var entityID = digitalMedia.getDctermsIdentifier() + "/" + digitalMedia.getOdsVersion();
     var activityID = UUID.randomUUID().toString();
     var sourceSystemID = digitalMedia.getOdsSourceSystemID();
     var sourceSystemName = digitalMedia.getOdsSourceSystemName();
     return new CreateUpdateTombstoneEvent()
         .withId(entityID)
         .withType("ods:CreateUpdateTombstoneEvent")
-        .withOdsID(entityID)
-        .withOdsType(properties.getCreateUpdateTombstoneEventType())
+        .withDctermsIdentifier(entityID)
+        .withOdsFdoType(properties.getCreateUpdateTombstoneEventType())
         .withProvActivity(new ProvActivity()
             .withId(activityID)
             .withType(activityType)
@@ -58,13 +63,13 @@ public class ProvenanceService {
             .withProvWasAssociatedWith(List.of(
                 new ProvWasAssociatedWith()
                     .withId(sourceSystemID)
-                    .withProvHadRole(ProvHadRole.ODS_REQUESTOR),
+                    .withProvHadRole(ProvHadRole.REQUESTOR),
                 new ProvWasAssociatedWith()
                     .withId(properties.getPid())
-                    .withProvHadRole(ProvHadRole.ODS_APPROVER),
+                    .withProvHadRole(ProvHadRole.APPROVER),
                 new ProvWasAssociatedWith()
                     .withId(properties.getPid())
-                    .withProvHadRole(ProvHadRole.ODS_GENERATOR)))
+                    .withProvHadRole(ProvHadRole.GENERATOR)))
             .withProvUsed(entityID)
             .withRdfsComment("Digital Media newly created"))
         .withProvEntity(new ProvEntity()
@@ -72,16 +77,11 @@ public class ProvenanceService {
             .withType("ods:DigitalMedia")
             .withProvValue(mapEntityToProvValue(digitalMedia))
             .withProvWasGeneratedBy(activityID))
-        .withOdsHasProvAgent(List.of(
-            new Agent()
-                .withType(Type.AS_APPLICATION)
-                .withId(sourceSystemID)
-                .withSchemaName(sourceSystemName),
-            new Agent()
-                .withType(Type.AS_APPLICATION)
-                .withId(properties.getPid())
-                .withSchemaName(properties.getName())
-        ));
+        .withOdsHasAgents(List.of(
+            createMachineAgent(sourceSystemName, sourceSystemID, SOURCE_SYSTEM, HANDLE,
+                PROV_SOFTWARE_AGENT),
+            createMachineAgent(properties.getName(), properties.getPid(),
+                AgentRoleType.PROCESSING_SERVICE, DctermsType.DOI, PROV_SOFTWARE_AGENT)));
   }
 
   private List<OdsChangeValue> mapJsonPatch(JsonNode jsonPatch) {

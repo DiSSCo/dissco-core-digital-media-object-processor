@@ -4,8 +4,8 @@ import static eu.dissco.core.digitalmediaprocessor.database.jooq.Tables.DIGITAL_
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaWrapper;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
+import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaWrapper;
 import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia;
 import java.time.Instant;
 import java.util.Collection;
