@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.3.5</version>
+		<version>3.4.0</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>eu.dissco.core</groupId>
@@ -21,6 +21,7 @@
 		<mockito-inline.version>5.2.0</mockito-inline.version>
 		<testcontainers.version>1.20.1</testcontainers.version>
 		<springdoc.version>2.6.0</springdoc.version>
+		<ok-http.version>4.12.0</ok-http.version>
 		<sonar.organization>dissco</sonar.organization>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 		<sonar.coverage.jacoco.xmlReportPaths>../app-it/target/site/jacoco-aggregate/jacoco.xml
@@ -166,11 +167,13 @@
 		<dependency>
 			<groupId>com.squareup.okhttp3</groupId>
 			<artifactId>okhttp</artifactId>
+			<version>${ok-http.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.squareup.okhttp3</groupId>
 			<artifactId>mockwebserver</artifactId>
+			<version>${ok-http.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
