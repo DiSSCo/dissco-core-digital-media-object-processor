@@ -14,10 +14,10 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaWr
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostHandleAttributes;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenPostHandleRequest;
 import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.RIGHTS_OWNER;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_ID;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_URL;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_NAME;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_ID;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_NAME;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_PID;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER;
 import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.SCHEMA_ORGANIZATION;
 import static eu.dissco.core.digitalmediaprocessor.utils.AgentUtils.createMachineAgent;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,7 +55,7 @@ class FdoRecordServiceTest {
 
   static Stream<Arguments> genLicense() {
     return Stream.of(
-        Arguments.of(LICENSE_ID.getAttribute(), LICENSE_TESTVAL),
+        Arguments.of(LICENSE_URL.getAttribute(), LICENSE_TESTVAL),
         Arguments.of(LICENSE_NAME.getAttribute(), "Apache 2.0"));
   }
 
@@ -139,7 +139,7 @@ class FdoRecordServiceTest {
         MAPPER.createObjectNode()
     );
     var expectedAttributes = ((ObjectNode) givenPostHandleAttributes());
-    expectedAttributes.remove(LICENSE_ID.getAttribute());
+    expectedAttributes.remove(LICENSE_URL.getAttribute());
     expectedAttributes
         .put(licenseField, fieldValue);
     var expected = List.of(MAPPER.createObjectNode()
@@ -167,10 +167,10 @@ class FdoRecordServiceTest {
     );
     var attributes = (ObjectNode) givenPostHandleAttributes();
     if (expectedName != null) {
-      attributes.put(RIGHTS_HOLDER_NAME.getAttribute(), expectedName);
+      attributes.put(RIGHTS_HOLDER.getAttribute(), expectedName);
     }
     if (expectedId != null) {
-      attributes.put(RIGHTS_HOLDER_ID.getAttribute(), expectedId);
+      attributes.put(RIGHTS_HOLDER_PID.getAttribute(), expectedId);
     }
     var expected = List.of(MAPPER.createObjectNode()
         .set("data", MAPPER.createObjectNode()
