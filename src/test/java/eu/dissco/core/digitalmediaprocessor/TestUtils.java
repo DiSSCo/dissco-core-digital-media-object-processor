@@ -2,7 +2,7 @@ package eu.dissco.core.digitalmediaprocessor;
 
 import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.PROCESSING_SERVICE;
 import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.SOURCE_SYSTEM;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_ID;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_URL;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_HOST;
@@ -293,7 +293,7 @@ public class TestUtils {
         .put(MEDIA_ID_NAME.getAttribute(), "ac:accessURI")
         .put(MEDIA_TYPE.getAttribute(), TYPE)
         .put(MIME_TYPE.getAttribute(), FORMAT)
-        .put(LICENSE_ID.getAttribute(), LICENSE_TESTVAL);
+        .put(LICENSE_URL.getAttribute(), LICENSE_TESTVAL);
   }
 
   public static AutoAcceptedAnnotation givenAutoAcceptedAnnotation(
