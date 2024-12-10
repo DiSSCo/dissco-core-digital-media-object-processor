@@ -1,7 +1,7 @@
 package eu.dissco.core.digitalmediaprocessor.service;
 
 import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.RIGHTS_OWNER;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_ID;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_URL;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_TYPE;
@@ -12,8 +12,8 @@ import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.M
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MIME_TYPE;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_ID;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_NAME;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_PID;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER;
 import static eu.dissco.core.digitalmediaprocessor.utils.DigitalMediaUtils.DOI_PREFIX;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -70,7 +70,7 @@ public class FdoRecordService {
 
   private static void setLicense(ObjectNode attributes, DigitalMedia media) {
     if (media.getDctermsRights() != null && media.getDctermsRights().matches(URL_PATTERN)) {
-      attributes.put(LICENSE_ID.getAttribute(), media.getDctermsRights());
+      attributes.put(LICENSE_URL.getAttribute(), media.getDctermsRights());
     } else if (media.getDctermsRights() != null) {
       attributes.put(LICENSE_NAME.getAttribute(), media.getDctermsRights());
     }
@@ -80,10 +80,10 @@ public class FdoRecordService {
     var rightsHolderId = collectRightsHolder(media, false);
     var rightsHolderName = collectRightsHolder(media, true);
     if (rightsHolderId != null) {
-      attributes.put(RIGHTS_HOLDER_ID.getAttribute(), rightsHolderId);
+      attributes.put(RIGHTS_HOLDER_PID.getAttribute(), rightsHolderId);
     }
     if (rightsHolderName != null) {
-      attributes.put(RIGHTS_HOLDER_NAME.getAttribute(), rightsHolderName);
+      attributes.put(RIGHTS_HOLDER.getAttribute(), rightsHolderName);
     }
   }
 

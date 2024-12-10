@@ -15,9 +15,9 @@ public enum FdoProfileAttributes {
   MEDIA_TYPE("mediaType"),
   MIME_TYPE("mimeType"),
   LICENSE_NAME("licenseName"),
-  LICENSE_ID("licenseId"),
-  RIGHTS_HOLDER_ID("rightsHolderId"),
-  RIGHTS_HOLDER_NAME("rightsHolderName");
+  LICENSE_URL("licenseUrl"),
+  RIGHTS_HOLDER_PID("rightsHolderPid"),
+  RIGHTS_HOLDER("rightsHolder");
 
   private final String attribute;
 
