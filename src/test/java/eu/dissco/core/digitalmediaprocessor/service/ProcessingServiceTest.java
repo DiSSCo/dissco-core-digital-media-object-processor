@@ -272,12 +272,12 @@ class ProcessingServiceTest {
   @Test
   void testNewDigitalMediaWithMediaId()throws Exception {
     // Given
-    var expected = List.of(givenDigitalMediaRecordWithId());
+    var expected = List.of(givenDigitalMediaRecordWithVersion(1));
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(List.of());
     given(bulkResponse.errors()).willReturn(false);
     given(elasticRepository.indexDigitalMedia(
-        Set.of(givenDigitalMediaRecordWithId()))).willReturn(bulkResponse);
+        Set.of(givenDigitalMediaRecordWithVersion(1)))).willReturn(bulkResponse);
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaEventWithMediaId()));

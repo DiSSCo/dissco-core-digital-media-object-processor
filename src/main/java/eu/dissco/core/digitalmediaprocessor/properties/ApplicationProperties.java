@@ -11,10 +11,10 @@ import org.springframework.validation.annotation.Validated;
 public class ApplicationProperties {
 
   @NotBlank
-  private String name = "dissco-core-digital-media-processor";
+  private String name = "DiSSCo Digital Media Processing Service";
 
   @NotBlank
-  private String pid = "https://hdl.handle.net/TEST/123-123-123";
+  private String pid = "https://doi.org/10.5281/zenodo.14383386";
 
   @NotBlank
   private String createUpdateTombstoneEventType = "https://doi.org/21.T11148/d7570227982f70256af3";

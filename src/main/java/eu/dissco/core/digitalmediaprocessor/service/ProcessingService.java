@@ -193,8 +193,8 @@ public class ProcessingService {
       return false;
     }
     var currentModified = currentDigitalMediaWrapper.attributes().getDctermsModified();
-    currentDigitalMediaWrapper.attributes().setDctermsModified(null);
-    digitalMediaWrapper.attributes().setDctermsModified(null);
+    var currentCreated = currentDigitalMediaWrapper.attributes().getDctermsCreated();
+    setGeneratedTimestampToNull(currentDigitalMediaWrapper, digitalMediaWrapper);
     var entityRelationships = digitalMediaWrapper.attributes().getOdsHasEntityRelationships();
     setTimestampsEntityRelationships(entityRelationships,
         currentDigitalMediaWrapper.attributes().getOdsHasEntityRelationships());
@@ -206,12 +206,24 @@ public class ProcessingService {
     ) {
       digitalMediaWrapper.attributes().setDctermsModified(currentModified);
       currentDigitalMediaWrapper.attributes().setDctermsModified(currentModified);
+      digitalMediaWrapper.attributes().setDctermsCreated(currentCreated);
+      currentDigitalMediaWrapper.attributes().setDctermsCreated(currentCreated);
       return true;
     } else {
       digitalMediaWrapper.attributes().setDctermsModified(formatter.format(Instant.now()));
       currentDigitalMediaWrapper.attributes().setDctermsModified(currentModified);
+      digitalMediaWrapper.attributes().setDctermsCreated(currentCreated);
+      digitalMediaWrapper.attributes().setDctermsCreated(currentCreated);
       return false;
     }
+  }
+
+  private static void setGeneratedTimestampToNull(DigitalMediaWrapper currentDigitalMediaWrapper,
+      DigitalMediaWrapper digitalMediaWrapper) {
+    currentDigitalMediaWrapper.attributes().setDctermsModified(null);
+    digitalMediaWrapper.attributes().setDctermsModified(null);
+    currentDigitalMediaWrapper.attributes().setDctermsCreated(null);
+    digitalMediaWrapper.attributes().setDctermsCreated(null);
   }
 
   private void checkOriginalData(DigitalMediaWrapper currentDigitalMediaWrapper,
@@ -715,6 +727,8 @@ public class ProcessingService {
         return null;
       }
     }
+    event.digitalMediaWrapper().attributes().setId(null);
+    event.digitalMediaWrapper().attributes().setDctermsIdentifier(null);
     return new DigitalMediaRecord(
         handle,
         1,
