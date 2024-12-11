@@ -1,8 +1,8 @@
 package eu.dissco.core.digitalmediaprocessor.service;
 
 import static eu.dissco.core.digitalmediaprocessor.domain.AgentRoleType.RIGHTS_OWNER;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_URL;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_NAME;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LICENSE_URL;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_PID;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.LINKED_DO_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_HOST;
@@ -12,8 +12,9 @@ import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.M
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MIME_TYPE;
-import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_PID;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.RIGHTS_HOLDER_PID;
 import static eu.dissco.core.digitalmediaprocessor.utils.DigitalMediaUtils.DOI_PREFIX;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -54,15 +55,16 @@ public class FdoRecordService {
   private JsonNode generateAttributes(DigitalMediaWrapper mediaObject) {
     var media = mediaObject.attributes();
     var attributes = mapper.createObjectNode()
-    .put(MEDIA_HOST.getAttribute(), media.getOdsOrganisationID())
-    .put(MEDIA_HOST_NAME.getAttribute(), media.getOdsOrganisationName())
-    .put(LINKED_DO_PID.getAttribute(), mediaObject.digitalSpecimenID())
-    .put(LINKED_DO_TYPE.getAttribute(), fdoProperties.getSpecimenType())
-    .put(MEDIA_ID.getAttribute(), media.getAcAccessURI())
-    .put(MEDIA_ID_TYPE.getAttribute(), "Resolvable")
-    .put(MEDIA_ID_NAME.getAttribute(), "ac:accessURI")
-    .put(MEDIA_TYPE.getAttribute(), "Image")
-    .put(MIME_TYPE.getAttribute(), media.getDctermsFormat());
+        .put(REFERENT_NAME.getAttribute(), media.getAcAccessURI())
+        .put(MEDIA_HOST.getAttribute(), media.getOdsOrganisationID())
+        .put(MEDIA_HOST_NAME.getAttribute(), media.getOdsOrganisationName())
+        .put(LINKED_DO_PID.getAttribute(), mediaObject.digitalSpecimenID())
+        .put(LINKED_DO_TYPE.getAttribute(), fdoProperties.getSpecimenType())
+        .put(MEDIA_ID.getAttribute(), media.getAcAccessURI())
+        .put(MEDIA_ID_TYPE.getAttribute(), "Resolvable")
+        .put(MEDIA_ID_NAME.getAttribute(), "ac:accessURI")
+        .put(MEDIA_TYPE.getAttribute(), "Image")
+        .put(MIME_TYPE.getAttribute(), media.getDctermsFormat());
     setLicense(attributes, media);
     setRightsHolder(attributes, media);
     return attributes;
@@ -92,10 +94,12 @@ public class FdoRecordService {
         .filter(agent -> agent.getOdsHasRoles().stream()
             .anyMatch(role -> role.getSchemaRoleName().equals(RIGHTS_OWNER.getName())));
     if (name) {
-      return rightsHolderStream.map(Agent::getSchemaName).filter(Objects::nonNull).reduce((a, b) -> a + " | " + b)
+      return rightsHolderStream.map(Agent::getSchemaName).filter(Objects::nonNull)
+          .reduce((a, b) -> a + " | " + b)
           .orElse(null);
     } else {
-      return rightsHolderStream.map(Agent::getId).filter(Objects::nonNull).reduce((a, b) -> a + " | " + b).orElse(null);
+      return rightsHolderStream.map(Agent::getId).filter(Objects::nonNull)
+          .reduce((a, b) -> a + " | " + b).orElse(null);
     }
   }
 

@@ -12,6 +12,7 @@ import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.M
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_ID_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MEDIA_TYPE;
 import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.MIME_TYPE;
+import static eu.dissco.core.digitalmediaprocessor.domain.FdoProfileAttributes.REFERENT_NAME;
 import static eu.dissco.core.digitalmediaprocessor.schema.Agent.Type.SCHEMA_SOFTWARE_APPLICATION;
 import static eu.dissco.core.digitalmediaprocessor.schema.Identifier.DctermsType.DOI;
 import static eu.dissco.core.digitalmediaprocessor.utils.AgentUtils.createMachineAgent;
@@ -284,6 +285,7 @@ public class TestUtils {
 
   public static JsonNode givenPostHandleAttributes() {
     return MAPPER.createObjectNode()
+        .put(REFERENT_NAME.getAttribute(), MEDIA_URL_1)
         .put(MEDIA_HOST.getAttribute(), MEDIA_HOST_TESTVAL)
         .put(MEDIA_HOST_NAME.getAttribute(), (String) null)
         .put(LINKED_DO_PID.getAttribute(), DIGITAL_SPECIMEN_ID)

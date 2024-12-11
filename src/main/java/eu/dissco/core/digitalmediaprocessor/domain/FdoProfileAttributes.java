@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum FdoProfileAttributes {
-
+  REFERENT_NAME("referentName"),
   MEDIA_HOST("mediaHost"),
   MEDIA_HOST_NAME("mediaHostName"),
   LINKED_DO_PID("linkedDigitalObjectPid"),
