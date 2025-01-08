@@ -92,8 +92,8 @@ class AnnotationPublisherServiceTest {
                       }]
                     """),
             List.of(givenAcceptedAnnotation(OaMotivation.OA_EDITING,
-                new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
-                    .withAdditionalProperty("ods:field",
+                new OaHasSelector().withAdditionalProperty("@type", "ods:TermSelector")
+                    .withAdditionalProperty("ods:term",
                         "$['dcterms:format']"),
                 new AnnotationBody().withOaValue(List.of("image/jpeg"))
                     .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID))
@@ -114,8 +114,8 @@ class AnnotationPublisherServiceTest {
                       }]
                     """),
             List.of(givenAcceptedAnnotation(OaMotivation.ODS_DELETING,
-                new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
-                    .withAdditionalProperty("ods:field", "$['dcterms:description']"),
+                new OaHasSelector().withAdditionalProperty("@type", "ods:TermSelector")
+                    .withAdditionalProperty("ods:term", "$['dcterms:description']"),
                 null))
         ),
         Arguments.of(
@@ -128,8 +128,8 @@ class AnnotationPublisherServiceTest {
                       }]
                     """),
             List.of(givenAcceptedAnnotation(OaMotivation.ODS_ADDING,
-                new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
-                    .withAdditionalProperty("ods:field", "$['xmpRights:WebStatement']"),
+                new OaHasSelector().withAdditionalProperty("@type", "ods:TermSelector")
+                    .withAdditionalProperty("ods:term", "$['xmpRights:WebStatement']"),
                 new AnnotationBody().withOaValue(List.of(LICENSE_TESTVAL))
                     .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID)))
         ),
@@ -143,13 +143,13 @@ class AnnotationPublisherServiceTest {
                       }]
                     """),
             List.of(givenAcceptedAnnotation(OaMotivation.ODS_ADDING,
-                    new OaHasSelector().withAdditionalProperty("@type", "ods:FieldSelector")
-                        .withAdditionalProperty("ods:field", "$['xmpRights:WebStatement']"),
+                    new OaHasSelector().withAdditionalProperty("@type", "ods:TermSelector")
+                        .withAdditionalProperty("ods:term", "$['xmpRights:WebStatement']"),
                     new AnnotationBody().withOaValue(List.of(LICENSE_TESTVAL))
                         .withType("oa:TextualBody").withDctermsReferences(SOURCE_SYSTEM_ID)),
                 givenAcceptedAnnotation(OaMotivation.ODS_DELETING, new OaHasSelector()
-                    .withAdditionalProperty("@type", "ods:FieldSelector")
-                    .withAdditionalProperty("ods:field", "$['dcterms:rights']"), null))
+                    .withAdditionalProperty("@type", "ods:TermSelector")
+                    .withAdditionalProperty("ods:term", "$['dcterms:rights']"), null))
         ));
   }
 
