@@ -1,10 +1,12 @@
 package eu.dissco.core.digitalmediaprocessor.service;
 
 
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.DIGITAL_SPECIMEN_ID;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.FORMAT;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.FORMAT_2;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MAPPER;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.MEDIA_URL_1;
+import static eu.dissco.core.digitalmediaprocessor.TestUtils.TYPE;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.UPDATED_TIMESTAMP;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.generateAttributes;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.generateOriginalAttributes;
@@ -37,14 +39,11 @@ class EqualityServiceTest {
     equalityService = new EqualityService(JSON_PATH_CONFIG, MAPPER);
   }
 
-  @Test
-  void testIsUnequal() throws Exception {
-    // Given
-    var currentDigitalMedia = givenDigitalMediaRecord(FORMAT_2);
-    var digitalMedia = givenDigitalMediaWrapper();
-
+  @ParameterizedTest
+  @MethodSource("provideUnequalMedia")
+  void testIsUnequal(DigitalMediaWrapper currentDigitalMedia, DigitalMediaWrapper digitalMedia) {
     // When
-    var result = equalityService.isEqual(currentDigitalMedia.digitalMediaWrapper(), digitalMedia);
+    var result = equalityService.isEqual(currentDigitalMedia, digitalMedia);
 
     // Then
     assertThat(result).isFalse();
@@ -82,11 +81,26 @@ class EqualityServiceTest {
     assertThat(result).isEqualTo(expected);
   }
 
+  private static Stream<Arguments> provideUnequalMedia() throws Exception {
+    return Stream.of(
+        Arguments.of(givenDigitalMediaRecord(FORMAT_2).digitalMediaWrapper(), givenDigitalMediaWrapper()),
+        Arguments.of(null, givenDigitalMediaWrapper()),
+        Arguments.of(new DigitalMediaWrapper(TYPE, DIGITAL_SPECIMEN_ID, null, generateOriginalAttributes()), givenDigitalMediaWrapper())
+    );
+  }
 
   private static Stream<Arguments> provideEqualMedia() throws Exception {
     return Stream.of(
         Arguments.of(givenDigitalMediaWrapper(), givenDigitalMediaWrapper()),
-        Arguments.of(givenDigitalMediaWrapper(), changeDates(givenDigitalMediaWrapper()))
+        Arguments.of(givenDigitalMediaWrapper(), changeDates(givenDigitalMediaWrapper()),
+        Arguments.of(givenDigitalMediaWrapper(), changeDates(
+            new DigitalMediaWrapper(
+                TYPE,
+                DIGITAL_SPECIMEN_ID,
+                changeDates(givenDigitalMediaWrapper()).attributes(),
+                MAPPER.createObjectNode()
+            )
+        )))
     );
   }
 
