@@ -256,7 +256,7 @@ public class TestUtils {
                 .withDwcRelatedResourceID(DOI_PREFIX + DIGITAL_SPECIMEN_ID)));
   }
 
-  private static JsonNode generateOriginalAttributes() throws JsonProcessingException {
+  public static JsonNode generateOriginalAttributes() throws JsonProcessingException {
     return MAPPER.readValue(
         """
              {
