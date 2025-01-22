@@ -20,7 +20,6 @@ import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaEv
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecord;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordNoOriginalData;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordPhysical;
-import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordWithId;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaRecordWithVersion;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenDigitalMediaWrapper;
 import static eu.dissco.core.digitalmediaprocessor.TestUtils.givenJsonPatch;
@@ -93,7 +92,8 @@ class ProcessingServiceTest {
   private Environment environment;
   @Mock
   private AnnotationPublisherService annotationPublisherService;
-
+  @Mock
+  private EqualityService equalityService;
   private MockedStatic<Instant> mockedInstant;
   private MockedStatic<Clock> mockedClock;
 
@@ -103,7 +103,7 @@ class ProcessingServiceTest {
   void setup() {
     service = new ProcessingService(MAPPER, repository, fdoRecordService, handleComponent,
         elasticRepository, publisherService, digitalSpecimenRepository, environment,
-        annotationPublisherService);
+        annotationPublisherService, equalityService);
     Clock clock = Clock.fixed(CREATED, ZoneOffset.UTC);
     Instant instant = Instant.now(clock);
     mockedInstant = mockStatic(Instant.class);
@@ -127,6 +127,7 @@ class ProcessingServiceTest {
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(
         List.of(givenDigitalMediaRecord()));
+    given(equalityService.isEqual(any(), any())).willReturn(true);
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaEvent()));
@@ -140,6 +141,7 @@ class ProcessingServiceTest {
   void testEqualDigitalMediaDifferentOriginalData()
       throws JsonProcessingException, DigitalSpecimenNotFoundException {
     // Given
+    given(equalityService.isEqual(any(), any())).willReturn(true);
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(
         List.of(givenDigitalMediaRecordNoOriginalData()));
@@ -156,6 +158,8 @@ class ProcessingServiceTest {
   void testUnequalDigitalMediaNoHandleUpdate() throws Exception {
     // Given
     var expected = List.of(givenDigitalMediaRecordWithVersion(2));
+    given(equalityService.isEqual(any(), any())).willReturn(false);
+    given(equalityService.setEventDates(any(), any())).willReturn(givenDigitalMediaEvent());
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(
         List.of(givenDigitalMediaRecord(FORMAT_2)));
@@ -178,6 +182,8 @@ class ProcessingServiceTest {
   @Test
   void testUnequalDigitalMediaHandleUpdate() throws Exception {
     // Given
+    given(equalityService.isEqual(any(), any())).willReturn(false);
+    given(equalityService.setEventDates(any(), any())).willReturn(givenDigitalMediaEvent());
     var expected = List.of(givenDigitalMediaRecordWithVersion(2));
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(
@@ -185,6 +191,8 @@ class ProcessingServiceTest {
     given(bulkResponse.errors()).willReturn(false);
     given(elasticRepository.indexDigitalMedia(expected)).willReturn(bulkResponse);
     given(fdoRecordService.handleNeedsUpdate(any(), any())).willReturn(true);
+    given(equalityService.isEqual(any(), any())).willReturn(false);
+    given(equalityService.setEventDates(any(), eq(givenDigitalMediaEvent()))).willReturn(givenDigitalMediaEvent());
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaEvent()));
@@ -203,6 +211,8 @@ class ProcessingServiceTest {
   @Test
   void testUnequalDigitalMediaHandleUpdateFailed() throws Exception {
     // Given
+    given(equalityService.isEqual(any(), any())).willReturn(false);
+    given(equalityService.setEventDates(any(), any())).willReturn(givenDigitalMediaEvent());
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(
         List.of(givenDigitalMediaRecord(FORMAT_2)));
@@ -224,6 +234,8 @@ class ProcessingServiceTest {
   @Test
   void testUnequalDigitalMediaHandleUpdateFailedKafkaFailed() throws Exception {
     // Given
+    given(equalityService.isEqual(any(), any())).willReturn(false);
+    given(equalityService.setEventDates(any(), any())).willReturn(givenDigitalMediaEvent());
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(
         List.of(givenDigitalMediaRecord(FORMAT_2)));
@@ -584,6 +596,9 @@ class ProcessingServiceTest {
     given(fdoRecordService.handleNeedsUpdate(any(), any())).willReturn(false);
     givenBulkResponse();
     given(elasticRepository.indexDigitalMedia(anyList())).willReturn(bulkResponse);
+    given(equalityService.setEventDates(any(), eq(givenDigitalMediaEvent()))).willReturn(givenDigitalMediaEvent());
+    given(equalityService.setEventDates(any(), eq(secondEvent))).willReturn(secondEvent);
+    given(equalityService.setEventDates(any(), eq(thirdEvent))).willReturn(thirdEvent);
 
     // When
     var result = service.handleMessage(
@@ -614,6 +629,10 @@ class ProcessingServiceTest {
     given(fdoRecordService.handleNeedsUpdate(any(), any())).willReturn(true);
     givenBulkResponse();
     given(elasticRepository.indexDigitalMedia(anyList())).willReturn(bulkResponse);
+    given(equalityService.isEqual(any(), any())).willReturn(false);
+    given(equalityService.setEventDates(any(), eq(givenDigitalMediaEvent()))).willReturn(givenDigitalMediaEvent());
+    given(equalityService.setEventDates(any(), eq(secondEvent))).willReturn(secondEvent);
+    given(equalityService.setEventDates(any(), eq(thirdEvent))).willReturn(thirdEvent);
 
     // When
     var result = service.handleMessage(
@@ -654,6 +673,10 @@ class ProcessingServiceTest {
     given(elasticRepository.indexDigitalMedia(anyList())).willReturn(bulkResponse);
     doNothing().doThrow(JsonProcessingException.class).when(publisherService)
         .publishUpdateEvent(any(), any());
+    given(equalityService.isEqual(any(), any())).willReturn(false);
+    given(equalityService.setEventDates(any(), eq(givenDigitalMediaEvent()))).willReturn(givenDigitalMediaEvent());
+    given(equalityService.setEventDates(any(), eq(secondEvent))).willReturn(secondEvent);
+    given(equalityService.setEventDates(any(), eq(thirdEvent))).willReturn(thirdEvent);
 
     // When
     var result = service.handleMessage(
@@ -684,6 +707,10 @@ class ProcessingServiceTest {
         givenDigitalMediaRecordPhysical(HANDLE_3, DIGITAL_SPECIMEN_ID_3, MEDIA_URL_3,
             "Another Type")
     ));
+    given(equalityService.isEqual(any(), any())).willReturn(false);
+    given(equalityService.setEventDates(any(), eq(givenDigitalMediaEvent()))).willReturn(givenDigitalMediaEvent());
+    given(equalityService.setEventDates(any(), eq(secondEvent))).willReturn(secondEvent);
+    given(equalityService.setEventDates(any(), eq(thirdEvent))).willReturn(thirdEvent);
     given(fdoRecordService.handleNeedsUpdate(any(), any())).willReturn(true);
     givenBulkResponse();
     given(elasticRepository.indexDigitalMedia(anyList())).willReturn(bulkResponse);
@@ -713,11 +740,14 @@ class ProcessingServiceTest {
     doThrow(JsonProcessingException.class).when(publisherService)
         .publishUpdateEvent(givenDigitalMediaRecordWithVersion(2), givenJsonPatch());
     given(fdoRecordService.handleNeedsUpdate(any(), any())).willReturn(true);
+    given(equalityService.isEqual(any(), any())).willReturn(false);
+    given(equalityService.setEventDates(any(), eq(givenDigitalMediaEvent()))).willReturn(givenDigitalMediaEvent());
 
     // When
     var result = service.handleMessage(List.of(givenDigitalMediaEvent()));
 
     // Then
+    then(equalityService).shouldHaveNoMoreInteractions();
     then(fdoRecordService).should()
         .buildPatchDeleteRequest(List.of(givenDigitalMediaRecord(FORMAT_2)));
     then(handleComponent).should().rollbackHandleUpdate(any());
@@ -732,6 +762,8 @@ class ProcessingServiceTest {
   void testUpdateDigitalMediaIOException() throws Exception {
     // Given
     var expected = List.of(givenDigitalMediaRecordWithVersion(2));
+    given(equalityService.isEqual(any(), any())).willReturn(false);
+    given(equalityService.setEventDates(any(), any())).willReturn(givenDigitalMediaEvent());
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(
         List.of(givenDigitalMediaRecord(FORMAT_2)));
@@ -872,6 +904,8 @@ class ProcessingServiceTest {
     given(repository.getDigitalMedia(List.of(DIGITAL_SPECIMEN_ID),
         List.of(MEDIA_URL_1))).willReturn(
         List.of(givenDigitalMediaRecord(FORMAT_2)));
+    given(equalityService.isEqual(any(), any())).willReturn(false);
+    given(equalityService.setEventDates(any(), any())).willReturn(givenDigitalMediaEvent());
     given(fdoRecordService.handleNeedsUpdate(any(), any())).willReturn(true);
     doThrow(DataAccessException.class).when(repository).createDigitalMediaRecord(any());
 
