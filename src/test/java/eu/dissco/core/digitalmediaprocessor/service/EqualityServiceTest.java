@@ -92,14 +92,13 @@ class EqualityServiceTest {
   private static Stream<Arguments> provideEqualMedia() throws Exception {
     return Stream.of(
         Arguments.of(givenDigitalMediaWrapper(), givenDigitalMediaWrapper()),
-        Arguments.of(givenDigitalMediaWrapper(), changeDates(givenDigitalMediaWrapper()),
+        Arguments.of(givenDigitalMediaWrapper(), changeDates(givenDigitalMediaWrapper())),
         Arguments.of(givenDigitalMediaWrapper(), changeDates(
             new DigitalMediaWrapper(
                 TYPE,
                 DIGITAL_SPECIMEN_ID,
                 changeDates(givenDigitalMediaWrapper()).attributes(),
                 MAPPER.createObjectNode()
-            )
         )))
     );
   }

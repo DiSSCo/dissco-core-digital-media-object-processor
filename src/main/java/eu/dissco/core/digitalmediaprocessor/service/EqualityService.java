@@ -12,7 +12,6 @@ import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaEvent;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaRecord;
 import eu.dissco.core.digitalmediaprocessor.domain.DigitalMediaWrapper;
 import eu.dissco.core.digitalmediaprocessor.schema.EntityRelationship;
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Function;
@@ -42,8 +41,8 @@ public class EqualityService {
     }
     try {
       verifyOriginalData(currentDigitalMedia, digitalMedia);
-      var jsonCurrentDigitalMedia = normaliseJsonNode(mapper.valueToTree(currentDigitalMedia));
-      var jsonDigitalMedia = normaliseJsonNode(mapper.valueToTree(digitalMedia));
+      var jsonCurrentDigitalMedia = normaliseJsonNode(mapper.valueToTree(currentDigitalMedia.attributes()));
+      var jsonDigitalMedia = normaliseJsonNode(mapper.valueToTree(digitalMedia.attributes()));
       var isEqual = jsonCurrentDigitalMedia.equals(jsonDigitalMedia);
       if (!isEqual) {
         log.debug("Specimen {} has changed. JsonDiff: {}",
