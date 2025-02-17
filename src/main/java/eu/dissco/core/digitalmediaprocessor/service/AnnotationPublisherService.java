@@ -54,38 +54,43 @@ public class AnnotationPublisherService {
   }
 
   public void publishAnnotationNewMedia(Set<DigitalMediaRecord> digitalMediaRecords) {
-    for (DigitalMediaRecord digitalMediaRecord : digitalMediaRecords) {
-      try {
-        var annotationProcessingRequest = mapNewMediaToAnnotation(digitalMediaRecord);
-        kafkaPublisherService.publishAcceptedAnnotation(
-            new AutoAcceptedAnnotation(
-                createMachineAgent(applicationProperties.getName(), applicationProperties.getPid(),
-                    PROCESSING_SERVICE, DOI, SCHEMA_SOFTWARE_APPLICATION),
-                annotationProcessingRequest));
-      } catch (JsonProcessingException e) {
-        log.error("Unable to send auto-accepted annotation for new media: {}",
-            digitalMediaRecord.id(), e);
-      }
+
+    try {
+      var annotationProcessingRequest = digitalMediaRecords.stream()
+          .map(this::mapNewMediaToAnnotation)
+          .toList();
+      kafkaPublisherService.publishAcceptedAnnotation(
+          new AutoAcceptedAnnotation(
+              createMachineAgent(applicationProperties.getName(), applicationProperties.getPid(),
+                  PROCESSING_SERVICE, DOI, SCHEMA_SOFTWARE_APPLICATION),
+              annotationProcessingRequest));
+    } catch (JsonProcessingException e) {
+      log.error("Unable to send auto-accepted annotation for new media", e);
     }
   }
 
   private AnnotationProcessingRequest mapNewMediaToAnnotation(
-      DigitalMediaRecord digitalMediaRecord) throws JsonProcessingException {
+      DigitalMediaRecord digitalMediaRecord) {
     var sourceSystemID = digitalMediaRecord.digitalMediaWrapper().attributes()
         .getOdsSourceSystemID();
     var sourceSystemName = digitalMediaRecord.digitalMediaWrapper().attributes()
         .getOdsSourceSystemName();
-    return new AnnotationProcessingRequest()
-        .withOaMotivation(OaMotivation.ODS_ADDING)
-        .withOaMotivatedBy("New information received from Source System with id: "
-            + sourceSystemID)
-        .withOaHasBody(buildBody(mapper.writeValueAsString(
-            DigitalMediaUtils.flattenToDigitalMedia(digitalMediaRecord)), sourceSystemID))
-        .withOaHasTarget(buildTarget(digitalMediaRecord, buildNewMediaSelector()))
-        .withDctermsCreated(Date.from(Instant.now()))
-        .withDctermsCreator(
-            createMachineAgent(sourceSystemName, sourceSystemID, SOURCE_SYSTEM, HANDLE,
-                SCHEMA_SOFTWARE_APPLICATION));
+    try {
+      return new AnnotationProcessingRequest()
+          .withOaMotivation(OaMotivation.ODS_ADDING)
+          .withOaMotivatedBy("New information received from Source System with id: "
+              + sourceSystemID)
+          .withOaHasBody(buildBody(mapper.writeValueAsString(
+              DigitalMediaUtils.flattenToDigitalMedia(digitalMediaRecord)), sourceSystemID))
+          .withOaHasTarget(buildTarget(digitalMediaRecord, buildNewMediaSelector()))
+          .withDctermsCreated(Date.from(Instant.now()))
+          .withDctermsCreator(
+              createMachineAgent(sourceSystemName, sourceSystemID, SOURCE_SYSTEM, HANDLE,
+                  SCHEMA_SOFTWARE_APPLICATION));
+    } catch (JsonProcessingException e) {
+      log.info("Unable to map new media to annotation: {}", digitalMediaRecord, e);
+      return null;
+    }
   }
 
   private AnnotationBody buildBody(String value, String sourceSystemID) {
@@ -108,27 +113,27 @@ public class AnnotationPublisherService {
 
   public void publishAnnotationUpdatedMedia(
       Set<UpdatedDigitalMediaRecord> updatedDigitalMediaRecords) {
-    for (var updatedDigitalMediaRecord : updatedDigitalMediaRecords) {
-      try {
-        var annotations = convertJsonPatchToAnnotations(
-            updatedDigitalMediaRecord.digitalMediaRecord(),
-            updatedDigitalMediaRecord.jsonPatch());
-        for (var annotationProcessingRequest : annotations) {
+
+    try {
+      var annotations = updatedDigitalMediaRecords.stream().map(updatedDigitalMediaRecord ->
+          convertJsonPatchToAnnotations(
+              updatedDigitalMediaRecord.digitalMediaRecord(),
+              updatedDigitalMediaRecord.jsonPatch()))
+          .flatMap(List::stream)
+          .toList();
+      if (!annotations.isEmpty()) {
           kafkaPublisherService.publishAcceptedAnnotation(new AutoAcceptedAnnotation(
               createMachineAgent(applicationProperties.getName(), applicationProperties.getPid(),
                   PROCESSING_SERVICE, DOI, SCHEMA_SOFTWARE_APPLICATION),
-              annotationProcessingRequest));
-        }
-      } catch (JsonProcessingException e) {
-        log.error("Unable to send auto-accepted annotation for updated media: {}",
-            updatedDigitalMediaRecord.digitalMediaRecord().id(), e);
+              annotations));
       }
+    } catch (JsonProcessingException e) {
+      log.error("Unable to send auto-accepted annotation for updated media.", e);
     }
   }
 
   private List<AnnotationProcessingRequest> convertJsonPatchToAnnotations(
-      DigitalMediaRecord digitalMediaRecord, JsonNode jsonNode)
-      throws JsonProcessingException {
+      DigitalMediaRecord digitalMediaRecord, JsonNode jsonNode) {
     var annotations = new ArrayList<AnnotationProcessingRequest>();
     var sourceSystemID = digitalMediaRecord.digitalMediaWrapper().attributes()
         .getOdsSourceSystemID();
@@ -142,23 +147,27 @@ public class AnnotationPublisherService {
           .withDctermsCreator(
               createMachineAgent(sourceSystemName, sourceSystemID, SOURCE_SYSTEM, HANDLE,
                   SCHEMA_SOFTWARE_APPLICATION));
-      if (action.get(OP).asText().equals("replace")) {
-        annotations.add(addReplaceOperation(action, annotationProcessingRequest, sourceSystemID));
-      } else if (action.get(OP).asText().equals("add")) {
-        annotations.add(addAddOperation(action, annotationProcessingRequest, sourceSystemID));
-      } else if (action.get(OP).asText().equals("remove")) {
-        annotations.add(addRemoveOperation(annotationProcessingRequest, sourceSystemID));
-      } else if (action.get(OP).asText().equals("copy")) {
-        var annotation = addCopyOperation(digitalMediaRecord, action, annotationProcessingRequest,
-            sourceSystemID);
-        if (annotation != null) {
-          annotations.add(annotation);
+      try {
+        if (action.get(OP).asText().equals("replace")) {
+          annotations.add(addReplaceOperation(action, annotationProcessingRequest, sourceSystemID));
+        } else if (action.get(OP).asText().equals("add")) {
+          annotations.add(addAddOperation(action, annotationProcessingRequest, sourceSystemID));
+        } else if (action.get(OP).asText().equals("remove")) {
+          annotations.add(addRemoveOperation(annotationProcessingRequest, sourceSystemID));
+        } else if (action.get(OP).asText().equals("copy")) {
+          var annotation = addCopyOperation(digitalMediaRecord, action, annotationProcessingRequest,
+              sourceSystemID);
+          if (annotation != null) {
+            annotations.add(annotation);
+          }
+        } else if (action.get(OP).asText().equals("move")) {
+          annotations.addAll(
+              addMoveOperation(digitalMediaRecord, action, annotationProcessingRequest,
+                  sourceSystemID,
+                  sourceSystemName));
         }
-      } else if (action.get(OP).asText().equals("move")) {
-        annotations.addAll(
-            addMoveOperation(digitalMediaRecord, action, annotationProcessingRequest,
-                sourceSystemID,
-                sourceSystemName));
+      } catch (JsonProcessingException e) {
+        log.error("Unable to map jsonPatch to annotation: {}", action, e);
       }
     }
     return annotations;
@@ -186,7 +195,7 @@ public class AnnotationPublisherService {
         .withOaMotivation(OaMotivation.ODS_DELETING)
         .withOaMotivatedBy(
             "Received delete information from Source System with id: " + sourceSystemID);
-    return List.of(additionalDeleteAnnotation, annotationProcessingRequest);
+    return List.of(annotationProcessingRequest, additionalDeleteAnnotation);
   }
 
   private AnnotationProcessingRequest addCopyOperation(DigitalMediaRecord digitalMediaRecord,
