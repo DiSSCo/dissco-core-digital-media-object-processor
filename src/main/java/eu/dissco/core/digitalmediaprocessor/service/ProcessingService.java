@@ -25,7 +25,6 @@ import eu.dissco.core.digitalmediaprocessor.repository.DigitalMediaRepository;
 import eu.dissco.core.digitalmediaprocessor.repository.DigitalSpecimenRepository;
 import eu.dissco.core.digitalmediaprocessor.repository.ElasticSearchRepository;
 import eu.dissco.core.digitalmediaprocessor.schema.DigitalMedia;
-import eu.dissco.core.digitalmediaprocessor.schema.EntityRelationship;
 import eu.dissco.core.digitalmediaprocessor.web.HandleComponent;
 import java.io.IOException;
 import java.time.Instant;
@@ -53,9 +52,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ProcessingService {
 
-  private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_STRING)
-      .withZone(ZoneOffset.UTC);
-
   private final ObjectMapper mapper;
   private final DigitalMediaRepository repository;
   private final FdoRecordService fdoRecordService;
@@ -65,6 +61,7 @@ public class ProcessingService {
   private final DigitalSpecimenRepository digitalSpecimenRepository;
   private final Environment environment;
   private final AnnotationPublisherService annotationPublisherService;
+  private final EqualityService equalityService;
 
   private static DigitalMediaEvent mapUpdatedRecordToEvent(UpdatedDigitalMediaRecord media) {
     return new DigitalMediaEvent(media.automatedAnnotations(),
@@ -163,110 +160,20 @@ public class ProcessingService {
         newDigitalMedia.add(digitalMedia);
       } else {
         var currentDigitalMedia = currentDigitalMedias.get(digitalMediaKey);
-        if (isEqual(currentDigitalMedia.digitalMediaWrapper(), digitalMediaWrapper)) {
+        if (equalityService.isEqual(currentDigitalMedia.digitalMediaWrapper(), digitalMediaWrapper)) {
           log.debug("Received digital media is equal to digital media: {}",
               currentDigitalMedia.id());
           equalDigitalMedia.add(currentDigitalMedia);
         } else {
           log.debug("Digital Media Object with id: {} has received an update",
               currentDigitalMedia.id());
+          var digitalMediaWithUpdatedDates = equalityService.setEventDates(currentDigitalMedia, digitalMedia);
           changedDigitalMedia.add(
-              new UpdatedDigitalMediaTuple(currentDigitalMedia, digitalMedia));
+              new UpdatedDigitalMediaTuple(currentDigitalMedia, digitalMediaWithUpdatedDates));
         }
       }
     }
     return new ProcessResult(equalDigitalMedia, changedDigitalMedia, newDigitalMedia);
-  }
-
-  /*
-  We need to remove the Modified and EntityRelationshipDate from the comparison.
-  We take over the ERDate from the current entity relationship if the ER is equal.
-
-  To establish equality, we only compare type and attributes, not original data or
-  physical specimen id. We ignore original data because original data is not updated
-  if it does change, and we ignore physical specimen id because that's how the specimens
-  were identified to be the same in the first place.
-  */
-  private boolean isEqual(DigitalMediaWrapper currentDigitalMediaWrapper,
-      DigitalMediaWrapper digitalMediaWrapper) {
-    if (currentDigitalMediaWrapper.attributes() == null) {
-      return false;
-    }
-    var currentModified = currentDigitalMediaWrapper.attributes().getDctermsModified();
-    var currentCreated = currentDigitalMediaWrapper.attributes().getDctermsCreated();
-    setGeneratedTimestampToNull(currentDigitalMediaWrapper, digitalMediaWrapper);
-    var entityRelationships = digitalMediaWrapper.attributes().getOdsHasEntityRelationships();
-    setTimestampsEntityRelationships(entityRelationships,
-        currentDigitalMediaWrapper.attributes().getOdsHasEntityRelationships());
-    checkOriginalData(currentDigitalMediaWrapper, digitalMediaWrapper);
-    if (currentDigitalMediaWrapper.attributes().equals(digitalMediaWrapper.attributes())
-        && currentDigitalMediaWrapper.digitalSpecimenID()
-        .equals(digitalMediaWrapper.digitalSpecimenID())
-        && currentDigitalMediaWrapper.type().equals(digitalMediaWrapper.type())
-    ) {
-      digitalMediaWrapper.attributes().setDctermsModified(currentModified);
-      currentDigitalMediaWrapper.attributes().setDctermsModified(currentModified);
-      digitalMediaWrapper.attributes().setDctermsCreated(currentCreated);
-      currentDigitalMediaWrapper.attributes().setDctermsCreated(currentCreated);
-      return true;
-    } else {
-      digitalMediaWrapper.attributes().setDctermsModified(formatter.format(Instant.now()));
-      currentDigitalMediaWrapper.attributes().setDctermsModified(currentModified);
-      digitalMediaWrapper.attributes().setDctermsCreated(currentCreated);
-      digitalMediaWrapper.attributes().setDctermsCreated(currentCreated);
-      return false;
-    }
-  }
-
-  private static void setGeneratedTimestampToNull(DigitalMediaWrapper currentDigitalMediaWrapper,
-      DigitalMediaWrapper digitalMediaWrapper) {
-    currentDigitalMediaWrapper.attributes().setDctermsModified(null);
-    digitalMediaWrapper.attributes().setDctermsModified(null);
-    currentDigitalMediaWrapper.attributes().setDctermsCreated(null);
-    digitalMediaWrapper.attributes().setDctermsCreated(null);
-  }
-
-  private void checkOriginalData(DigitalMediaWrapper currentDigitalMediaWrapper,
-      DigitalMediaWrapper digitalMediaWrapper) {
-    if (currentDigitalMediaWrapper.originalAttributes() != null
-        && !currentDigitalMediaWrapper.originalAttributes()
-        .equals(digitalMediaWrapper.originalAttributes())) {
-      log.info(
-          "Media Object with ac:accessURI {} has changed original data. New Original data not captured.",
-          digitalMediaWrapper.attributes().getAcAccessURI());
-    }
-  }
-
-  /*
-  When all fields are equal except the timestamp we assume tha relationships are equal and the
-  timestamp can be taken over from the current entity relationship.
-  This will reduce the amount of updates and will only update the ER timestamp when there was an
-  actual change
-  */
-  private void setTimestampsEntityRelationships(List<EntityRelationship> entityRelationships,
-      List<EntityRelationship> currentEntityRelationships) {
-    for (var entityRelationship : entityRelationships) {
-      for (var currentEntityrelationship : currentEntityRelationships) {
-        if (Objects.equals(entityRelationship.getId(), currentEntityrelationship.getId()) &&
-            Objects.equals(entityRelationship.getType(), currentEntityrelationship.getType()) &&
-            Objects.equals(entityRelationship.getDwcRelationshipOfResource(),
-                currentEntityrelationship.getDwcRelationshipOfResource()) &&
-            Objects.equals(entityRelationship.getDwcRelationshipOfResourceID(),
-                currentEntityrelationship.getDwcRelationshipOfResourceID()) &&
-            Objects.equals(entityRelationship.getDwcRelatedResourceID(),
-                currentEntityrelationship.getDwcRelatedResourceID()) &&
-            Objects.equals(entityRelationship.getOdsRelatedResourceURI(),
-                currentEntityrelationship.getOdsRelatedResourceURI()) &&
-            Objects.equals(entityRelationship.getOdsHasAgents(),
-                currentEntityrelationship.getOdsHasAgents()) &&
-            Objects.equals(entityRelationship.getDwcRelationshipRemarks(),
-                currentEntityrelationship.getDwcRelationshipRemarks())
-        ) {
-          entityRelationship.setDwcRelationshipEstablishedDate(
-              currentEntityrelationship.getDwcRelationshipEstablishedDate());
-        }
-      }
-    }
   }
 
   private Map<DigitalMediaKey, DigitalMediaRecord> getCurrentDigitalMedia(
