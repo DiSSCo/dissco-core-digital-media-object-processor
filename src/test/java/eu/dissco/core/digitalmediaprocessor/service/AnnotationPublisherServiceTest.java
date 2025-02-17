@@ -230,9 +230,10 @@ class AnnotationPublisherServiceTest {
             List.of(), null, jsonPatch)));
 
     // Then
-    then(kafkaPublisherService).should()
-        .publishAcceptedAnnotation(givenAutoAcceptedAnnotation(expectedAnnotations));
-
+    for (var expectedAnnotation : expectedAnnotations) {
+      then(kafkaPublisherService).should()
+          .publishAcceptedAnnotation(givenAutoAcceptedAnnotation(expectedAnnotation));
+    }
   }
 
   @Test

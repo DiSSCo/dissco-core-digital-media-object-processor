@@ -302,15 +302,7 @@ public class TestUtils {
       AnnotationProcessingRequest annotation) {
     return new AutoAcceptedAnnotation(
         createMachineAgent(APP_NAME, APP_HANDLE, PROCESSING_SERVICE, DOI,
-            SCHEMA_SOFTWARE_APPLICATION), List.of(annotation));
-  }
-
-
-  public static AutoAcceptedAnnotation givenAutoAcceptedAnnotation(
-      List<AnnotationProcessingRequest> annotations) {
-    return new AutoAcceptedAnnotation(
-        createMachineAgent(APP_NAME, APP_HANDLE, PROCESSING_SERVICE, DOI,
-            SCHEMA_SOFTWARE_APPLICATION), annotations);
+            SCHEMA_SOFTWARE_APPLICATION), annotation);
   }
 
   public static AnnotationProcessingRequest givenNewAcceptedAnnotation()
