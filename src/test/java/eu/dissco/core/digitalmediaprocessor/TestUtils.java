@@ -331,7 +331,7 @@ public class TestUtils {
             .withId(DOI_PREFIX + HANDLE)
             .withDctermsIdentifier(DOI_PREFIX + HANDLE)
             .withType(TYPE)
-            .withOdsFdoType("ods:DigitalMedia")
+            .withOdsFdoType("https://doi.org/21.T11148/bbad8c4e101e8af01115")
             .withOaHasSelector(new OaHasSelector()
                 .withAdditionalProperty("@type", "ods:ClassSelector")
                 .withAdditionalProperty("ods:class", "$")));

@@ -159,7 +159,7 @@ class AnnotationPublisherServiceTest {
         .withOaMotivation(motivation)
         .withOaHasBody(body)
         .withOaHasTarget(new AnnotationTarget()
-            .withOdsFdoType("ods:DigitalMedia")
+            .withOdsFdoType("https://doi.org/21.T11148/bbad8c4e101e8af01115")
             .withType(TYPE)
             .withId(DOI_PREFIX + TestUtils.HANDLE)
             .withDctermsIdentifier(DOI_PREFIX + TestUtils.HANDLE)

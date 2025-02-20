@@ -107,7 +107,7 @@ public class AnnotationPublisherService {
         .withId(targetId)
         .withDctermsIdentifier(targetId)
         .withType(digitalMediaRecord.digitalMediaWrapper().type())
-        .withOdsFdoType("ods:DigitalMedia")
+        .withOdsFdoType("https://doi.org/21.T11148/bbad8c4e101e8af01115")
         .withOaHasSelector(selector);
   }
 
