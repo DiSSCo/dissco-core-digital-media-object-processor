@@ -26,7 +26,9 @@ public class TokenAuthenticator {
   @Qualifier("tokenClient")
   private final WebClient tokenClient;
 
+
   public String getToken() throws PidCreationException {
+    log.info("Requesting new token from keycloak");
     var response = tokenClient
         .post()
         .body(BodyInserters.fromFormData(properties.getFromFormData()))
