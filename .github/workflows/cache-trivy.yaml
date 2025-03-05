@@ -11,6 +11,7 @@ jobs:
     steps:
       - name: Setup oras
         uses: oras-project/setup-oras@v1
+      - run: oras version
       - name: Get current date
         id: date
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
