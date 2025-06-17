@@ -1,3 +1,6 @@
+# This Repository Has Been Archived
+17/06/2025 - The digital media processor has been archived. Its functionality has been merged with the [specimen processor](https://github.com/dissco/dissco-core-digital-specimen-processor).
+
 # digital-media-object-processor
 The digital media objects processor can receive digital media object from two different sources:
 - Through the API as a request to register a digital media object
